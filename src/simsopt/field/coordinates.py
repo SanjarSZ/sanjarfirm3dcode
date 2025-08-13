@@ -19,14 +19,14 @@ def boozer_to_cylindrical(field, s, theta, zeta):
 
     Args:
         field : The :class:`BoozerMagneticField` instance used for field evaluation.
-        s : A numpy array of shape (npoints,) containing the normalized toroidal flux.
-        theta : A numpy array of shape (npoints,) containing the Boozer poloidal angle.
-        zeta : A numpy array of shape (npoints,) containing the Boozer toroidal angle.
+        s : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
+        theta : A scalar or a numpy array of shape (npoints,) containing the Boozer poloidal angle.
+        zeta : A scalar or a numpy array of shape (npoints,) containing the Boozer toroidal angle.
 
     Returns:
-        R : A numpy array of shape (npoints,) containing the radial coordinate.
-        phi : A numpy array of shape (npoints,) containing the azimuthal angle.
-        Z : A numpy array of shape (npoints,) containing the vertical coordinate.
+        R : A scalar or a numpy array of shape (npoints,) containing the radial coordinate.
+        phi : A scalar or a numpy array of shape (npoints,) containing the azimuthal angle.
+        Z : A scalar or a numpy array of shape (npoints,) containing the vertical coordinate.
     """
     if not isinstance(s, np.ndarray):
         s = np.asarray(s)
@@ -83,18 +83,24 @@ def cylindrical_to_boozer(
 
     Args:
         field : The :class:`BoozerMagneticField` instance used for field evaluation.
-        R : A numpy array of shape (npoints,) containing the radial coordinate.
-        phi : A numpy array of shape (npoints,) containing the azimuthal angle.
-        Z : A numpy array of shape (npoints,) containing the vertical coordinate.
-        s_guess : Optional initial guess for s (default: None, uses 0.5). Must be a scalar.
-        theta_guess : Optional initial guess for theta (default: None, uses 0.0). Must be a scalar.
-        zeta_guess : Optional initial guess for zeta (default: None, uses phi). Must be a scalar.
-        n_guesses : Number of initial guesses to try for each point (default: 4). Must be a positive integer.
+        R : A scalar or a numpy array of shape (npoints,) containing the radial coordinate.
+        phi : A scalar or a numpy array of shape (npoints,) containing the azimuthal angle.
+        Z : A scalar or a numpy array of shape (npoints,) containing the vertical coordinate.
+        s_guess : float, optional
+            Initial guess for s (default: None, uses 0.5). Must be a scalar.
+        theta_guess : float, optional
+            Initial guess for theta (default: None, uses 0.0). Must be a scalar.
+        zeta_guess : float, optional
+            Initial guess for zeta (default: None, uses phi). Must be a scalar.
+        n_guesses : int, optional
+            Number of initial guesses to try for each point (default: 4). Must be a positive integer.
+        ftol : float, optional
+            Tolerance for root finding convergence (default: 1e-6).
 
     Returns:
-        s : A numpy array of shape (npoints,) containing the normalized toroidal flux.
-        theta : A numpy array of shape (npoints,) containing the Boozer poloidal angle.
-        zeta : A numpy array of shape (npoints,) containing the Boozer toroidal angle.
+        s : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
+        theta : A scalar or a numpy array of shape (npoints,) containing the Boozer poloidal angle.
+        zeta : A scalar or a numpy array of shape (npoints,) containing the Boozer toroidal angle.
     """
     if not isinstance(R, np.ndarray):
         R = np.asarray(R)
@@ -161,7 +167,13 @@ def cylindrical_to_boozer(
         nu_computed = field.nu()[0, 0]
         phi_computed = zeta_val - nu_computed
 
-        return [R_computed - R_target, phi_computed - phi_target, Z_computed - Z_target]
+        return [
+            R_computed - R_target,
+            np.arctan2(
+                np.sin(phi_computed - phi_target), np.cos(phi_computed - phi_target)
+            ),
+            Z_computed - Z_target,
+        ]
 
     for i in range(npoints):
         if use_phi_for_zeta:
@@ -210,29 +222,21 @@ def cylindrical_to_boozer(
 
 def vmec_to_boozer(wout_filename, field, s_vmec, theta_vmec, phi_vmec, ftol=1e-6):
     r"""
-    Transform from VMEC coordinates (s, theta_vmec, phi_vmec) to Boozer coordinates (s, theta_b, zeta_b).
-
-    This function uses the VMEC wout file to compute the transformation between VMEC and Boozer coordinates.
-    The transformation involves computing the PEST angles (vartheta, phi) from VMEC coordinates and then
-    finding the corresponding Boozer coordinates through root finding.
+    Convert from VMEC coordinates to Boozer coordinates.
 
     Args:
         wout_filename : str
             The name of the VMEC wout file.
-        field : BoozerMagneticField
-            The BoozerMagneticField object.
-        s_vmec : array_like (1d)
-            The normalized toroidal flux of the points to transform.
-        theta_vmec : array_like (1d)
-            The VMEC poloidal angle theta of the points to transform.
-        phi_vmec : array_like (1d)
-            The VMEC cylindrical angle phi of the points to transform.
+        field : The :class:`BoozerMagneticField` instance used for field evaluation.
+        s_vmec : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
+        theta_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC poloidal angle.
+        phi_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC cylindrical angle.
+        ftol : float, optional
+            Tolerance for root finding convergence (default: 1e-6).
 
     Returns:
-        theta_b : array_like (1d)
-            The Boozer poloidal angle theta of the points.
-        zeta_b : array_like (1d)
-            The Boozer toroidal angle zeta of the points.
+        theta_b : A numpy array of shape (npoints,) containing the Boozer poloidal angle.
+        zeta_b : A numpy array of shape (npoints,) containing the Boozer toroidal angle.
     """
     # Validate that arrays are not empty
     if len(s_vmec) == 0:
@@ -286,7 +290,11 @@ def vmec_to_boozer(wout_filename, field, s_vmec, theta_vmec, phi_vmec, ftol=1e-6
         theta_b = x[0]
         zeta_b = x[1]
         vartheta, phi = vartheta_phi_vmec(s, theta_b, zeta_b)
-        return [vartheta - vartheta_target, phi - phi_target]
+        vartheta_diff = np.arctan2(
+            np.sin(vartheta - vartheta_target), np.cos(vartheta - vartheta_target)
+        )
+        phi_diff = np.arctan2(np.sin(phi - phi_target), np.cos(phi - phi_target))
+        return [vartheta_diff, phi_diff]
 
     theta_b = []
     zeta_b = []
@@ -312,29 +320,21 @@ def vmec_to_boozer(wout_filename, field, s_vmec, theta_vmec, phi_vmec, ftol=1e-6
 
 def boozer_to_vmec(wout_filename, field, s, theta_b, zeta_b, ftol=1e-6):
     r"""
-    Transform from Boozer coordinates (s, theta_b, zeta_b) to VMEC coordinates (s, theta_vmec, phi_vmec).
-
-    This function uses the VMEC wout file to compute the transformation between Boozer and VMEC coordinates.
-    The transformation involves computing the PEST angles from Boozer coordinates and then finding the
-    corresponding VMEC coordinates through root finding.
+    Convert from Boozer coordinates to VMEC coordinates.
 
     Args:
         wout_filename : str
             The name of the VMEC wout file.
-        field : BoozerMagneticField
-            The BoozerMagneticField object.
-        s : array_like (1d)
-            The normalized toroidal flux of the points to transform.
-        theta_b : array_like (1d)
-            The Boozer poloidal angle theta of the points to transform.
-        zeta_b : array_like (1d)
-            The Boozer toroidal angle zeta of the points to transform.
+        field : The :class:`BoozerMagneticField` instance used for field evaluation.
+        s : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
+        theta_b : A scalar or a numpy array of shape (npoints,) containing the Boozer poloidal angle.
+        zeta_b : A scalar or a numpy array of shape (npoints,) containing the Boozer toroidal angle.
+        ftol : float, optional
+            Tolerance for root finding convergence (default: 1e-6).
 
     Returns:
-        theta_vmec : array_like (1d)
-            The VMEC poloidal angle theta of the points.
-        phi_vmec : array_like (1d)
-            The VMEC cylindrical angle phi of the points.
+        theta_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC poloidal angle.
+        phi_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC cylindrical angle.
     """
     # Handle scalar inputs - return scalars if any input is a scalar
     input_scalar = np.isscalar(s) or np.isscalar(theta_b) or np.isscalar(zeta_b)
@@ -402,7 +402,10 @@ def boozer_to_vmec(wout_filename, field, s, theta_b, zeta_b, ftol=1e-6):
         vartheta_target, phi_target = vartheta_phi_vmec(s, vartheta_boozer, zeta_boozer)
         # Compute PEST angles from VMEC coordinates
         vartheta = vartheta_vmec(s, theta_vmec, phi_target)
-        return [vartheta - vartheta_target]
+        vartheta_diff = np.arctan2(
+            np.sin(vartheta - vartheta_target), np.cos(vartheta - vartheta_target)
+        )
+        return [vartheta_diff]
 
     theta_vmec = np.zeros_like(s)
     phi_vmec = np.zeros_like(s)
@@ -431,25 +434,19 @@ def boozer_to_vmec(wout_filename, field, s, theta_b, zeta_b, ftol=1e-6):
 
 def vmec_to_cylindrical(wout_filename, s_vmec, theta_vmec, phi_vmec):
     r"""
-    Transform from VMEC coordinates to cylindrical coordinates using direct VMEC R, Z evaluation.
+    Convert from VMEC coordinates to cylindrical coordinates.
 
     Args:
         wout_filename : str
             The name of the VMEC wout file.
-        s_vmec : array_like (1d)
-            The normalized toroidal flux of the points to transform.
-        theta_vmec : array_like (1d)
-            The VMEC poloidal angle theta of the points to transform.
-        phi_vmec : array_like (1d)
-            The VMEC cylindrical angle phi of the points to transform.
+        s_vmec : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
+        theta_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC poloidal angle.
+        phi_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC cylindrical angle.
 
     Returns:
-        R : array_like (1d)
-            The radial coordinate.
-        phi_cyl : array_like (1d)
-            The azimuthal angle in cylindrical coordinates.
-        Z : array_like (1d)
-            The vertical coordinate.
+        R : A scalar or a numpy array of shape (npoints,) containing the radial coordinate.
+        phi_cyl : A scalar or a numpy array of shape (npoints,) containing the azimuthal angle.
+        Z : A scalar or a numpy array of shape (npoints,) containing the vertical coordinate.
     """
     # Handle scalar inputs - return scalars if any input is a scalar
     input_scalar = (
@@ -528,29 +525,29 @@ def cylindrical_to_vmec(
     ftol=1e-6,
 ):
     r"""
-    Transform from cylindrical coordinates to VMEC coordinates using direct VMEC R, Z evaluation.
+    Convert from cylindrical coordinates to VMEC coordinates.
 
     Args:
         wout_filename : str
             The name of the VMEC wout file.
-        R : array_like (1d)
-            The radial coordinate.
-        phi : array_like (1d)
-            The azimuthal angle in cylindrical coordinates.
-        Z : array_like (1d)
-            The vertical coordinate.
-        s_guess : Optional initial guess for s (default: None, uses 0.5). Must be a scalar.
-        theta_guess : Optional initial guess for theta_vmec (default: None, uses arctan2(Z, R)). Must be a scalar.
-        zeta_guess : Optional initial guess for phi_vmec (default: None, uses phi). Must be a scalar.
-        n_guesses : Number of initial guesses to try for each point (default: 4). Must be a positive integer.
+        R : A scalar or a numpy array of shape (npoints,) containing the radial coordinate.
+        phi : A scalar or a numpy array of shape (npoints,) containing the azimuthal angle.
+        Z : A scalar or a numpy array of shape (npoints,) containing the vertical coordinate.
+        s_guess : float, optional
+            Initial guess for s (default: None, uses 0.5). Must be a scalar.
+        theta_guess : float, optional
+            Initial guess for theta_vmec (default: None, uses arctan2(Z, R)). Must be a scalar.
+        zeta_guess : float, optional
+            Initial guess for phi_vmec (default: None, uses phi). Must be a scalar.
+        n_guesses : int, optional
+            Number of initial guesses to try for each point (default: 4). Must be a positive integer.
+        ftol : float, optional
+            Tolerance for root finding convergence (default: 1e-6).
 
     Returns:
-        s_vmec : array_like (1d)
-            The normalized toroidal flux.
-        theta_vmec : array_like (1d)
-            The VMEC poloidal angle theta.
-        phi_vmec : array_like (1d)
-            The VMEC cylindrical angle phi.
+        s_vmec : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
+        theta_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC poloidal angle.
+        phi_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC cylindrical angle.
     """
     # Handle scalar inputs - return scalars if any input is a scalar
     input_scalar = np.isscalar(R) or np.isscalar(phi) or np.isscalar(Z)
@@ -615,8 +612,8 @@ def cylindrical_to_vmec(
 
         for j in range(rmnc.shape[1]):  # Loop over mode numbers
             # Interpolate rmnc and zmns to s_i
-            rmnc_s[j] = np.interp(s_i, s_full, rmnc[:, j])
-            zmns_s[j] = np.interp(s_i, s_full, zmns[:, j])
+            rmnc_s[j] = np.interp(np.clip(s_i, 0, 1), s_full, rmnc[:, j])
+            zmns_s[j] = np.interp(np.clip(s_i, 0, 1), s_full, zmns[:, j])
 
         # Compute R and Z using Fourier series
         R_computed = 0.0
@@ -628,19 +625,14 @@ def cylindrical_to_vmec(
             Z_computed += zmns_s[j] * np.sin(angle)
 
         # Return residuals
-        return [R_computed - R_target, phi_i - phi_target, Z_computed - Z_target]
+        phi_diff = np.arctan2(np.sin(phi_i - phi_target), np.cos(phi_i - phi_target))
+        return [R_computed - R_target, phi_diff, Z_computed - Z_target]
 
     # For each point, solve for VMEC coordinates using root finding
     for i in range(R.size):
         R_i = R[i]
         phi_i = phi[i]
         Z_i = Z[i]
-
-        # Determine theta_guess for this point
-        if theta_guess == 0.0:  # Default case, use arctan2
-            theta_guess_i = np.arctan2(Z_i, R_i)
-        else:
-            theta_guess_i = theta_guess
 
         # Determine zeta_guess for this point
         if use_phi_for_zeta:
@@ -653,7 +645,7 @@ def cylindrical_to_vmec(
         initial_guesses = []
 
         # Add the user-provided guess as the first attempt
-        initial_guesses.append([s_guess, theta_guess_i, zeta_guess_i])
+        initial_guesses.append([s_guess, theta_guess, zeta_guess_i])
 
         # Generate additional random guesses
         for j in range(1, n_guesses):

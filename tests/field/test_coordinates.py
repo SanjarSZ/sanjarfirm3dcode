@@ -381,9 +381,7 @@ class TestCoordinates(unittest.TestCase):
         phi = np.array([1.57079633])
         Z = np.array([0.06899233])
 
-        s_vmec, theta_vmec, phi_vmec = cylindrical_to_vmec(
-            filename_vac_wout, R, phi, Z
-        )
+        s_vmec, theta_vmec, phi_vmec = cylindrical_to_vmec(filename_vac_wout, R, phi, Z)
 
         # Check output shapes
         self.assertEqual(s_vmec.shape, R.shape)

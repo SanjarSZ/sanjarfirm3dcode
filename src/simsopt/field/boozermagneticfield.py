@@ -888,7 +888,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
                 bmnc(s)/s^(3/2) for m odd and >=3
 
-            before performing interpolation and spline differentiation to
+            before performing interpolation and finite-difference differentiation to
             obtain ``dbmncds``. If ``False``, interpolation of the unscaled Fourier harmonics and its
             finite-difference derivative wrt ``s`` is performed instead (defaults to ``False``)
         ns_delete: (see ``rescale``) (defaults to 0)
@@ -920,6 +920,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         helicity_N=None,
         enforce_vacuum=False,
         rescale=False,
+        spline_derivative=False,
         ns_delete=0,
         no_K=False,
         write_boozmn=True,
@@ -1006,6 +1007,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             self.no_K = True
         self.ns_delete = ns_delete
         self.rescale = rescale
+        self.spline_derivative = spline_derivative
         if (helicity_M is not None) and (helicity_N is not None):
             if helicity_M % 1 != 0:
                 raise ValueError("helicity_M must be an integer for field to be 2π-periodic in Boozer poloidal angle.")
@@ -1283,24 +1285,31 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         self.d_mn_factor_splines = make_interp_spline(
                     s_half_mn, d_mn_factor.T, k=self.order, axis=0
                 )
-        if (self.enforce_qs and (self.helicity_M *self.xn_b != self.helicity_N * self.xm_b)):
+        if self.enforce_qs:
+            bmnc_filtered = bmnc.copy()
+            bmnc_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
             self.bmnc_splines = make_interp_spline(
-                s_half_mn, (0 * bmnc).T, k=self.order, axis=0
+                s_half_mn, (mn_factor * bmnc_filtered).T, k=self.order, axis=0
             )
-            self.dbmncds_splines = make_interp_spline(
-                s_full[1:-1], (0 * dbmncds).T, k=self.order, axis=0
-            )
+            if self.spline_derivative:
+                self.dbmncds_splines = self.bmnc_splines.derivative()
+            else:
+                dbmncds_filtered = dbmncds.copy()
+                dbmncds_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
+                self.dbmncds_splines = make_interp_spline(
+                    s_full[1:-1], (dbmncds_filtered).T, k=self.order, axis=0
+                )
         else:
             self.bmnc_splines = make_interp_spline(
                     s_half_mn, (mn_factor * bmnc).T, k=self.order, axis=0
                 )
-            if self.rescale:
+            if self.spline_derivative:
                 self.dbmncds_splines = self.bmnc_splines.derivative()
             else:
                 self.dbmncds_splines = make_interp_spline(
                         s_full[1:-1], dbmncds.T, k=self.order, axis=0
                     )
-        if self.rescale:
+        if self.spline_derivative:
             self.dnumnsds_splines = self.numns_splines.derivative()
             self.drmncds_splines = self.rmnc_splines.derivative()
             self.dzmnsds_splines = self.zmns_splines.derivative()
@@ -1325,25 +1334,32 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             self.zmnc_splines = make_interp_spline(
                 s_half_mn, (mn_factor * zmnc).T, k=self.order, axis=0
             )
-            if (self.enforce_qs and (self.helicity_M *self.xn_b != self.helicity_N * self.xm_b)):
+            if self.enforce_qs:
+                bmns_filtered = bmns.copy()
+                bmns_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
                 self.bmns_splines = make_interp_spline(
-                        s_half_mn, (0 * bmns).T, k=self.order, axis=0
+                        s_half_mn, (mn_factor * bmns_filtered).T, k=self.order, axis=0
                     )
-                self.dbmnsds_splines = make_interp_spline(
-                    s_full[1:-1], (0 * dbmnsds).T, k=self.order, axis=0
-                )
+                if self.spline_derivative:
+                    self.dbmnsds_splines = self.bmns_splines.derivative()
+                else:
+                    dbmnsds_filtered = dbmnsds.copy()
+                    dbmnsds_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
+                    self.dbmnsds_splines = make_interp_spline(
+                        s_full[1:-1], dbmnsds_filtered.T, k=self.order, axis=0
+                    )
             else:
                 self.bmns_splines = make_interp_spline(
                     s_half_mn, (mn_factor * bmns).T, k=self.order, axis=0
                 )
-                if self.rescale:
+                if self.spline_derivative:
                     self.dbmnsds_splines = self.bmns_splines.derivative()
                 else:
                     self.dbmnsds_splines = make_interp_spline(
                         s_full[1:-1], dbmnsds.T, k=self.order, axis=0
                     )
 
-            if self.rescale:
+            if self.spline_derivative:
                 self.dnumncds_splines = self.numnc_splines.derivative()
                 self.drmnsds_splines = self.rmns_splines.derivative()
                 self.dzmncds_splines = self.zmnc_splines.derivative()
@@ -1503,9 +1519,11 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         if self.proc0:
             n_modes_actual = len(self.xm_b)  # Get actual number of modes
             self.kmns_splines = []
-            if (self.enforce_qs and (self.helicity_M * self.xn_b!= self.helicity_N * self.xm_b)):
+            if self.enforce_qs:
+                kmns_filtered = kmns.copy()
+                kmns_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
                 self.kmns_splines = make_interp_spline(
-                    self.s_half_ext, 0 * kmns[:, :n_modes_actual], k=self.order, axis=0
+                    self.s_half_ext, kmns_filtered[:, :n_modes_actual], k=self.order, axis=0
                 )
             else:
                 self.kmns_splines = make_interp_spline(
@@ -1514,9 +1532,11 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                 )
 
             if self.asym:
-                if (self.enforce_qs and (self.helicity_M *self.xn_b != self.helicity_N * self.xm_b)):
+                if self.enforce_qs:
+                    kmnc_filtered = kmnc.copy()
+                    kmnc_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
                     self.kmnc_splines = make_interp_spline(
-                        self.s_half_ext, 0 * kmnc[:, :n_modes_actual], k=self.order, axis=0
+                        self.s_half_ext, kmnc_filtered[:, :n_modes_actual], k=self.order, axis=0
                     )
                 else:
                     self.kmnc_splines = make_interp_spline(

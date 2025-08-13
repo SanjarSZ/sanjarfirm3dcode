@@ -83,7 +83,7 @@ for i in range(len(resolutions)):
         nzeta_interp=nzeta_interp,
     )
     
-    points = initialize_position_uniform_vol(field, nParticles, comm=comm, seed=0)
+    points_init = initialize_position_uniform_vol(field, nParticles, comm=comm, seed=0)
 
     for j in range(len(tols)): # Tolerance for ODE solver
         proc0_print("  Tolerance = ", tols[j])
@@ -94,7 +94,7 @@ for i in range(len(resolutions)):
         errors = [] 
         for k in range(first, last):
             point = np.zeros((1,3))
-            point[0, :] = points[k,:]
+            point[0, :] = points_init[k,:]
             ## Trace alpha particle in Boozer coordinates until it hits the s = 1 surface
             res_tys, res_zeta_hits = trace_particles_boozer(
                 field,

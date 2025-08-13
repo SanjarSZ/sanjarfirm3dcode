@@ -1,3 +1,4 @@
+from re import S
 import numpy as np
 from warnings import warn
 
@@ -91,8 +92,10 @@ class PassingPoincare:
         mass,
         charge,
         Ekin,
-        ns_poinc=120,
-        ntheta_poinc=2,
+        ns_poinc=None,
+        ntheta_poinc=None,
+        s_init=None,
+        thetas_init=None,
         Nmaps=500,
         comm=None,
         tmax=1e-2,
@@ -110,6 +113,8 @@ class PassingPoincare:
             mass : Particle mass.
             charge : Particle charge.
             Ekin : Particle total energy.
+            s_init : List of initial s coordinates for the Poincare map. (default: None, ns_poinc is used instead)
+            thetas_init : List of initial theta coordinates for the Poincare map. (default: None, ntheta_poinc is used instead)
             ns_poinc : Number of initial conditions in s for Poincare plot (default: 120).
             ntheta_poinc : Number of initial conditions in theta for Poincare plot (default: 2).
             Nmaps : Number of Poincare return maps to compute for each initial condition (default: 500).
@@ -126,12 +131,24 @@ class PassingPoincare:
         self.mass = mass
         self.charge = charge
         self.Ekin = Ekin
-        self.ns_poinc = ns_poinc
-        self.ntheta_poinc = ntheta_poinc
+        if s_init is not None and thetas_init is not None:
+            self.s_init = s_init
+            self.thetas_init = thetas_init
+        else:
+            if ns_poinc is None: 
+                ns_poinc = 120
+            if ntheta_poinc is None:
+                ntheta_poinc = 2
+            s = np.linspace(0, 1, ns_poinc + 1, endpoint=False)[1::]
+            thetas = np.linspace(0, 2 * np.pi, ntheta_poinc)
+            s, thetas = np.meshgrid(s, thetas)
+            self.s_init = s.flatten()
+            self.thetas_init = thetas.flatten()
         self.Nmaps = Nmaps
         self.comm = comm
         self.tmax = tmax
         self.solver_options = solver_options
+        self.vpars_init = self.initialize_passing_map() 
 
         self.s_all, self.thetas_all, self.vpars_all, self.t_all = (
             self.compute_passing_map()
@@ -149,12 +166,6 @@ class PassingPoincare:
             thetas_init : List of initial theta coordinates for the Poincare map.
             vpars_init : List of initial parallel velocities for the Poincare map.
         """
-        s = np.linspace(0, 1, self.ns_poinc + 1, endpoint=False)[1::]
-        thetas = np.linspace(0, 2 * np.pi, self.ntheta_poinc)
-        s, thetas = np.meshgrid(s, thetas)
-        s = s.flatten()
-        thetas = thetas.flatten()
-
         vtotal = np.sqrt(
             2 * self.Ekin / self.mass
         )  # Total velocity from kinetic energy
@@ -171,24 +182,18 @@ class PassingPoincare:
             else:
                 return self.sign_vpar * vtotal * np.sqrt(1 - self.lam * modB)
 
-        first, last = parallel_loop_bounds(self.comm, len(s))
+        first, last = parallel_loop_bounds(self.comm, len(self.s_init))
         # For each point, find value of vpar such that lambda = vperp^2/(v^2 B)
-        s_init = []
-        thetas_init = []
         vpars_init = []
         for i in range(first, last):
-            vpar = vpar_func(s[i], thetas[i])
+            vpar = vpar_func(self.s_init[i], self.thetas_init[i])
             if vpar is not None:
-                s_init.append(s[i])
-                thetas_init.append(thetas[i])
                 vpars_init.append(vpar)
 
         if self.comm is not None:
-            s_init = [i for o in self.comm.allgather(s_init) for i in o]
-            thetas_init = [i for o in self.comm.allgather(thetas_init) for i in o]
             vpars_init = [i for o in self.comm.allgather(vpars_init) for i in o]
 
-        return s_init, thetas_init, vpars_init
+        return vpars_init
 
     def passing_map(self, point):
         r"""
@@ -226,7 +231,6 @@ class PassingPoincare:
             vpars=[0],
             omega_zetas=[0],
             stopping_criteria=[
-                MinToroidalFluxStoppingCriterion(0.01),
                 MaxToroidalFluxStoppingCriterion(1.0),
             ],
             forget_exact_path=False,
@@ -252,7 +256,6 @@ class PassingPoincare:
         r"""
         Evaluates the passing Poincare return map for the initialized particle positions.
         """
-        self.s_init, self.thetas_init, self.vpars_init = self.initialize_passing_map()
         Ntrj = len(self.s_init)
 
         s_all = []
@@ -412,8 +415,10 @@ class TrappedPoincare:
         mass,
         charge,
         Ekin,
-        ns_poinc=120,
-        neta_poinc=2,
+        ns_poinc=None,
+        neta_poinc=None,
+        s_init=None,
+        etas_init=None,
         Nmaps=500,
         comm=None,
         tmax=1e-2,
@@ -440,8 +445,10 @@ class TrappedPoincare:
             mass : Particle mass.
             charge : Particle charge.
             Ekin : Particle total energy.
+            s_init : List of initial s coordinates for the Poincare map. (default: None, ns_poinc is used instead)
+            etas_init : List of initial eta coordinates for the Poincare map. (default: None, neta_poinc is used instead)
             ns_poinc : Number of initial conditions in s for Poincare plot (default: 120).
-            neta_poinc : Number of initial conditions in theta for Poincare plot (default: 2).
+            neta_poinc : Number of initial conditions in eta for Poincare plot (default: 2).
             Nmaps : Number of Poincare return maps to compute for each initial condition (default: 500).
             comm : MPI communicator for parallel execution (default: None).
             tmax : Maximum integration time for each segment of the Poincare map (default: 1e-2 s).
@@ -469,8 +476,16 @@ class TrappedPoincare:
         self.mass = mass
         self.charge = charge
         self.Ekin = Ekin
-        self.ns_poinc = ns_poinc
-        self.neta_poinc = neta_poinc
+        if s_init is not None and etas_init is not None:
+            self.s_init = s_init
+            self.etas_init = etas_init
+        else:
+            if ns_poinc is None: 
+                ns_poinc = 120
+            if neta_poinc is None:
+                neta_poinc = 2
+            self.ns_poinc = ns_poinc
+            self.neta_poinc = neta_poinc
         self.Nmaps = Nmaps
         self.comm = comm
         self.tmax = tmax
@@ -640,11 +655,16 @@ class TrappedPoincare:
                 )
             return sol.root
 
-        etas = np.linspace(0, 2 * np.pi, self.neta_poinc, endpoint=False)
-        s = np.linspace(0, 1.0, self.ns_poinc + 1, endpoint=False)[1::]
-        etas2d, s2d = np.meshgrid(etas, s)
-        etas2d = etas2d.flatten()
-        s2d = s2d.flatten()
+        # Create mesh grid if not provided directly
+        if not hasattr(self, 's_init') or not hasattr(self, 'etas_init'):
+            etas = np.linspace(0, 2 * np.pi, self.neta_poinc, endpoint=False)
+            s = np.linspace(0, 1.0, self.ns_poinc + 1, endpoint=False)[1::]
+            etas2d, s2d = np.meshgrid(etas, s)
+            etas2d = etas2d.flatten()
+            s2d = s2d.flatten()
+        else:
+            s2d = self.s_init
+            etas2d = self.etas_init
 
         s_init = []
         chis_init = []
@@ -952,8 +972,10 @@ class PassingPerturbedPoincare:
         Ekin=None,
         p0=None,
         lam=None,
-        ns_poinc=120,
-        nchi_poinc=2,
+        ns_poinc=None,
+        nchi_poinc=None,
+        s_init=None,
+        chis_init=None,
         Nmaps=500,
         comm=None,
         tmax=1e-2,
@@ -997,6 +1019,8 @@ class PassingPerturbedPoincare:
             Ekin: Total unperturbed kinetic energy of the particle, used to compute Eprime if not provided.
             p0: Initial point in Boozer coordinates for evaluation of Eprime.
             lam: Pitch angle variable, lambda = vperp^2/(v^2 B), used to compute mu if not provided.
+            s_init : List of initial s coordinates for the Poincare map. (default: None, ns_poinc is used instead)
+            chis_init : List of initial chi coordinates for the Poincare map. (default: None, nchi_poinc is used instead)
             ns_poinc : Number of initial conditions in s for Poincare plot (default: 120).
             nchi_poinc : Number of initial conditions in chi for Poincare plot (default: 2).
             Nmaps : Number of Poincare return maps to compute for each initial condition (default: 500).
@@ -1024,8 +1048,16 @@ class PassingPerturbedPoincare:
         else:
             self.helicity_Mp = 0
             self.helicity_Np = -1
-        self.ns_poinc = ns_poinc
-        self.nchi_poinc = nchi_poinc
+        if s_init is not None and chis_init is not None:
+            self.s_init = s_init
+            self.chis_init = chis_init
+        else:
+            if ns_poinc is None: 
+                ns_poinc = 120
+            if nchi_poinc is None:
+                nchi_poinc = 2
+            self.ns_poinc = ns_poinc
+            self.nchi_poinc = nchi_poinc
         self.Nmaps = Nmaps
         self.comm = comm
         self.tmax = tmax
@@ -1133,11 +1165,16 @@ class PassingPerturbedPoincare:
             else:
                 return (-b + self.sign_vpar * np.sqrt(b**2 - 4 * a * c)) / (2 * a)
 
-        s = np.linspace(0, 1, self.ns_poinc + 1, endpoint=False)[1::]
-        chis = np.linspace(0, 2 * np.pi, self.nchi_poinc)
-        s, chis = np.meshgrid(s, chis)
-        s = s.flatten()
-        chis = chis.flatten()
+        # Create mesh grid if not provided directly
+        if not hasattr(self, 's_init') or not hasattr(self, 'chis_init'):
+            s = np.linspace(0, 1, self.ns_poinc + 1, endpoint=False)[1::]
+            chis = np.linspace(0, 2 * np.pi, self.nchi_poinc)
+            s, chis = np.meshgrid(s, chis)
+            s = s.flatten()
+            chis = chis.flatten()
+        else:
+            s = self.s_init
+            chis = self.chis_init
 
         first, last = parallel_loop_bounds(self.comm, len(s))
         # For each point, find value of vpar such that lambda = vperp^2/(v^2 B)

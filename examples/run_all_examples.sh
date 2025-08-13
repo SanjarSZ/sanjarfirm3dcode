@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --nodes=1
-#SBATCH --time=0:60:00
+#SBATCH --time=3:00:00
 #SBATCH --constraint=cpu
 #SBATCH --qos=premium
 #SBATCH --account=m4680 # Change to your account number
@@ -14,6 +14,7 @@ srun -n 128 -c 1 --chdir=passing_map_perturbed_QA python -u passing_map_perturbe
 srun -n 128 -c 1 --chdir=passing_map_perturbed_QH python -u passing_map_perturbed.py
 srun -n 128 -c 1 --chdir=passing_map_unperturbed python -u passing_map.py
 srun -n 128 -c 1 --chdir=plot_trajectory python -u plot_trajectory.py
+srun -n 32  -c 1 --chdir=resolution_scan python -u resolution_scan.py
 srun -n 128 -c 1 --chdir=tracing_with_AE python -u tracing_with_AE.py
 srun -n 128 -c 1 --chdir=trapped_frequencies python -u trapped_frequencies.py
 srun -n 128 -c 1 --chdir=trapped_map python -u trapped_map.py

@@ -35,13 +35,13 @@ check_success "Failed to install FIRM3D dependencies"
 
 # FIRM3D Installation
 cd firm3d || { echo "Error: firm3d directory not found. Exiting."; exit 1; }
-env CC=$(which mpicc) CXX=$(which mpicxx) pip install -e .
+env CC=$CONDA_PREFIX/bin/mpicc CXX=$CONDA_PREFIX/bin/mpicxx pip install -e .
 check_success "Failed to install FIRM3D"
 cd ..
 
 # BOOZ_XFORM Installation
 cd booz_xform || { echo "Error: booz_xform directory not found. Exiting."; exit 1; }
-env CC=$(which mpicc) CXX=$(which mpicxx) pip install -e .
+env CC=$CONDA_PREFIX/bin/mpicc CXX=$CONDA_PREFIX/bin/mpicxx pip install -e .
 check_success "Failed to install BOOZ_XFORM"
 cd ..
 

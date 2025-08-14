@@ -1,0 +1,40 @@
+name: Ruff
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  ruff:
+    name: Ruff
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install ruff
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff
+
+    - name: Check code formatting
+      run: |
+        ruff format --check .
+
+    - name: Lint with ruff
+      run: |
+        ruff check .
+
+    - name: Check for unused imports
+      run: |
+        ruff check --select F401 .
+
+    - name: Check for undefined names
+      run: |
+        ruff check --select F821 .

@@ -1,0 +1,80 @@
+/* Custom styles for FIRM3D documentation */
+
+/* Improve code block styling */
+.highlight {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 1em;
+    margin: 1em 0;
+}
+
+/* Better table styling */
+.wy-table-responsive table td, .wy-table-responsive table th {
+    white-space: normal;
+}
+
+/* Improve math equation display */
+.math {
+    text-align: center;
+    margin: 1em 0;
+}
+
+/* Custom admonition styling */
+.admonition {
+    border-left: 4px solid #007cba;
+    background-color: #f8f9fa;
+    padding: 1em;
+    margin: 1em 0;
+}
+
+.admonition-title {
+    font-weight: bold;
+    color: #007cba;
+}
+
+/* Better navigation */
+.wy-nav-side {
+    background-color: #2c3e50;
+}
+
+.wy-nav-top {
+    background-color: #34495e;
+}
+
+/* Improve readability */
+.wy-nav-content {
+    max-width: 1200px;
+}
+
+/* Code inline styling */
+code {
+    background-color: #f1f1f1;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+/* Better link styling */
+a {
+    color: #007cba;
+}
+
+a:hover {
+    color: #005a8b;
+}
+
+/* Improve parameter tables */
+.field-list {
+    margin: 1em 0;
+}
+
+.field-list dt {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.field-list dd {
+    margin-left: 1em;
+    margin-bottom: 0.5em;
+}

@@ -24,7 +24,7 @@ void init_interpolant(py::module_ &m){
 
     py::class_<RegularGridInterpolant3D<Array2>, shared_ptr<RegularGridInterpolant3D<Array2>>>(m, "RegularGridInterpolant3D",
             R"pbdoc(
-            Interpolates a (vector valued) function on a uniform grid. 
+            Interpolates a (vector valued) function on a uniform grid.
             This interpolant is optimized for fast function evaluation (at the cost of memory usage). The main purpose of this class is to be used to interpolate magnetic fields and then use the interpolant for tasks such as fieldline or particle tracing for which the field needs to be evaluated many many times.
             )pbdoc")
         .def(py::init<InterpolationRule, RangeTriplet, RangeTriplet, RangeTriplet, int, bool, std::function<std::vector<bool>(Vec, Vec, Vec)>>())

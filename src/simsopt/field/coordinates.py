@@ -1,7 +1,7 @@
 import numpy as np
-from scipy.optimize import root
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.io import netcdf_file
+from scipy.optimize import root
 
 __all__ = [
     "boozer_to_cylindrical",

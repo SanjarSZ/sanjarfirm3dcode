@@ -1,15 +1,15 @@
-from re import S
-import numpy as np
 from warnings import warn
 
+import numpy as np
+
+from .._core.util import parallel_loop_bounds
+from ..field.boozermagneticfield import ShearAlfvenHarmonic, ShearAlfvenWave
 from ..field.tracing import (
-    trace_particles_boozer,
-    trace_particles_boozer_perturbed,
     MaxToroidalFluxStoppingCriterion,
     MinToroidalFluxStoppingCriterion,
+    trace_particles_boozer,
+    trace_particles_boozer_perturbed,
 )
-from ..field.boozermagneticfield import ShearAlfvenHarmonic, ShearAlfvenWave
-from .._core.util import parallel_loop_bounds
 
 __all__ = [
     "compute_loss_fraction",
@@ -44,7 +44,7 @@ def compute_loss_fraction(res_tys, tmin=1e-7, tmax=1e-2, ntime=1000):
 
     loss_frac = np.zeros_like(times)
     for it in range(ntime):
-        loss_frac[it] = np.count_nonzero(timelost < times[it]-1e-15) / nparticles
+        loss_frac[it] = np.count_nonzero(timelost < times[it] - 1e-15) / nparticles
 
     return times, loss_frac
 
@@ -135,7 +135,7 @@ class PassingPoincare:
             self.s_init = s_init
             self.thetas_init = thetas_init
         else:
-            if ns_poinc is None: 
+            if ns_poinc is None:
                 ns_poinc = 120
             if ntheta_poinc is None:
                 ntheta_poinc = 2
@@ -148,11 +148,14 @@ class PassingPoincare:
         self.comm = comm
         self.tmax = tmax
         self.solver_options = solver_options
-        self.vpars_init = self.initialize_passing_map() 
+        self.vpars_init = self.initialize_passing_map()
 
-        self.s_all, self.thetas_all, self.vpars_all, self.t_all = (
-            self.compute_passing_map()
-        )
+        (
+            self.s_all,
+            self.thetas_all,
+            self.vpars_all,
+            self.t_all,
+        ) = self.compute_passing_map()
 
     def initialize_passing_map(self):
         r"""
@@ -424,7 +427,7 @@ class TrappedPoincare:
         tmax=1e-2,
         solver_options={},
     ):
-        """
+        r"""
         Initialize and compute the trapped Poincare map, evaluated by integrating the guiding
         center equations from the v_{\|} = 0 plane until the trajectory returns to the v_{\|} = 0 plane.
         The field strength contours are assumed to have helicity (M,N) in Boozer coordinates. The mapping
@@ -480,7 +483,7 @@ class TrappedPoincare:
             self.s_init = s_init
             self.etas_init = etas_init
         else:
-            if ns_poinc is None: 
+            if ns_poinc is None:
                 ns_poinc = 120
             if neta_poinc is None:
                 neta_poinc = 2
@@ -495,9 +498,12 @@ class TrappedPoincare:
         self.dtheta_dchi = self.helicity_Np / denom
         self.dzeta_dchi = self.helicity_Mp / denom
 
-        self.s_all, self.chis_all, self.etas_all, self.t_all = (
-            self.compute_trapped_map()
-        )
+        (
+            self.s_all,
+            self.chis_all,
+            self.etas_all,
+            self.t_all,
+        ) = self.compute_trapped_map()
 
     def chi(self, theta, zeta):
         r"""
@@ -656,7 +662,7 @@ class TrappedPoincare:
             return sol.root
 
         # Create mesh grid if not provided directly
-        if not hasattr(self, 's_init') or not hasattr(self, 'etas_init'):
+        if not hasattr(self, "s_init") or not hasattr(self, "etas_init"):
             etas = np.linspace(0, 2 * np.pi, self.neta_poinc, endpoint=False)
             s = np.linspace(0, 1.0, self.ns_poinc + 1, endpoint=False)[1::]
             etas2d, s2d = np.meshgrid(etas, s)
@@ -773,6 +779,15 @@ class TrappedPoincare:
 
         return ax
 
+    def get_poincare_data(self):
+        """
+        Return the Poincare map data.
+
+        Returns:
+            s_all, chis_all, etas_all, t_all : Lists of trajectory data.
+        """
+        return self.s_all, self.chis_all, self.etas_all, self.t_all
+
     def compute_frequencies(self):
         """
         Compute the trapped particle eta and bounce frequencies and mean radial position.
@@ -832,7 +847,7 @@ def compute_peta(field_or_saw, points, vpar, mass, charge, helicity_M, helicity_
     r"""
     Given a ShearAlfvenWave or BoozerMagneticField instance, a point in Boozer coordinates, and particle properties, compute the
     value of the canonical momentum, :math:`p_{\eta}`. This quantity is conserved under the unperturbed guiding center equations
-    if the field strength is exactly quasisymmetric with helicity (M,N) and :math:`\alpha = 0`. 
+    if the field strength is exactly quasisymmetric with helicity (M,N) and :math:`\alpha = 0`.
 
     :math:`p_{\eta} = (M G + N I) \left(\frac{m v_{\|\|}}{B} + q \alpha \right) + q (M \psi - M \psi')`
 
@@ -862,9 +877,9 @@ def compute_peta(field_or_saw, points, vpar, mass, charge, helicity_M, helicity_
         vpar = np.array([vpar])
     if isinstance(vpar, list):
         vpar = np.array(vpar)
-    assert vpar.shape[0] == points.shape[0], (
-        "vpar must have the same number of points as points"
-    )
+    assert (
+        vpar.shape[0] == points.shape[0]
+    ), "vpar must have the same number of points as points"
 
     if isinstance(field_or_saw, ShearAlfvenWave):
         field = field_or_saw.B0
@@ -922,9 +937,9 @@ def compute_Eprime(saw, points, vpar, mu, mass, charge, helicity_M, helicity_N):
         vpar = np.array([vpar])
     if isinstance(vpar, list):
         vpar = np.array(vpar)
-    assert vpar.shape[0] == points.shape[0], (
-        "vpar must have the same number of points as points"
-    )
+    assert (
+        vpar.shape[0] == points.shape[0]
+    ), "vpar must have the same number of points as points"
     if vpar.shape[0] != points.shape[0]:
         raise ValueError("vpar must have the same number of points as points")
     if isinstance(saw, ShearAlfvenHarmonic) is False:
@@ -1052,7 +1067,7 @@ class PassingPerturbedPoincare:
             self.s_init = s_init
             self.chis_init = chis_init
         else:
-            if ns_poinc is None: 
+            if ns_poinc is None:
                 ns_poinc = 120
             if nchi_poinc is None:
                 nchi_poinc = 2
@@ -1113,9 +1128,13 @@ class PassingPerturbedPoincare:
         if self.Ekin is None:
             self.Ekin = 0.5 * self.mass * self.vpars_init[0] ** 2
 
-        self.s_all, self.chis_all, self.etas_all, self.vpars_all, self.t_all = (
-            self.compute_passing_map()
-        )
+        (
+            self.s_all,
+            self.chis_all,
+            self.etas_all,
+            self.vpars_all,
+            self.t_all,
+        ) = self.compute_passing_map()
 
     def initialize_passing_map(self):
         """
@@ -1166,7 +1185,7 @@ class PassingPerturbedPoincare:
                 return (-b + self.sign_vpar * np.sqrt(b**2 - 4 * a * c)) / (2 * a)
 
         # Create mesh grid if not provided directly
-        if not hasattr(self, 's_init') or not hasattr(self, 'chis_init'):
+        if not hasattr(self, "s_init") or not hasattr(self, "chis_init"):
             s = np.linspace(0, 1, self.ns_poinc + 1, endpoint=False)[1::]
             chis = np.linspace(0, 2 * np.pi, self.nchi_poinc)
             s, chis = np.meshgrid(s, chis)
@@ -1307,7 +1326,9 @@ class PassingPerturbedPoincare:
 
         res_hit = res_hits[0][0, :]  # Only check the first hit or stopping criterion
 
-        if ((self.helicity_M != 0 and res_hit[1] == 0) or (self.helicity_M == 0 and res_hit[1] == 1)):  # Check that the zetas or thetas plane was hit
+        if (self.helicity_M != 0 and res_hit[1] == 0) or (
+            self.helicity_M == 0 and res_hit[1] == 1
+        ):  # Check that the zetas or thetas plane was hit
             point[0] = res_hit[2]
             point[1] = self.chi(res_hit[3], res_hit[4])
             point[2] = res_hit[5]
@@ -1393,6 +1414,15 @@ class PassingPerturbedPoincare:
             plt.savefig(filename)
 
         return ax
+
+    def get_poincare_data(self):
+        """
+        Return the Poincare map data.
+
+        Returns:
+            s_all, chis_all, etas_all, vpars_all, t_all : Lists of trajectory data.
+        """
+        return self.s_all, self.chis_all, self.etas_all, self.vpars_all, self.t_all
 
 
 def trajectory_to_vtk(res_ty, field, filename="trajectory"):

@@ -6,13 +6,26 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(Python_FIND_STRATEGY LOCATION)
-find_package(Python 3 COMPONENTS Interpreter Development.Module NumPy)
+find_package(Python 3 COMPONENTS Interpreter Development.Module)
 
 message(status "Python executable is ${Python_EXECUTABLE}")
 message(status "Python Development Module found value is ${Python_Development.Module_FOUND}")
 message(status "Python header dirs are ${Python_INCLUDE_DIRS}")
 message(status "Python library dirs are ${Python_LIBRARY_DIRS}")
 message(status "Python version is ${Python_VERSION}")
+
+# Find NumPy manually since the NumPy component might not be available
+execute_process(COMMAND ${Python_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
+                OUTPUT_VARIABLE Python_NumPy_INCLUDE_DIRS
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                RESULT_VARIABLE NUMPY_IMPORT_RESULT)
+if(NUMPY_IMPORT_RESULT EQUAL 0)
+    message(status "NumPy include dirs are ${Python_NumPy_INCLUDE_DIRS}")
+else()
+    message(WARNING "NumPy not found during build. This is expected in the build environment.")
+    # Set a default path that will be overridden at runtime
+    set(Python_NumPy_INCLUDE_DIRS "${Python_INCLUDE_DIRS}")
+endif()
 
 # Find pybind11
 execute_process(COMMAND python -m pybind11 --cmakedir
@@ -105,7 +118,7 @@ else()
             libs/utility libs/typeof libs/array libs/units libs/integer libs/fusion
             libs/range libs/iterator libs/concept_check libs/detail libs/function_types
             libs/lexical_cast libs/container libs/move libs/smart_ptr libs/multi_array
-            libs/functional libs/function libs/type_index libs/container_hash libs/bind 
+            libs/functional libs/function libs/type_index libs/container_hash libs/bind
             libs/format libs/optional
         CONFIGURE_COMMAND ./bootstrap.sh --prefix=<PREFIX>
         BUILD_COMMAND ./b2 headers --prefix=${boost_DIR}
@@ -133,11 +146,11 @@ set(XTENSOR_USE_OPENMP 0)
 set(XTENSOR_USE_TBB 0)
 
 pybind11_add_module(${PROJECT_NAME}
-    src/simsoptpp/python.cpp 
+    src/simsoptpp/python.cpp
     src/simsoptpp/python_tracing.cpp
     src/simsoptpp/python_interpolant.cpp
     src/simsoptpp/regular_grid_interpolant_3d_py.cpp
-    src/simsoptpp/tracing.cpp 
+    src/simsoptpp/tracing.cpp
     src/simsoptpp/python_boozermagneticfield.cpp
     src/simsoptpp/boozerradialinterpolant.cpp
     ${GSL_TARGETS}

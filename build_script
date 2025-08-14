@@ -1,0 +1,2 @@
+conda activate firm3d
+env CC=$CONDA_PREFIX/bin/mpicc CXX=$CONDA_PREFIX/bin/mpicxx pip install -e ".[dev]"

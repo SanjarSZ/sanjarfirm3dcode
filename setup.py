@@ -18,6 +18,7 @@ PLAT_TO_CMAKE = {
     "win-arm64": "ARM64",
 }
 
+
 # A CMakeExtension needs a sourcedir instead of a file list.
 # The name must be the _single_ output extension from the CMake build.
 # If you need multiple extensions, see scikit-build.
@@ -129,8 +130,8 @@ class CMakeBuild(build_ext):
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
     name="simsopt",
-    package_dir={'':'src'},
+    package_dir={"": "src"},
     ext_modules=[CMakeExtension("simsoptpp")],
     cmdclass={"build_ext": CMakeBuild},
-    zip_safe=False
+    zip_safe=False,
 )

@@ -18,11 +18,11 @@ pip-wheel-metadata/
 .coverage
 .tox
 *fort.9
-	
+
 # f90wrap related
 src.*/
-.f2py_f2cmap 
-.libs/ 
+.f2py_f2cmap
+.libs/
 __pycache__/
 *.fpp
 f90wrap_*.f90

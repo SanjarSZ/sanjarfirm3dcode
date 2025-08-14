@@ -1,16 +1,19 @@
 from math import sqrt
 from warnings import warn
+
 import numpy as np
+
 import simsoptpp as sopp
+
+from .._core.types import RealArray
 from .._core.util import parallel_loop_bounds
 from ..field.boozermagneticfield import BoozerMagneticField, ShearAlfvenWave
 from ..util.constants import (
-    ALPHA_PARTICLE_MASS,
     ALPHA_PARTICLE_CHARGE,
+    ALPHA_PARTICLE_MASS,
     FUSION_ALPHA_PARTICLE_ENERGY,
 )
-from ..util.functions import print, proc0_print
-from .._core.types import RealArray
+from ..util.functions import proc0_print
 
 __all__ = [
     "MinToroidalFluxStoppingCriterion",
@@ -33,8 +36,8 @@ def trace_particles_boozer_perturbed(
     tmax=1e-4,
     mass=ALPHA_PARTICLE_MASS,
     charge=ALPHA_PARTICLE_CHARGE,
-    Ekin=None, 
-    dt_max=None, 
+    Ekin=None,
+    dt_max=None,
     tol=1e-9,
     abstol=None,
     reltol=None,
@@ -107,14 +110,14 @@ def trace_particles_boozer_perturbed(
         mass: particle mass in kg, defaults to the mass of an alpha particle
         charge: charge in Coulomb, defaults to the charge of an alpha particle
         Ekin: kinetic energy in Joule, defaults to 3.52MeV. Note that for perturbed tracing, this is simply used to determine the
-            maximum timestep, dtmax = (G0/B0)*0.5*pi/vtotal, where G0 and B0 are evaluated at the first initial condition 
-            and vtotal = sqrt(2*Ekin/mass). If Ekin is None, then dtmax is computed using data from the first initial condition with 
-            vtotal = sqrt(vpar^2 + 2*mu*B0). 
+            maximum timestep, dtmax = (G0/B0)*0.5*pi/vtotal, where G0 and B0 are evaluated at the first initial condition
+            and vtotal = sqrt(2*Ekin/mass). If Ekin is None, then dtmax is computed using data from the first initial condition with
+            vtotal = sqrt(vpar^2 + 2*mu*B0).
         tol: tolerance for the adaptive ode solver
         abstol: absolute tolerance for adaptive ode solver
         reltol: relative tolerance for adaptive ode solver
         comm: MPI communicator to parallelize over
-        thetas: list of angles in [0, 2pi] for which intersection with the plane 
+        thetas: list of angles in [0, 2pi] for which intersection with the plane
             corresponding to that theta should be computed. Should only be used if axis = 0.
         zetas: list of angles in [0, 2pi] for which intersection with the plane
             corresponding to that zeta should be computed
@@ -144,7 +147,7 @@ def trace_particles_boozer_perturbed(
         zetas_stop: whether to stop if hit provided zeta planes
         vpars_stop: whether to stop if hit provided vpar planes
         axis: Defines handling of coordinate singularity. If 0, tracing is
-            performed in Boozer coordinates (s,theta,zeta). If 1, tracing is performed in coordinates (sqrt(s)*cos(theta), sqrt(s)*sin(theta), zeta). 
+            performed in Boozer coordinates (s,theta,zeta). If 1, tracing is performed in coordinates (sqrt(s)*cos(theta), sqrt(s)*sin(theta), zeta).
             If 2, tracing is performed in coordinates (s*cos(theta),s*sin(theta),zeta). Option 2 is recommended.
     Returns: 2 element tuple containing
         - ``res_tys``:
@@ -169,11 +172,13 @@ def trace_particles_boozer_perturbed(
     assert len(mus) == len(parallel_speeds)
     speed_par = parallel_speeds
     m = mass
-    if Ekin is None: 
-        perturbed_field.set_points(np.asarray([[stz_inits[0,0]], [stz_inits[0,1]], [stz_inits[0,2]], [0]]).T)
-        B0 = perturbed_field.B0.modB()[0,0]
-        speed_total = sqrt(speed_par[0]**2 + 2 * mus[0] * B0)
-    else: 
+    if Ekin is None:
+        perturbed_field.set_points(
+            np.asarray([[stz_inits[0, 0]], [stz_inits[0, 1]], [stz_inits[0, 2]], [0]]).T
+        )
+        B0 = perturbed_field.B0.modB()[0, 0]
+        speed_total = sqrt(speed_par[0] ** 2 + 2 * mus[0] * B0)
+    else:
         speed_total = sqrt(2 * Ekin / m)
 
     if mode is not None:
@@ -228,6 +233,7 @@ def trace_particles_boozer_perturbed(
 
     return res_tys, res_hits
 
+
 def trace_particles_boozer(
     field: BoozerMagneticField,
     stz_inits: RealArray,
@@ -257,7 +263,6 @@ def trace_particles_boozer(
     solveSympl=False,
     roottol=None,
     predictor_step=None,
-
 ):
     r"""
     Follow particles in a :class:`BoozerMagneticField`.
@@ -316,7 +321,7 @@ def trace_particles_boozer(
         reltol: relative tolerance for adaptive ode solver (defaults to `tol`). Only used if `solveSympl` is False.
         abstol: absolute tolerance for adaptive ode solver (defaults to `tol`). Only used if `solveSympl` is False.
         comm: MPI communicator to parallelize over
-        thetas: list of angles in [0, 2pi] for which intersection with the plane 
+        thetas: list of angles in [0, 2pi] for which intersection with the plane
             corresponding to that theta should be computed. Should only be used if axis = 0.
         zetas: list of angles in [0, 2pi] for which intersection with the plane
             corresponding to that zeta should be computed
@@ -367,12 +372,15 @@ def trace_particles_boozer(
             If `idx<0`, then `stopping_criteria[int(-idx)-1]` was hit. The state vector is `[s, theta, zeta, v_par]`.
     """
     if zetas_stop and (not len(zetas) and not len(omega_zetas)):
-        raise ValueError("No zetas and omega_zetas provided for the zeta stopping criterion")
+        raise ValueError(
+            "No zetas and omega_zetas provided for the zeta stopping criterion"
+        )
     if thetas_stop and (not len(thetas) and not len(omega_thetas)):
-        raise ValueError("No thetas and omega_thetas provided for the theta stopping criterion")
+        raise ValueError(
+            "No thetas and omega_thetas provided for the theta stopping criterion"
+        )
     if vpars_stop and (not len(vpars)):
         raise ValueError("No vpars provided for the vpar stopping criterion")
-
 
     if solveSympl:
         if abstol is not None or reltol is not None:
@@ -381,7 +389,7 @@ def trace_particles_boozer(
                 "Use dt and roottol to control timestep.",
                 RuntimeWarning,
             )
-        if (axis is not None and axis != 0):
+        if axis is not None and axis != 0:
             warn(
                 "Symplectic solver must be run with axis = 0.",
                 RuntimeWarning,
@@ -396,7 +404,7 @@ def trace_particles_boozer(
             )
     # Set default values for parameters
     if axis is None:
-        axis = 2  
+        axis = 2
     if reltol is None:
         reltol = tol
     if abstol is None:

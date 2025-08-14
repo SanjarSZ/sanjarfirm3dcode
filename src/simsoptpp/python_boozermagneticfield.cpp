@@ -33,7 +33,7 @@ void init_boozermagneticfields(py::module_ &m){
         "dKdzeta",
         &BoozerMagneticField::dKdzeta,
         "Returns a `(npoints, 1)` array containing the zeta derivative of the"
-        " Boozer radial covariant component, K, where B = G nabla zeta + I " 
+        " Boozer radial covariant component, K, where B = G nabla zeta + I "
         " nabla theta + K nabla psi."
     )
     .def(
@@ -123,7 +123,7 @@ void init_boozermagneticfields(py::module_ &m){
         "dZds",
         &BoozerMagneticField::dZds,
         "Returns a `(npoints, 1)` array containing the derivative of the " "height wrt s as a function of Boozer coordinates."
-    )     
+    )
     .def(
         "Z_derivs",
         &BoozerMagneticField::Z_derivs,
@@ -176,7 +176,7 @@ void init_boozermagneticfields(py::module_ &m){
     )
     .def(
         "iota",
-        &BoozerMagneticField::iota, 
+        &BoozerMagneticField::iota,
         "Returns a `(npoints, 1)` array containing the rotational transform "
         "in Boozer coordinates."
     )
@@ -335,7 +335,7 @@ void init_boozermagneticfields(py::module_ &m){
     )
     .def(
         "modB_derivs_ref",
-        &BoozerMagneticField::modB_derivs_ref, 
+        &BoozerMagneticField::modB_derivs_ref,
         "Same as `modB_derivs`, but returns a reference to the array "
         "(this array should be read only)."
     )
@@ -402,7 +402,7 @@ void init_boozermagneticfields(py::module_ &m){
 
   auto ifield = py::class_<
       InterpolatedBoozerField,
-      BoozerMagneticField, 
+      BoozerMagneticField,
       shared_ptr<InterpolatedBoozerField>
       >(m, "InterpolatedBoozerField")
       .def(
@@ -507,7 +507,7 @@ void init_boozermagneticfields(py::module_ &m){
       .def_readwrite("status_nu_derivs",&InterpolatedBoozerField::status_nu_derivs)
       .def_readwrite("status_modB_derivs",&InterpolatedBoozerField::status_modB_derivs)
       ;
-    
+
     // ShearAlfvenWave:
     auto saw = py::class_<
         ShearAlfvenWave,
@@ -565,7 +565,7 @@ void init_boozermagneticfields(py::module_ &m){
             &ShearAlfvenWave::dalphadzeta,
             "Returns zeta derivative of alpha"
         )
-        
+
         .def("Phi_ref", &ShearAlfvenWave::Phi_ref)
         .def("dPhidpsi_ref", &ShearAlfvenWave::dPhidpsi_ref)
         .def("dPhidtheta_ref", &ShearAlfvenWave::dPhidtheta_ref)
@@ -575,10 +575,10 @@ void init_boozermagneticfields(py::module_ &m){
         .def("dalphadtheta_ref", &ShearAlfvenWave::dalphadtheta_ref)
         .def("dalphadpsi_ref", &ShearAlfvenWave::dalphadpsi_ref)
         .def("dalphadzeta_ref", &ShearAlfvenWave::dalphadzeta_ref)
-          
+
         .def("set_points", &ShearAlfvenWave::set_points)
         .def("get_points", &ShearAlfvenWave::get_points);
-    
+
     // Phihat:
     py::class_<Phihat>(m, "Phihat")
         .def(
@@ -588,7 +588,7 @@ void init_boozermagneticfields(py::module_ &m){
         .def("__call__", &Phihat::operator())
         .def("derivative", &Phihat::derivative)
         .def("get_s_basis", &Phihat::get_s_basis);
-    
+
     // ShearAlfvenHarmonic:
     py::class_<
         ShearAlfvenHarmonic,
@@ -602,7 +602,7 @@ void init_boozermagneticfields(py::module_ &m){
         .def_readwrite("phase", &ShearAlfvenHarmonic::phase)
         .def_property_readonly("B0", &ShearAlfvenHarmonic::get_B0)
         .def_property_readonly("phihat", &ShearAlfvenHarmonic::get_phihat);
-    
+
     // ShearAlfvenWavesSuperposition:
     py::class_<
         ShearAlfvenWavesSuperposition,

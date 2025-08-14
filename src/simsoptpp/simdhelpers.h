@@ -23,10 +23,10 @@ class aligned_padded_allocator : public xs::aligned_allocator<T, Align> {
 
         inline aligned_padded_allocator() noexcept { }
 
-        inline aligned_padded_allocator(const aligned_padded_allocator&) noexcept { } 
+        inline aligned_padded_allocator(const aligned_padded_allocator&) noexcept { }
 
         template <class U>
-        inline aligned_padded_allocator(const aligned_padded_allocator<U, Align>&) noexcept { } 
+        inline aligned_padded_allocator(const aligned_padded_allocator<U, Align>&) noexcept { }
 
         T* allocate(size_t n, const void* hint = 0) {
             int simdcount = Align/sizeof(T);
@@ -42,7 +42,7 @@ class aligned_padded_allocator : public xs::aligned_allocator<T, Align> {
 using AlignedPaddedVec = std::vector<double, aligned_padded_allocator<double, XSIMD_DEFAULT_ALIGNMENT>>;
 using simd_t = xs::simd_type<double>;
 
-#if __AVX512F__ 
+#if __AVX512F__
 // On skylake _mm512_sqrt_pd takes 24 CPI and _mm512_div_pd takes 16 CPI, so
 // 1/sqrt(vec) takes 40 CPI. Instead we can use the approximate inverse square
 // root _mm512_rsqrt14_pd which takes 2 CPI (but only gives 4 digits or so) and

@@ -8,7 +8,7 @@ check_success() {
     fi
 }
 
-# Load modules 
+# Load modules
 module load python cray-hdf5/1.14.3.1 cray-netcdf/4.9.0.13
 
 # Ensure Conda is available

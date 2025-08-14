@@ -12,12 +12,12 @@ using std::shared_ptr;
 #include <numeric>      // For std::iota in Phihat
 #include <stdexcept>    // For std::invalid_argument Phihat
 #include <set>          // For std::set in Phihat
-#include <xtensor/xview.hpp> // To access parts of the xtensor 
+#include <xtensor/xview.hpp> // To access parts of the xtensor
                              // (for ShearAlfvenWave and ShearAlfvenHarmonic)
 
 /**
 * @brief Transverse Shear Alfvén Wave in Boozer coordinates
-* 
+*
 * See Paul. et al,
 * JPP (2023;89(5):905890515. doi:10.1017/S0022377823001095), and refs. therein.
 **/
@@ -88,7 +88,7 @@ public:
         npoints = p.shape(0);
         points.resize({npoints, 4});
         memcpy(points.data(), p.data(), 4 * npoints * sizeof(double));
-        // Set points for B0 using the first three columns of p 
+        // Set points for B0 using the first three columns of p
         // (s, theta, zeta):
         Array2 p_b0 = xt::view(p, xt::all(), xt::range(0, 3));
         B0->set_points(p_b0);
@@ -157,7 +157,7 @@ public:
         _dalphadzeta_impl(data_dalphadzeta);
         return data_dalphadzeta;
     }
-    
+
     std::shared_ptr<BoozerMagneticField> get_B0() const {
         return B0;
     }
@@ -323,7 +323,7 @@ public:
     return (Phihat_values[i_right] - Phihat_values[i_left]) /
            (s_values[i_right] - s_values[i_left]);
   }
-  
+
   /**
   * @brief Returns the sorted s_values used for interpolation.
   *
@@ -368,13 +368,13 @@ public:
         auto data_dIdpsi = B0->dIds_ref() / B0->psi0;
         data_alpha_fac = (data_iota * Phim - Phin) /
           (omega * (data_G + data_iota * data_I));
-        data_d_alpha_fac_dpsi = 
+        data_d_alpha_fac_dpsi =
           (data_diotadpsi * Phim) / (omega * (data_G + data_iota * data_I)) -
           data_alpha_fac / (data_G + data_iota * data_I) *
           (data_dGdpsi + data_diotadpsi * data_I + data_iota * data_dIdpsi);
       } else {
         data_alpha_fac = (data_iota * Phim - Phin) / (omega * data_G);
-        data_d_alpha_fac_dpsi = data_diotadpsi * Phim / (omega * data_G); 
+        data_d_alpha_fac_dpsi = data_diotadpsi * Phim / (omega * data_G);
       }
 
       data_Phi.resize({npoints, 1});
@@ -384,21 +384,21 @@ public:
       data_Phidot.resize({npoints, 1});
       if (B0->field_type == "nok" || B0->field_type == "") {
         data_alpha.resize({npoints, 1});
-        data_dalphadzeta.resize({npoints, 1});   
+        data_dalphadzeta.resize({npoints, 1});
       }
       data_alphadot.resize({npoints, 1});
       data_dalphadpsi.resize({npoints, 1});
       data_dalphadtheta.resize({npoints, 1});
-      data_dalphadzeta.resize({npoints, 1});   
+      data_dalphadzeta.resize({npoints, 1});
       for (std::size_t i = 0; i < npoints; ++i) {
         double s = p(i,0);
         double theta = p(i,1);
         double zeta = p(i,2);
         double time = p(i,3);
-        double data_cos = 
+        double data_cos =
             cos(Phim * theta - Phin * zeta +
             omega * time + phase);
-        double data_sin = 
+        double data_sin =
             sin(Phim * theta - Phin * zeta +
             omega * time + phase);
         double data_phihat = phihat(s);
@@ -422,7 +422,7 @@ public:
 protected:
   Array2 data_Phi, data_dPhidpsi, data_dPhidtheta, data_dPhidzeta, data_Phidot;
   Array2 data_alpha, data_alphadot, data_dalphadpsi, data_dalphadtheta, data_dalphadzeta;
-  Array2 data_alpha_fac; 
+  Array2 data_alpha_fac;
 
   void _Phi_impl(Array2& Phi) override {
     Phi = data_Phi;
@@ -431,7 +431,7 @@ protected:
   void _dPhidpsi_impl(Array2& dPhidpsi) override {
     dPhidpsi = data_dPhidpsi;
   }
-  
+
   void _dPhidtheta_impl(Array2& dPhidtheta) override {
     dPhidtheta = data_dPhidtheta;
   }
@@ -439,24 +439,24 @@ protected:
   void _dPhidzeta_impl(Array2& dPhidzeta) override {
     dPhidzeta = data_dPhidzeta;
   }
-  
+
   void _Phidot_impl(Array2& Phidot) override {
     Phidot = data_Phidot;
   }
 
   void _alpha_impl(Array2& alpha) override {
-    // Data only precomputed if non-vacuum 
+    // Data only precomputed if non-vacuum
     if (B0->field_type == "vac") {
       alpha = - data_Phi * data_alpha_fac;
     } else {
-      alpha = data_alpha; 
+      alpha = data_alpha;
     }
   }
-      
+
   void _alphadot_impl(Array2& alphadot) override {
     alphadot = data_alphadot;
   }
-    
+
   void _dalphadpsi_impl(Array2& dalphadpsi) override {
     dalphadpsi = data_dalphadpsi;
   }
@@ -464,16 +464,16 @@ protected:
   void _dalphadtheta_impl(Array2& dalphadtheta) override {
     dalphadtheta = data_dalphadtheta;
   }
-  
+
   void _dalphadzeta_impl(Array2& dalphadzeta) override {
-    // Data only precomputed if non-vacuum 
+    // Data only precomputed if non-vacuum
     if (B0->field_type == "vac") {
       dalphadzeta = -data_dPhidzeta * data_alpha_fac;
     } else {
       dalphadzeta = data_dalphadzeta;
     }
   }
-  
+
   public:
       /**
       * @brief Constructor for the ShearAlfvenHarmonic class.
@@ -495,14 +495,14 @@ protected:
           double omega,
           double phase,
           shared_ptr<BoozerMagneticField> B0field
-      ) : 
+      ) :
       ShearAlfvenWave(B0field),
       phihat(phihat_in),
       Phim(Phim),
       Phin(Phin),
       omega(omega),
       phase(phase) {}
-      
+
       /**
       * @brief Returns radial amplitude Phihat of the ShearAlfvenHarmonic
       */
@@ -522,16 +522,16 @@ class ShearAlfvenWavesSuperposition : public ShearAlfvenWave {
 public:
   using Array2 = xt::pytensor<double, 2, xt::layout_type::row_major>;
   //List of waves in superposition:
-  std::vector<std::shared_ptr<ShearAlfvenWave>> waves; 
+  std::vector<std::shared_ptr<ShearAlfvenWave>> waves;
 
   /**
   * @brief Adds a new wave to the superposition.
   *
-  *  Adds a new wave to the superposition after verifying 
+  *  Adds a new wave to the superposition after verifying
   *  that it has the same equilibrium magnetic field `B0`.
   *
   * @param wave Shared pointer to a ShearAlfvenWave object to be added.
-  * @throws std::invalid_argument if the wave's `B0` field does not 
+  * @throws std::invalid_argument if the wave's `B0` field does not
   * match the superposition's `B0`.
   */
   void add_wave(const std::shared_ptr<ShearAlfvenWave>& wave) {
@@ -542,11 +542,11 @@ public:
     }
     waves.push_back(wave);
   }
-  
+
   /**
   * @brief Constructor for ShearAlfvenWavesSuperposition.
   *
-  * Initializes the superposition with a base wave, 
+  * Initializes the superposition with a base wave,
   * setting its `B0` field as the reference field
   * for all subsequent waves added to the superposition.
   *
@@ -562,13 +562,13 @@ public:
     }
     add_wave(base_wave);
   }
-  
+
   /**
   * @brief Sets the points (s, theta, zeta, time)
   *
   * Sets the points for the superposition and propagates them to all waves.
   *
-  * @param p A tensor representing the points in Boozer coordinates 
+  * @param p A tensor representing the points in Boozer coordinates
   *          and time (s, theta, zeta, time).
   */
   void set_points(Array2& p) override {
@@ -577,7 +577,7 @@ public:
       wave->set_points(p);  // Propagate points to each wave
     }
   }
-  
+
 protected:
   void _Phi_impl(Array2& Phi) override {
     Phi.fill(0.0);
@@ -585,63 +585,63 @@ protected:
       Phi += wave->Phi();
     }
   }
-  
+
   void _dPhidpsi_impl(Array2& dPhidpsi) override {
     dPhidpsi.fill(0.0);
     for (const auto& wave : waves) {
       dPhidpsi += wave->dPhidpsi();
     }
   }
-  
+
   void _dPhidtheta_impl(Array2& dPhidtheta) override {
     dPhidtheta.fill(0.0);
     for (const auto& wave : waves) {
       dPhidtheta += wave->dPhidtheta();
     }
   }
-  
+
   void _dPhidzeta_impl(Array2& dPhidzeta) override {
     dPhidzeta.fill(0.0);
     for (const auto& wave : waves) {
       dPhidzeta += wave->dPhidzeta();
     }
   }
-  
+
   void _Phidot_impl(Array2& Phidot) override {
     Phidot.fill(0.0);
       for (const auto& wave : waves) {
       Phidot += wave->Phidot();
     }
   }
-  
+
   void _alpha_impl(Array2& alpha) override {
     alpha.fill(0.0);
     for (const auto& wave : waves) {
       alpha += wave->alpha();
     }
   }
-  
+
   void _dalphadpsi_impl(Array2& dalphadpsi) override {
     dalphadpsi.fill(0.0);
     for (const auto& wave : waves) {
       dalphadpsi += wave->dalphadpsi();
     }
   }
-  
+
   void _dalphadtheta_impl(Array2& dalphadtheta) override {
     dalphadtheta.fill(0.0);
     for (const auto& wave : waves) {
       dalphadtheta += wave->dalphadtheta();
     }
   }
-  
+
   void _dalphadzeta_impl(Array2& dalphadzeta) override {
     dalphadzeta.fill(0.0);
     for (const auto& wave : waves) {
       dalphadzeta += wave->dalphadzeta();
     }
   }
-  
+
   void _alphadot_impl(Array2& alphadot) override {
     alphadot.fill(0.0);
     for (const auto& wave : waves) {

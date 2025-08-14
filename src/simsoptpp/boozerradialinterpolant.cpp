@@ -27,27 +27,27 @@ void compute_kmnc_kmns(Array& kmnc, Array& kmns, Array& rmnc, Array& drmncds, Ar
     AlignedPaddedVec sin_angles(num_modes, 0.);
     AlignedPaddedVec cos_angles(num_modes, 0.);
 
-    double* kmnc_array = kmnc.data(); 
-    double* kmns_array = kmns.data(); 
+    double* kmnc_array = kmnc.data();
+    double* kmns_array = kmns.data();
 
-    double* rmnc_array = rmnc.data(); 
-    double* drmncds_array = drmncds.data(); 
-    double* zmns_array = zmns.data(); 
+    double* rmnc_array = rmnc.data();
+    double* drmncds_array = drmncds.data();
+    double* zmns_array = zmns.data();
     double* dzmnsds_array = dzmnsds.data();
-    double* numns_array = numns.data(); 
+    double* numns_array = numns.data();
     double* dnumnsds_array = dnumnsds.data();
     double* bmnc_array = bmnc.data();
-    double* rmns_array = rmns.data(); 
-    double* drmnsds_array = drmnsds.data(); 
-    double* zmnc_array = zmnc.data(); 
+    double* rmns_array = rmns.data();
+    double* drmnsds_array = drmnsds.data();
+    double* zmnc_array = zmnc.data();
     double* dzmncds_array = dzmncds.data();
     double* numnc_array = numnc.data();
     double* dnumncds_array = dnumncds.data();
     double* bmns_array = bmns.data();
 
-    double* iota_array = iota.data(); 
-    double* G_array = G.data(); 
-    double* I_array = I.data(); 
+    double* iota_array = iota.data();
+    double* G_array = G.data();
+    double* I_array = I.data();
     double* xm_array = xm.data();
     double* xn_array = xn.data();
 
@@ -55,7 +55,7 @@ void compute_kmnc_kmns(Array& kmnc, Array& kmns, Array& rmnc, Array& drmncds, Ar
         double n_zeta = zetas(ip);
         simd_t theta(thetas(ip));
         simd_t zeta(n_zeta);
-        
+
 
         for (std::size_t im=0; im < num_modes; im+=simd_size) {
             xs::batch<double, simd_size> b_sin, b_cos, b_xm, b_xn;
@@ -71,7 +71,7 @@ void compute_kmnc_kmns(Array& kmnc, Array& kmns, Array& rmnc, Array& drmncds, Ar
             b_cos.store_aligned(&cos_angles[im]);
         }
 
-        for (std::size_t isurf=0; isurf < num_surf; ++isurf) {  
+        for (std::size_t isurf=0; isurf < num_surf; ++isurf) {
             double B = 0.;
             double R = 0.;
             double dRdtheta = 0.;
@@ -117,13 +117,13 @@ void compute_kmnc_kmns(Array& kmnc, Array& kmns, Array& rmnc, Array& drmncds, Ar
             simd_t b_coe(2.*M_PI*M_PI);
 
             for (std::size_t im=0; im < num_modes; im+=simd_size) {
-                xs::batch<double, simd_size> b_sin,b_cos, b_kmns, b_kmnc; 
+                xs::batch<double, simd_size> b_sin,b_cos, b_kmns, b_kmnc;
 
                 b_sin = xs::load_aligned(&sin_angles[im]);
                 b_cos = xs::load_aligned(&cos_angles[im]);
                 b_kmns = xs::load_aligned(&kmns_array[isurf*num_modes+im]);
                 b_kmnc = xs::load_aligned(&kmnc_array[isurf*num_modes+im]);
-                
+
                 b_kmns = xs::fma(b_K, b_sin/b_coe, b_kmns);
                 b_kmnc = xs::fma(b_K, b_cos/b_coe, b_kmnc);
 
@@ -145,7 +145,7 @@ void compute_kmns(Array& kmns, Array& rmnc, Array& drmncds, Array& zmns, Array& 
 
     constexpr std::size_t simd_size = xsimd::simd_type<double>::size;
 
-    double* kmns_array = kmns.data(); 
+    double* kmns_array = kmns.data();
 
     double* rmnc_array = rmnc.data();
     double* drmncds_array = drmncds.data();
@@ -155,12 +155,12 @@ void compute_kmns(Array& kmns, Array& rmnc, Array& drmncds, Array& zmns, Array& 
     double* dnumnsds_array = dnumnsds.data();
     double* bmnc_array = bmnc.data();
 
-    double* iota_array = iota.data(); 
-    double* G_array = G.data(); 
-    double* I_array = I.data(); 
+    double* iota_array = iota.data();
+    double* G_array = G.data();
+    double* I_array = I.data();
     double* xm_array = xm.data();
     double* xn_array = xn.data();
-    double* thetas_array = thetas.data(); 
+    double* thetas_array = thetas.data();
     double* zetas_array = zetas.data();
 
     AlignedPaddedVec sin_angles(num_modes, 0.);
@@ -183,7 +183,7 @@ void compute_kmns(Array& kmns, Array& rmnc, Array& drmncds, Array& zmns, Array& 
             b_cos.store_aligned(&cos_angles[im]);
         }
 
-        for (int isurf=0; isurf < num_surf; ++isurf) {    
+        for (int isurf=0; isurf < num_surf; ++isurf) {
             double B = 0.;
             double R = 0.;
             double dRdtheta = 0.;
@@ -210,7 +210,7 @@ void compute_kmns(Array& kmns, Array& rmnc, Array& drmncds, Array& zmns, Array& 
                 dnuds += dnumnsds_array[isurf*num_modes+im]*sin_angles[im];
                 dnudtheta += numns_array[isurf*num_modes+im]*xm_array[im]*cos_angles[im];
                 dnudzeta += -numns_array[isurf*num_modes+im]*xn_array[im]*cos_angles[im];
-            }            
+            }
             double phi = n_zeta - nu;
             double dphids = - dnuds;
             double dphidtheta = - dnudtheta;
@@ -230,15 +230,15 @@ void compute_kmns(Array& kmns, Array& rmnc, Array& drmncds, Array& zmns, Array& 
             simd_t b_coe(2.*M_PI*M_PI);
 
             for (std::size_t im=0; im < num_modes; im+=simd_size) {
-                xs::batch<double, simd_size> b_sin, b_kmns ; 
+                xs::batch<double, simd_size> b_sin, b_kmns ;
 
                 b_sin = xs::load_aligned(&sin_angles[im]);
                 b_kmns = xs::load_aligned(&kmns_array[isurf*num_modes+im]);
-                
+
                 b_kmns = xs::fma(b_K, b_sin/b_coe, b_kmns);
 
                 b_kmns.store_aligned(&kmns_array[isurf*num_modes+im]);
-                // kmns_array[isurf*num_modes+im] = kmns_array[isurf*num_modes+im] + K*sin_angles[im]/(2.*M_PI*M_PI); 
+                // kmns_array[isurf*num_modes+im] = kmns_array[isurf*num_modes+im] + K*sin_angles[im]/(2.*M_PI*M_PI);
             }
         }
     }
@@ -306,23 +306,23 @@ void inverse_fourier_transform_odd(Array& K, Array& kmns, Array& xm, Array& xn,
             b_thetas = xs::load_aligned(&thetas_array[ip]);
             b_zetas = xs::load_aligned(&zetas_array[ip]);
             b_K = xs::load_aligned(&K_array[ip]);
-            
+
             simd_t sin_nfpzetas, cos_nfpzetas;
             simd_t sinterm, costerm;
             xs::sincos(-nfp*b_zetas, sin_nfpzetas, cos_nfpzetas);
-            
+
             int num_ntor = ntor + 1;
             int m = xm(0);
             int n = xn(0);
             int i = 0;
             for (int im=0; im < num_modes; ++im) {
                 b_kmns = xs::load_aligned(&kmns_array[im*num_points+ip]);
-                
+
                 // recompute the angle from scratch every so often, to
                 // avoid accumulating floating point error
                 if(i % ANGLE_RECOMPUTE == 0)
                     xs::sincos(m*b_thetas-n*b_zetas, sinterm, costerm);
-                    
+
                 b_K = xs::fma(b_kmns, sinterm, b_K);
 
                 if(i % ANGLE_RECOMPUTE != ANGLE_RECOMPUTE - 1){
@@ -365,7 +365,7 @@ void inverse_fourier_transform_odd(Array& K, Array& kmns, Array& xm, Array& xn,
         double res = 0;
         // there are some weird bugs associated with adding this
         // won't be able to get correct result if even and odd are
-        // called consectively 
+        // called consectively
         // #pragma omp parallel private(b_K) reduction(+:res)
         {
             // #pragma omp for
@@ -405,18 +405,18 @@ void inverse_fourier_transform_even(Array& K, Array& kmns, Array& xm, Array& xn,
             b_thetas = xs::load_aligned(&thetas_array[ip]);
             b_zetas = xs::load_aligned(&zetas_array[ip]);
             b_K = xs::load_aligned(&K_array[ip]);
-            
+
             simd_t sin_nfpzetas, cos_nfpzetas;
             simd_t sinterm, costerm;
             xs::sincos(-nfp*b_zetas, sin_nfpzetas, cos_nfpzetas);
-            
+
             int num_ntor = ntor + 1;
             int m = xm(0);
             int n = xn(0);
             int i = 0;
             for (int im=0; im < num_modes; ++im) {
                 b_kmns = xs::load_aligned(&kmns_array[im*num_points+ip]);
-                
+
                 // recompute the angle from scratch every so often, to
                 // avoid accumulating floating point error
                 if(i % ANGLE_RECOMPUTE == 0)
@@ -450,7 +450,7 @@ void inverse_fourier_transform_even(Array& K, Array& kmns, Array& xm, Array& xn,
         //         b_zetas = xs::load_aligned(&zetas_array[ip]);
         //         b_K = xs::load_aligned(&K_array[ip]);
         //         b_kmns = xs::load_aligned(&kmns_array[im*num_points+ip]);
-                
+
         //         b_K = xs::fma(b_kmns, cos(xs::fms(b_xm, b_thetas, b_xn*b_zetas)), b_K);
         //         b_K.store_aligned(&K_array[ip]);
         //     }

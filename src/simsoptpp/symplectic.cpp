@@ -115,7 +115,7 @@ int f_euler_quasi_func(const gsl_vector* x, void* p, gsl_vector* f)
     const double dt = (params->dt);
     auto z = (params->z);
     SymplField field = (params->f);
-    
+
     const double x0 = gsl_vector_get(x,0);
     const double x1 = gsl_vector_get(x,1);
 
@@ -136,7 +136,7 @@ int f_euler_quasi_func(const gsl_vector* x, void* p, gsl_vector* f)
 double cubic_hermite_interp(double t_last, double t_current, double y_last, double y_current, double dy_last, double dy_current, double t)
 {
     double dt = t_current - t_last;
-    return (3*dt*pow(t-t_last,2) - 2*pow(t-t_last,3))/pow(dt,3) * y_current 
+    return (3*dt*pow(t-t_last,2) - 2*pow(t-t_last,3))/pow(dt,3) * y_current
             + (pow(dt,3)-3*dt*pow(t-t_last,2)+2*pow(t-t_last,3))/pow(dt,3) * y_last
             + pow(t-t_last,2)*(t-t_current)/pow(dt,2) * dy_current
             + (t-t_last)*pow(t-t_current,2)/pow(dt,2) * dy_last;
@@ -201,7 +201,7 @@ tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField
     State z = {}; // s, theta, zeta, pzeta
     State temp = {};
     // y = [s, theta, zeta, vpar]
-        
+
     // Translate y to z
     // y = [s, theta, zeta, vpar]
     // z = [s, theta, zeta, pzeta]
@@ -323,12 +323,12 @@ tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField
 
         double t_current = t;
 
-        stop = check_stopping_criteria<SymplField,sympl_dense>(f, iter, res_hits, dense, t_last, t_current, dt, abstol, thetas, zetas, 
+        stop = check_stopping_criteria<SymplField,sympl_dense>(f, iter, res_hits, dense, t_last, t_current, dt, abstol, thetas, zetas,
             omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop);
 
         // Save path if forget_exact_path = False
         if (forget_exact_path == 0) {
-            double t_last; 
+            double t_last;
             // If we have hit a stopping criterion, we still want to save the trajectory up to that point
             if (stop) {
                 t_last = res_hits.back()[0];
@@ -339,12 +339,12 @@ tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField
             double t_save_last = dt_save * std::ceil(t_last/dt_save);
 
             for (double t_save = t_save_last; t_save <= t_last; t_save += dt_save) {
-                if (t_save != 0) { // t = 0 is already saved. 
+                if (t_save != 0) { // t = 0 is already saved.
                     dense.calc_state(t_save, temp);
                     res.push_back(join<1,SymplField::Size>({t_save}, {temp}));
                 }
             }
-        } 
+        }
 
         t_last = t_current;
     } while(t < tmax && !stop);

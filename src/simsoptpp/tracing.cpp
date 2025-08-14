@@ -45,7 +45,7 @@ class GuidingCenterVacuumBoozerRHS {
         double vnorm, tnorm;
         static constexpr int Size = 4;
         using State = array<double, Size>;
-        State stzv, stzvdot; 
+        State stzv, stzvdot;
 
         GuidingCenterVacuumBoozerRHS(shared_ptr<BoozerMagneticField> field, double m, double q, double mu, int axis, double vnorm=1, double tnorm=1)
             : field(field), m(m), q(q), mu(mu), axis(axis), vnorm(vnorm), tnorm(tnorm) {
@@ -74,7 +74,7 @@ class GuidingCenterVacuumBoozerRHS {
             double fak1 = m*v_par*v_par/modB + m*mu;
 
             stzvdot[0] = -dmodBdtheta*fak1/(q*psi0);
-            stzvdot[1] =  dmodBds*fak1/(q*psi0) + iota*v_par*modB/G; 
+            stzvdot[1] =  dmodBds*fak1/(q*psi0) + iota*v_par*modB/G;
             stzvdot[2] = v_par*modB/G;
             stzvdot[3] = -(iota*dmodBdtheta + dmodBdzeta)*mu*modB/G;
 
@@ -86,18 +86,18 @@ class GuidingCenterVacuumBoozerPerturbedRHS {
     /*
      * The state consists of :math:`[s, theta, zeta, v_par, t]` with
      *
-     *    \dot s      = (-|B|_{,\theta} m(v_{||}^2/|B| + \mu)/q 
+     *    \dot s      = (-|B|_{,\theta} m(v_{||}^2/|B| + \mu)/q
      *                  + \alpha_{,\theta}|B|v_{||} - \Phi_{\theta})/psi0;
-     *    \dot \theta = |B|_{,\psi} m (v_{||}^2/|B| + \mu)/q 
+     *    \dot \theta = |B|_{,\psi} m (v_{||}^2/|B| + \mu)/q
      *                  + (\iota - \alpha_{,psi} G) v_{||}|B|/G + \Phi_{,\psi};
      *    \dot \zeta  = v_{||}|B|/G
-     *    \dot v_{||} = -|B|/(Gm) (m\mu(|B|_{,\zeta} 
-     *                          + \alpha_{,\theta}|B|_{,\psi}G 
+     *    \dot v_{||} = -|B|/(Gm) (m\mu(|B|_{,\zeta}
+     *                          + \alpha_{,\theta}|B|_{,\psi}G
      *                          + |B|_{,\theta}(\iota - \alpha_{,\psi}G))
-     *                  + q(\dot\alpha G + \alpha_{,\theta}G\Phi_{,\psi} 
+     *                  + q(\dot\alpha G + \alpha_{,\theta}G\Phi_{,\psi}
      *                  + (\iota - \alpha_{\psi}*G)*\Phi_{\theta}
-     *                  + \Phi_{,\zeta})) 
-     *                  + v_{||}/|B|(|B|_{,\theta}\Phi_{,\psi} 
+     *                  + \Phi_{,\zeta}))
+     *                  + v_{||}/|B|(|B|_{,\theta}\Phi_{,\psi}
      *                             - |B|_{,\psi} \Phi_{,\theta})
      *
      *  where :math:`q` is the charge, :math:`m` is the mass, and :math:`v_\perp = 2\mu|B|`.
@@ -119,15 +119,15 @@ class GuidingCenterVacuumBoozerPerturbedRHS {
             double m,
             double q,
             double mu,
-            int axis, 
+            int axis,
             double vnorm=1,
             double tnorm=1
-        ): 
+        ):
             perturbed_field(perturbed_field),
             m(m),
             q(q),
             mu(mu),
-            axis(axis), 
+            axis(axis),
             vnorm(vnorm),
             tnorm(tnorm) {}
 
@@ -186,22 +186,22 @@ class GuidingCenterNoKBoozerPerturbedRHS {
      *    \dot theta = (G q \Phi_{,\psi}
      *               + |B| q v_{||} (-\alpha_{,\psi} G - \alpha G_{,\psi} + \iota)
      *               - G_{,\psi} m v_{||}^2 + |B|_{,\psi} G (mv_{||}}^2/|B| + m\mu))/D
-     *    \dot \zeta = (-I (|B|_{,\psi} m \mu + \Phi_{,\psi} q) 
+     *    \dot \zeta = (-I (|B|_{,\psi} m \mu + \Phi_{,\psi} q)
      *               + |B| q v_{||} (1 + \alpha_{,\psi}) I + \alpha I'(\psi))
      *               + m v_{||}^2/|B| (|B| I'(\psi) - |B|_{,\psi} I))/D
-     *    \dot v_{||} = (|B|q/m ( -m mu (|B|_{,\zeta}(1 + \alpha_{,\psi} I + \alpha I'(\psi)) 
-     *                + |B|_{,\psi} (\alpha_{,\theta} G - \alpha_{,\zeta} I) 
-     *                + |B|_{,\theta} (\iota - \alpha G'(\psi) - \alpha_{,\psi} G)) 
+     *    \dot v_{||} = (|B|q/m ( -m mu (|B|_{,\zeta}(1 + \alpha_{,\psi} I + \alpha I'(\psi))
+     *                + |B|_{,\psi} (\alpha_{,\theta} G - \alpha_{,\zeta} I)
+     *                + |B|_{,\theta} (\iota - \alpha G'(\psi) - \alpha_{,\psi} G))
      *                - q (\dot \alpha (G + I (\iota - \alpha G'(\psi)) + \alpha G I'(\psi))
-     *                + (\alpha_{,\theta} G - \alpha_{,\zeta} I) \Phi_{,\psi} 
-     *                + (\iota - \alpha G_{,\psi} - \alpha_{,\psi} G) \Phi_{,\theta} 
-     *                + (1 + \alpha I'(\psi) + \alpha_{,\psi} I) Phi_{,\zeta})) 
-     *                + q v_{||}/|B| ((|B|_{,\theta} G - |B|_{,\zeta} I) \Phi_{,\psi} 
-     *                + |B|_{,\psi} (I \Phi_{,\zeta} - G \Phi_{,\theta})) 
-     *                + v_{||} (m \mu (|B|_{,\theta} G'(\psi) - |B|_{,\zeta} I'(\psi)) 
+     *                + (\alpha_{,\theta} G - \alpha_{,\zeta} I) \Phi_{,\psi}
+     *                + (\iota - \alpha G_{,\psi} - \alpha_{,\psi} G) \Phi_{,\theta}
+     *                + (1 + \alpha I'(\psi) + \alpha_{,\psi} I) Phi_{,\zeta}))
+     *                + q v_{||}/|B| ((|B|_{,\theta} G - |B|_{,\zeta} I) \Phi_{,\psi}
+     *                + |B|_{,\psi} (I \Phi_{,\zeta} - G \Phi_{,\theta}))
+     *                + v_{||} (m \mu (|B|_{,\theta} G'(\psi) - |B|_{,\zeta} I'(\psi))
      *                + q (\dot \alpha (G'(\psi) I - G I'(\psi))
      *                + G'(\psi) \Phi_{,\theta} - I'(\psi)\Phi_{,\zeta})))/D
-     *    D = (q(G + I(-\alpha G_{,\psi} + \iota) + \alpha G I'(\psi) 
+     *    D = (q(G + I(-\alpha G_{,\psi} + \iota) + \alpha G I'(\psi)
      *          + mv_{||}/|B| (-G'(\psi) I + G I'(\psi)))
      *  where :math:`q` is the charge, :math:`m` is the mass, and :math:`v_\perp = 2\mu|B|`.
      *
@@ -222,10 +222,10 @@ class GuidingCenterNoKBoozerPerturbedRHS {
             double m,
             double q,
             double mu,
-            int axis, 
+            int axis,
             double vnorm=1,
             double tnorm=1
-        ): 
+        ):
         perturbed_field(perturbed_field),
         m(m),
         q(q),
@@ -269,7 +269,7 @@ class GuidingCenterNoKBoozerPerturbedRHS {
             double dalphadpsi = perturbed_field->dalphadpsi_ref()(0);
             double dalphadtheta = perturbed_field->dalphadtheta_ref()(0);
             double dalphadzeta = perturbed_field->dalphadzeta_ref()(0);
-            double denom = (q*(G + I*(-alpha*dGdpsi + iota) + alpha*G*dIdpsi) 
+            double denom = (q*(G + I*(-alpha*dGdpsi + iota) + alpha*G*dIdpsi)
                 + m*v_par/modB * (-dGdpsi*I + G*dIdpsi)); // q*G in vacuum
 
             stzvtdot[0] = (-G*dPhidtheta*q + I*dPhidzeta*q + modB*q*v_par*(dalphadtheta*G-dalphadzeta*I) + (-dmodBdtheta*G + dmodBdzeta*I)*fak1)/(denom*psi0);
@@ -316,7 +316,7 @@ class GuidingCenterNoKBoozerRHS {
         double vnorm, tnorm;
         static constexpr int Size = 4;
         using State = array<double, Size>;
-        State stzv, stzvdot; 
+        State stzv, stzvdot;
 
         GuidingCenterNoKBoozerRHS(shared_ptr<BoozerMagneticField> field, double m, double q, double mu, int axis, double vnorm=1, double tnorm=1)
             : field(field), m(m), q(q), mu(mu), axis(axis), vnorm(vnorm), tnorm(tnorm) {
@@ -330,7 +330,7 @@ class GuidingCenterNoKBoozerRHS {
             stz(0, 1) = stzv[1];
             stz(0, 2) = stzv[2];
             double v_par = stzv[3];
-                    
+
             field->set_points(stz);
             auto psi0 = field->psi0;
             double modB = field->modB_ref()(0);
@@ -382,8 +382,8 @@ class GuidingCenterBoozerRHS {
         static constexpr int Size = 4;
         using State = array<double, Size>;
         int axis;
-        double vnorm, tnorm; 
-        State stzv, stzvdot; 
+        double vnorm, tnorm;
+        State stzv, stzvdot;
 
         GuidingCenterBoozerRHS(shared_ptr<BoozerMagneticField> field, double m, double q, double mu, int axis, double vnorm=1, double tnorm=1)
             : field(field), m(m), q(q), mu(mu), axis(axis), vnorm(vnorm), tnorm(tnorm) {
@@ -434,8 +434,8 @@ class GuidingCenterBoozerRHS {
 
 template<class RHS>
 tuple<vector<array<double, RHS::Size+1>>, vector<array<double, RHS::Size+2>>>
-solve(RHS rhs, typename RHS::State stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol, vector<double> thetas, vector<double> zetas, 
-    vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, double dtau_save, vector<double> vpars, 
+solve(RHS rhs, typename RHS::State stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol, vector<double> thetas, vector<double> zetas,
+    vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, double dtau_save, vector<double> vpars,
     bool thetas_stop=false, bool zetas_stop=false, bool vpars_stop=false, bool forget_exact_path=false) {
 
     if (zetas.size() > 0 && omega_zetas.size() == 0) {
@@ -452,7 +452,7 @@ solve(RHS rhs, typename RHS::State stzvt, double tau_max, double dtau, double dt
     vector<array<double, RHS::Size+1>> res = {};
     vector<array<double, RHS::Size+2>> res_hits = {};
     typedef typename RHS::State State;
-    State y, temp; 
+    State y, temp;
     typedef typename boost::numeric::odeint::result_of::make_dense_output<runge_kutta_dopri5<State>>::type dense_stepper_type;
     dense_stepper_type dense = make_dense_output(abstol, reltol, dtau_max, runge_kutta_dopri5<State>());
     double tau = 0;
@@ -478,7 +478,7 @@ solve(RHS rhs, typename RHS::State stzvt, double tau_max, double dtau, double dt
         dtau = tau_current - tau_last; // Timestep taken
 
         // Check if we have hit a stopping criterion between tau_last and tau_current
-        stop = check_stopping_criteria<RHS,dense_stepper_type>(rhs, iter, res_hits, dense, tau_last, 
+        stop = check_stopping_criteria<RHS,dense_stepper_type>(rhs, iter, res_hits, dense, tau_last,
             tau_current, dtau, abstol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop);
 
         // Save path if forget_exact_path = False
@@ -490,14 +490,14 @@ solve(RHS rhs, typename RHS::State stzvt, double tau_max, double dtau, double dt
             // This will give the first save point after tau_last
             double tau_save_last = std::ceil(tau_last/dtau_save) * dtau_save;
             for (double tau_save = tau_save_last; tau_save <= tau_current; tau_save += dtau_save) {
-                if (tau_save != 0) {  // tau = 0 is already saved. 
+                if (tau_save != 0) {  // tau = 0 is already saved.
                     dense.calc_state(tau_save, temp);
                     double t_save = tau_save * rhs.tnorm;
                     y_to_stzvt<RHS>(temp, stzvt, rhs);
                     res.push_back(join<1, RHS::Size>({t_save}, stzvt));
                 }
             }
-        } 
+        }
     } while(tau < tau_max && !stop);
     // Save t = tmax
     if (stop) {
@@ -559,24 +559,24 @@ particle_guiding_center_boozer_perturbed_tracing(
     double dtau_save = dt_save / tnorm;
 
     // Initial conditions are passed as (s, theta, zeta, v_par, t)
-    // While, tracing is done in mapped coordinates y 
+    // While, tracing is done in mapped coordinates y
     stzvt[0] = stz_init[0];
     stzvt[1] = stz_init[1];
-    stzvt[2] = stz_init[2]; 
-    stzvt[3] = vtang; 
-    stzvt[4] = 0; 
+    stzvt[2] = stz_init[2];
+    stzvt[3] = vtang;
+    stzvt[4] = 0;
 
     if (vacuum) {
       auto rhs_class = GuidingCenterVacuumBoozerPerturbedRHS(
           perturbed_field, m, q, mu, axis, vnorm, tnorm
       );
-      return solve<GuidingCenterVacuumBoozerPerturbedRHS>(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, 
+      return solve<GuidingCenterVacuumBoozerPerturbedRHS>(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
             stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path);
   } else {
       auto rhs_class = GuidingCenterNoKBoozerPerturbedRHS(
           perturbed_field, m, q, mu, axis, vnorm, tnorm
       );
-      return solve<GuidingCenterNoKBoozerPerturbedRHS>(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, 
+      return solve<GuidingCenterNoKBoozerPerturbedRHS>(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
             stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path);
   }
 }
@@ -586,31 +586,31 @@ See trace_particles_boozer() defined in tracing.py for details on the parameters
 **/
 tuple<vector<array<double, 5>>, vector<array<double, 6>>>
 particle_guiding_center_boozer_tracing(
-        shared_ptr<BoozerMagneticField> field, 
+        shared_ptr<BoozerMagneticField> field,
         array<double, 3> stz_init,
-        double m, 
-        double q, 
-        double vtotal, 
-        double vtang, 
-        double tmax, 
-        bool vacuum, 
-        bool noK, 
+        double m,
+        double q,
+        double vtotal,
+        double vtang,
+        double tmax,
+        bool vacuum,
+        bool noK,
         vector<double> thetas,
-        vector<double> zetas, 
+        vector<double> zetas,
         vector<double> omega_thetas,
         vector<double> omega_zetas,
         vector<double> vpars,
-        vector<shared_ptr<StoppingCriterion>> stopping_criteria,  
-        double dt_save, 
+        vector<shared_ptr<StoppingCriterion>> stopping_criteria,
+        double dt_save,
         bool forget_exact_path,
         bool thetas_stop,
-        bool zetas_stop, 
-        bool vpars_stop, 
-        int axis, 
-        double abstol, 
+        bool zetas_stop,
+        bool vpars_stop,
+        int axis,
+        double abstol,
         double reltol,
         bool solveSympl,
-        bool predictor_step, 
+        bool predictor_step,
         double roottol,
         double dt
         )
@@ -621,7 +621,7 @@ particle_guiding_center_boozer_tracing(
     double vperp2 = vtotal*vtotal - vtang*vtang;
     double mu = vperp2/(2*modB);
     array<double, 4> stzv;
-    double vnorm, tnorm, dtau_max, dtau; 
+    double vnorm, tnorm, dtau_max, dtau;
 
     if (!solveSympl){
         double G0 = std::abs(field->G()(0));
@@ -632,7 +632,7 @@ particle_guiding_center_boozer_tracing(
         dtau = 1e-3 * dtau_max; // initial guess for first timestep, will be adjusted by adaptive timestepper
     } else {
         vnorm = 1;
-        tnorm = 1; 
+        tnorm = 1;
         dtau = dt / tnorm;
     }
     if (dtau<0) {
@@ -644,8 +644,8 @@ particle_guiding_center_boozer_tracing(
 
     stzv[0] = stz_init[0];
     stzv[1] = stz_init[1];
-    stzv[2] = stz_init[2]; 
-    stzv[3] = vtang; 
+    stzv[2] = stz_init[2];
+    stzv[3] = vtang;
 
     if (solveSympl) {
 #ifdef USE_GSL

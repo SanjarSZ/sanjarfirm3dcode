@@ -1,15 +1,16 @@
-import numpy as np
 import unittest
 from pathlib import Path
+
+import numpy as np
 
 from simsopt.field.boozermagneticfield import BoozerRadialInterpolant
 from simsopt.field.coordinates import (
     boozer_to_cylindrical,
-    cylindrical_to_boozer,
     boozer_to_vmec,
+    cylindrical_to_boozer,
+    cylindrical_to_vmec,
     vmec_to_boozer,
     vmec_to_cylindrical,
-    cylindrical_to_vmec,
 )
 
 np.random.seed(0)

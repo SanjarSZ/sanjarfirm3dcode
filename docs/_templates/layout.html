@@ -1,0 +1,36 @@
+{%- extends "!layout.html" %}
+
+{%- block extrahead %}
+{{ super() }}
+<link rel="stylesheet" href="{{ pathto('_static/custom.css', 1) }}" type="text/css" />
+{% endblock %}
+
+{%- block footer %}
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> FIRM3D</span>
+    v: {{ release }}
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>{{ _('Versions') }}</dt>
+      <dd><a href="#">latest</a></dd>
+      <dd><a href="#">stable</a></dd>
+    </dl>
+    <dl>
+      <dt>{{ _('Downloads') }}</dt>
+      <dd><a href="#">PDF</a></dd>
+      <dd><a href="#">ePub</a></dd>
+      <dd><a href="#">HTML</a></dd>
+    </dl>
+    <dl>
+      <dt>{{ _('On Read the Docs') }}</dt>
+      <dd><a href="#">Project Home</a></dd>
+      <dd><a href="#">Builds</a></dd>
+    </dl>
+    <hr/>
+    {% trans %}Free document hosting provided by <a href="https://readthedocs.org">Read the Docs</a>.{% endtrans %}
+  </div>
+</div>
+{% endblock %}

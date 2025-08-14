@@ -1,5 +1,5 @@
 #pragma once
-#ifdef USE_GSL 
+#ifdef USE_GSL
 #include <memory>
 #include <array>
 #include <vector>
@@ -30,13 +30,13 @@ public:
         double H;
         // vpar = (pzeta - q Azeta)/(m hzeta)
         double vpar;
-        double vnorm, tnorm; 
+        double vnorm, tnorm;
 
         // Derivatives of above quantities wrt (s, theta, zeta)
         double dAtheta[3], dAzeta[3];
         double dhtheta[3], dhzeta[3];
         double dmodB[3];
-    
+
         double dvpar[4], dH[4], dptheta[4];
 
         // mu = vperp^2/(2 B)
@@ -76,20 +76,20 @@ public:
 class sympl_dense {
 public:
     // for interpolation
-    array<double, 2> bracket_s = {}; 
+    array<double, 2> bracket_s = {};
     array<double, 2> bracket_dsdt = {};
-    array<double, 2> bracket_theta = {}; 
-    array<double, 2> bracket_dthdt = {}; 
-    array<double, 2> bracket_zeta = {}; 
+    array<double, 2> bracket_theta = {};
+    array<double, 2> bracket_dthdt = {};
+    array<double, 2> bracket_zeta = {};
     array<double, 2> bracket_dzedt = {};
-    array<double, 2> bracket_vpar = {}; 
-    array<double, 2> bracket_dvpardt = {}; 
+    array<double, 2> bracket_vpar = {};
+    array<double, 2> bracket_dvpardt = {};
     typedef typename SymplField::State State;
 
     // bounds of interval for interpolation between time steps
-    double tlast = 0.0; 
+    double tlast = 0.0;
     double tcurrent = 0.0;
-    
+
     void update(double t, double dt, array<double, 4>  y, SymplField f);
     void calc_state(double eval_t, State &temp);
 };

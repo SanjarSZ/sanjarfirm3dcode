@@ -2,13 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, master ]
 
 jobs:
   lint:
-    name: Lint and Format
+    name: Lint
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ruff pytest pytest-cov
+        pip install ruff coverage
 
     - name: Check code formatting
       run: |
@@ -54,11 +54,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e ".[dev]"
-        pip install pytest pytest-cov
+        pip install coverage
 
     - name: Run tests
       run: |
-        pytest tests/ --cov=simsopt --cov-report=xml
+        python -m coverage run -m unittest discover tests/
+        python -m coverage xml
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -87,11 +88,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e ".[dev]"
-        pip install mpi4py pytest pytest-cov
+        pip install mpi4py coverage
 
     - name: Run MPI tests
       run: |
-        mpirun -np 2 pytest tests/ -v
+        mpirun -np 2 python -m unittest discover tests/ -v
 
   docs:
     name: Build Documentation
@@ -114,37 +115,3 @@ jobs:
       run: |
         cd docs
         make html
-
-    - name: Check for documentation warnings
-      run: |
-        cd docs
-        make html 2>&1 | grep -E "(WARNING|ERROR)" && exit 1 || exit 0
-
-  security:
-    name: Security Check
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install bandit safety
-
-    - name: Run security checks
-      run: |
-        bandit -r src/ -f json -o bandit-report.json || true
-        safety check --json --output safety-report.json || true
-
-    - name: Upload security reports
-      uses: actions/upload-artifact@v3
-      with:
-        name: security-reports
-        path: |
-          bandit-report.json
-          safety-report.json

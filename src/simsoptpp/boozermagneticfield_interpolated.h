@@ -70,7 +70,7 @@ class InterpolatedBoozerField : public BoozerMagneticField {
             }
             Array2 stz = this->get_points_ref();
             points_sym.resize({npoints, 3});
-            Array2 stz0 = this->get_sym_points_ref(); 
+            Array2 stz0 = this->get_sym_points_ref();
             exploit_fluxfunction_points(stz, stz0);
             interp_G->evaluate_batch(stz0, G);
         }
@@ -112,7 +112,7 @@ class InterpolatedBoozerField : public BoozerMagneticField {
             }
             Array2 stz = this->get_points_ref();
             points_sym.resize({npoints, 3});
-            Array2 stz0 = this->get_sym_points_ref(); 
+            Array2 stz0 = this->get_sym_points_ref();
             exploit_fluxfunction_points(stz, stz0);
             interp_iota->evaluate_batch(stz0, iota);
         }
@@ -241,7 +241,7 @@ class InterpolatedBoozerField : public BoozerMagneticField {
             }
             Array2 stz = this->get_points_ref();
             points_sym.resize({npoints, 3});
-            Array2 stz_sym = this->get_sym_points_ref(); 
+            Array2 stz_sym = this->get_sym_points_ref();
             exploit_symmetries_points(stz, stz_sym);
             interp_dKdzeta->evaluate_batch(stz_sym, dKdzeta);
         }
@@ -283,7 +283,7 @@ class InterpolatedBoozerField : public BoozerMagneticField {
             }
             Array2 stz = this->get_points_ref();
             points_sym.resize({npoints, 3});
-            Array2 stz_sym = this->get_sym_points_ref();               
+            Array2 stz_sym = this->get_sym_points_ref();
             exploit_symmetries_points(stz, stz_sym);
             interp_nu->evaluate_batch(stz_sym, nu);
             if (stellsym) {

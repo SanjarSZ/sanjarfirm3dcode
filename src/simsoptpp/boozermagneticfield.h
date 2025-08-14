@@ -40,7 +40,7 @@ class BoozerMagneticField {
             throw logic_error("_dnudzeta_impl was not implemented");
         }
         virtual void _dnuds_impl(Array2& dnuds) {
-            throw logic_error("_dnuds_impl was not implemented"); 
+            throw logic_error("_dnuds_impl was not implemented");
         }
         virtual void _nu_derivs_impl(Array2& nu_derivs) {
             throw logic_error("_nu_derivs_impl was not implemented");
@@ -131,9 +131,9 @@ class BoozerMagneticField {
         bool status_modB=false, status_modB_derivs=false;
         bool status_dmodBds=false, status_dmodBdtheta=false, status_dmodBdzeta=false;
         bool status_G=false, status_dGds=false;
-        bool status_iota=false, status_diotads=false; 
+        bool status_iota=false, status_diotads=false;
         bool status_psip=false;
-        bool status_I=false, status_dIds=false;  
+        bool status_I=false, status_dIds=false;
         bool status_nu=false, status_nu_derivs=false;
         bool status_dnuds=false, status_dnudtheta=false, status_dnudzeta=false;
         bool status_K=false, status_K_derivs=false;
@@ -155,7 +155,7 @@ class BoozerMagneticField {
             Array2& _points = points;
             memcpy(_points.data(), p.data(), 3*npoints*sizeof(double));
             this->_set_points_cb();
-            status_modB = false; 
+            status_modB = false;
             status_modB_derivs = false;
             status_dmodBds = false;
             status_dmodBdtheta = false;

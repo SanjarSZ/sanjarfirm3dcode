@@ -142,7 +142,7 @@ class RegularGridInterpolant3D {
     public:
 
         RegularGridInterpolant3D(InterpolationRule rule, RangeTriplet xrange, RangeTriplet yrange, RangeTriplet zrange, int value_size, bool out_of_bounds_ok, std::function<std::vector<bool>(Vec, Vec, Vec)> skip) :
-            rule(rule), 
+            rule(rule),
             xmin(std::get<0>(xrange)), xmax(std::get<1>(xrange)), nx(std::get<2>(xrange)),
             ymin(std::get<0>(yrange)), ymax(std::get<1>(yrange)), ny(std::get<2>(yrange)),
             zmin(std::get<0>(zrange)), zmax(std::get<1>(zrange)), nz(std::get<2>(zrange)),
@@ -301,7 +301,7 @@ class RegularGridInterpolant3D {
         Vec evaluate(double x, double y, double z); // evaluate the interpolant at one location
         void evaluate_batch(Array& xyz, Array& fxyz); // evluate the interpolant at multiple locations
         void evaluate_batch_1D(Array &xyz, Array &fxyz);
-        
+
         std::pair<double, double> estimate_error(std::function<Vec(Vec, Vec, Vec)> &f, int samples);
 };
 
@@ -337,4 +337,3 @@ class ChebyshevInterpolationRule : public InterpolationRule {
             build_scalings();
         }
 };
-

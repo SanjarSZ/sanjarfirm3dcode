@@ -120,7 +120,7 @@ array<double, m+n> join(const array<double, m>& a, const array<double, n>& b)
 
 template<class RHS>
 void stzvt_to_y(const array<double, RHS::Size>& stzvt, array<double, RHS::Size>& y, RHS rhs)
-{ 
+{
     if (y.size() != 4 && y.size() != 5) {
         throw std::invalid_argument("y must have size 4 or 5.");
     }
@@ -141,10 +141,10 @@ void stzvt_to_y(const array<double, RHS::Size>& stzvt, array<double, RHS::Size>&
         throw std::invalid_argument("axis must be 0, 1, or 2.");
     }
     y[2] = stzvt[2];
-    y[3] = stzvt[3] / rhs.vnorm; // velocity normalization 
+    y[3] = stzvt[3] / rhs.vnorm; // velocity normalization
     if (y.size() == 5) {
-        y[4] = stzvt[4] / rhs.tnorm; // time normalization 
-    } 
+        y[4] = stzvt[4] / rhs.tnorm; // time normalization
+    }
 }
 
 
@@ -216,14 +216,14 @@ void stzvtdot_to_ydot(const array<double, RHS::Size>& stzvtdot, const array<doub
 
 // Here, all time variables (tau_last, tau_current, dtau) are in normalized units, tau = t/tnorm
 template<class RHS, class DENSE>
-bool check_stopping_criteria(RHS rhs, int iter, vector<array<double, RHS::Size+2>> &res_hits, DENSE dense, double tau_last, double tau_current, double dtau, 
-    double abstol, vector<double> thetas, vector<double> zetas, vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, 
+bool check_stopping_criteria(RHS rhs, int iter, vector<array<double, RHS::Size+2>> &res_hits, DENSE dense, double tau_last, double tau_current, double dtau,
+    double abstol, vector<double> thetas, vector<double> zetas, vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria,
     vector<double> vpars, bool thetas_stop, bool zetas_stop, bool vpars_stop)
 {
     typedef typename RHS::State State;
     boost::math::tools::eps_tolerance<double> roottol(-int(std::log2(abstol)));
     uintmax_t rootmaxit = 200;
-    State y, stzvt, stzvt_current; 
+    State y, stzvt, stzvt_current;
 
     bool stop = false;
     array<double, RHS::Size> ykeep = {};
@@ -278,7 +278,7 @@ bool check_stopping_criteria(RHS rhs, int iter, vector<array<double, RHS::Size+2
         double zeta = zetas[i];
         double omega = omega_zetas[i];
         double phase_last = zeta_last - omega*t_last;
-        double phase_current = zeta_current - omega*t_current;            
+        double phase_current = zeta_current - omega*t_current;
         if((std::floor((phase_last - zeta)/(2*M_PI)) != std::floor((phase_current-zeta)/(2*M_PI))) && (phase_current != zeta) && (phase_last != zeta)) { // check whether zeta+k*2pi for some k was crossed
             int fak = std::round(((phase_last+phase_current)/2-zeta)/(2*M_PI));
             double phase_shift = fak*2*M_PI + zeta;

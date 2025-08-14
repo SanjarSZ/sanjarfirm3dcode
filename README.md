@@ -1,6 +1,8 @@
 # firm3d
 
-FIRM3D (Fast Ion Reduced Models in 3D) is a software suite for modeling of energetic particle dynamics in 3D magnetic fields. The guiding center equations of motion are integrated in magnetic fields represented in Boozer coordinates, including VMEC equilibria and Alfvén eigenmodes from AE3D or FAR3D. The core routines are based on [SIMSOPT](https://simsopt.readthedocs.io), but have been extended to include additional physics and diagnostics that are not typically required in the optimization context. This standalone framework enables more modular development of FIRM3D with minimal dependencies. 
+FIRM3D (Fast Ion Reduced Models in 3D) is a software suite for modeling of energetic particle dynamics in 3D magnetic fields. The guiding center equations of motion are integrated in magnetic fields represented in Boozer coordinates, including VMEC equilibria and Alfvén eigenmodes from AE3D or FAR3D. The core routines are based on [SIMSOPT](https://simsopt.readthedocs.io), but have been extended to include additional physics and diagnostics that are not typically required in the optimization context. This standalone framework enables more modular development of FIRM3D with minimal dependencies.
+
+📖 **Documentation**: [Read the Docs](https://firm3d.readthedocs.io/) | 📚 **Examples**: See the `examples/` directory
 
 - [Installation](#installation)
   - [macOS](#macos)
@@ -24,7 +26,7 @@ FIRM3D (Fast Ion Reduced Models in 3D) is a software suite for modeling of energ
 
 ### macOS
 
-All dependencies can be installed inside a conda environment using the provided install bash script located at `install/macOS/install_simsopt_osx.sh`. 
+All dependencies can be installed inside a conda environment using the provided install bash script located at `install/macOS/install_simsopt_osx.sh`.
 
 ### Perlmutter (NERSC)
 
@@ -32,9 +34,9 @@ All dependencies can be installed inside a conda environment using the provided 
 
 ## Equilibrium magnetic field classes
 
-The equilibrium magnetic field in Boozer coordinates, an instance of ``BoozerMagneticField``, can be represented using a simple [analytic model](#boozeranalytic), a [radial interpolant](#boozerradialinterpolant) of a ``booz_xform`` equilibrium , or a [3D interpolant](#interpolatedboozerfield). 
+The equilibrium magnetic field in Boozer coordinates, an instance of ``BoozerMagneticField``, can be represented using a simple [analytic model](#boozeranalytic), a [radial interpolant](#boozerradialinterpolant) of a ``booz_xform`` equilibrium , or a [3D interpolant](#interpolatedboozerfield).
 
-An important attribute of ``BoozerMagneticField`` classes is ``field_type``, which can be ``vac`` (vacuum field), ``no_k`` (does not retain the radial covariatn component), or an empty string (no assumptions made). By default, the ``field_type`` will determine the ``mode`` used for guiding center tracing, ``gc_vac``, ``gc_noK``, or ``gc``. 
+An important attribute of ``BoozerMagneticField`` classes is ``field_type``, which can be ``vac`` (vacuum field), ``no_k`` (does not retain the radial covariatn component), or an empty string (no assumptions made). By default, the ``field_type`` will determine the ``mode`` used for guiding center tracing, ``gc_vac``, ``gc_noK``, or ``gc``.
 
 ### BoozerAnalytic
 
@@ -68,11 +70,11 @@ in order to test the guiding center equations at finite beta.
 
 ### BoozerRadialInterpolant
 
-The magnetic field can be computed at any point in Boozer coordinates using radial spline interpolation (``scipy.interpolate.InterpolatedUnivariateSpline``) and an inverse Fourier transform in the two angles. While the Fourier representation is more accurate, typically [InterpolatedBoozerField](#interpolatedboozerfield) is used inside the tracing loop due to its efficiency. If given a `VMEC` output file, performs a Boozer coordinate transformation using ``booz_xform``. If given a ``booz_xform`` output file, the Boozer transformation must be performed with all surfaces on the VMEC half grid, and with `phip`, `chi`, `pres`, and `phi` saved in the file. 
+The magnetic field can be computed at any point in Boozer coordinates using radial spline interpolation (``scipy.interpolate.make_interp_spline``) and an inverse Fourier transform in the two angles. While the Fourier representation is more accurate, typically [InterpolatedBoozerField](#interpolatedboozerfield) is used inside the tracing loop due to its efficiency. If given a `VMEC` output file, performs a Boozer coordinate transformation using ``booz_xform``. If given a ``booz_xform`` output file, the Boozer transformation must be performed with all surfaces on the VMEC half grid, and with `phip`, `chi`, `pres`, and `phi` saved in the file.
 
-Field evaluations are parallelized over the number of Fourier harmonics over CPUs, given the communicator `comm`. In addition, the evaluations are parallelized over threads with OpenMP. Because the guiding center tracing routines 
+Field evaluations are parallelized over the number of Fourier harmonics over CPUs, given the communicator `comm`. In addition, the evaluations are parallelized over threads with OpenMP. Because the guiding center tracing routines
 are also parallelized over CPUs with MPI, we don't recommend passing `comm` to ``BoozerRadialInterpolant`` if it is
-being passed to a tracing routine. 
+being passed to a tracing routine.
 
 ### Preparing `booz_xform` equilibrium
 
@@ -88,11 +90,11 @@ b.nboz = nboz
 b.run()
 b.write_boozmn(boozmn_filename)
 ```
-Equilibria produced with the [STELLOPT implementation](https://github.com/PrincetonUniversity/STELLOPT) can also be used.  
+Equilibria produced with the [STELLOPT implementation](https://github.com/PrincetonUniversity/STELLOPT) can also be used.
 
 ### InterpolatedBoozerField
 
-This field takes an existing ``BoozerMagneticField`` instance, such as [BoozerRadialInterpolant](#boozerradialinterpolant), and interpolates it on a regular grid in $(s,\theta,\zeta)$. This resulting interpolant can then be evaluated very quickly inside the tracing loop. 
+This field takes an existing ``BoozerMagneticField`` instance, such as [BoozerRadialInterpolant](#boozerradialinterpolant), and interpolates it on a regular grid in $(s,\theta,\zeta)$. This resulting interpolant can then be evaluated very quickly inside the tracing loop.
 
 ## Shear Alfvén wave field classes
 
@@ -100,7 +102,7 @@ Given an equilibrium field $\textbf{B}_0$, a shear Alfvén wave is modeled throu
 
 ```math
 \delta \textbf{E} = -\nabla \Phi - \frac{\partial \alpha}{\partial t} \\
-\delta \textbf{B} = \nabla \times \left(\alpha \textbf{B}_0 \right). 
+\delta \textbf{B} = \nabla \times \left(\alpha \textbf{B}_0 \right).
 ```
 
 The parameter $\alpha$ is related to $\Phi$ given ideal Ohm's law:
@@ -108,17 +110,17 @@ The parameter $\alpha$ is related to $\Phi$ given ideal Ohm's law:
 \nabla_{||} \Phi = -B_0 \frac{\partial \alpha}{\partial t}.
 ```
 
-In the ``ShearAlfvenWave`` classes, the equilibrium field is prescribed as a ``BoozerMagneticField`` class in addition to input parameters determining $\Phi$. 
+In the ``ShearAlfvenWave`` classes, the equilibrium field is prescribed as a ``BoozerMagneticField`` class in addition to input parameters determining $\Phi$.
 
 ### ShearAlfvenHarmonic
 
 This class initializes a Shear Alfvén Wave with a scalar potential of the form:
 
 ```math
-  \Phi(s, \theta, \zeta, t) = \hat{\Phi}(s) \sin(m \theta - n \zeta + \omega t + \text{phase}),
+  \Phi(s, \theta, \zeta, t) = \hat{\Phi}(s) \sin(m \theta - n \zeta + \omega t + \phi_0),
 ```
 
-where $\hat{\Phi}(s)$ is a radial profile, $m$ is the poloidal mode number, $n$ is the toroidal mode number, $\omega$ is the frequency, and `phase` is the phase shift. The perturbed parallel vector potential parameter, $\alpha$, is then determined by ideal Ohm's law. This representation is used to describe SAWs propagating in an equilibrium magnetic field $\textbf{B}_0$. 
+where $\hat{\Phi}(s)$ is a radial profile, $m$ is the poloidal mode number, $n$ is the toroidal mode number, $\omega$ is the frequency, and $\phi_0$ is the phase shift. The perturbed parallel vector potential parameter, $\alpha$, is then determined by ideal Ohm's law. This representation is used to describe SAWs propagating in an equilibrium magnetic field $\textbf{B}_0$.
 
 ### ShearAlfvenWavesSuperposition
 
@@ -140,15 +142,15 @@ where $2\pi \psi$ is the toroidal flux, $2\pi \chi$ is the poloidal flux, $q$ is
 ```math
 \textbf{B} = G(\psi) \nabla \zeta + I(\psi) \nabla \theta + K(\psi,\theta,\zeta) \nabla \psi.
 ```
-See R. White, Theory of Tokamak Plasmas, Sec. 3.2. 
+See R. White, Theory of Tokamak Plasmas, Sec. 3.2.
 
 The trajectory information is saved as $(s,\theta,\zeta,v_{||})$, where $s = \psi_0$ is the toroidal flux normalized to its value on the boundary, $2\pi\psi_0$
 
-Various integrators, equations of motion, and solver options are detailed below.  
+Various integrators, equations of motion, and solver options are detailed below.
 
 ### Perturbed guiding center integration
 
-The primary routine for unperturbed guiding center integration is ``trace_particles_boozer``. 
+The primary routine for unperturbed guiding center integration is ``trace_particles_boozer``.
 
 In the case of ``mode='gc_vac'`` we solve the guiding center equations under the vacuum assumption, i.e $G =$ const. and $I = 0$
 
@@ -173,13 +175,13 @@ In the case of ``mode='gc'`` we solve the general guiding center equations for a
   \dot v_{||} = (CB_{,\theta} - FB_{,\zeta})\frac{\mu B}{\iota D} \\
   C = - \frac{m v_{||} K_{,\zeta}}{B}  - q \iota + \frac{m v_{||}G'}{B} \\
   F = - \frac{m v_{||} K_{,\theta}}{B} + q + \frac{m v_{||}I'}{B} \\
-  D = (F G - C I)/\iota 
+  D = (F G - C I)/\iota
 ```
 where primes indicate differentiation wrt $\psi$. In the case ``mod='gc_noK'``, the above equations are used with $K=0$.
 
 # Perturbed guiding center integration
 
-In the case of ``mode='gc_vac'`` we solve the guiding center equations under the vacuum assumption, i.e. $G =$ const. and $I = 0$. 
+In the case of ``mode='gc_vac'`` we solve the guiding center equations under the vacuum assumption, i.e. $G =$ const. and $I = 0$.
 
 ```math
 \dot s      = \left(-B_{,\theta} m \frac{\frac{v_{||}^2}{B} + \mu}{q} + \alpha_{,\theta}B v_{||} - \Phi_{,\theta}\right)\frac{1}{\psi_0} \\
@@ -200,22 +202,22 @@ In the case of ``mode='gc'`` we solve the general guiding center equations for a
    \dot{\theta} = \Bigg(G q \Phi_{,\psi}
                    + B q v_{||} (-\alpha_{,\psi} G - \alpha G_{,\psi} + \iota)
                    - G_{,\psi} m v_{||}^2 + B_{,\psi} G \left(\frac{mv_{||}^2}{B} + m\mu\right)\Bigg)\frac{1}{D} \\
-   \dot{\zeta} =  \Bigg(-I (B_{,\psi} m \mu + \Phi_{,\psi} q) 
+   \dot{\zeta} =  \Bigg(-I (B_{,\psi} m \mu + \Phi_{,\psi} q)
                     + B q v_{||} (1 + \alpha_{,\psi} I + \alpha I'(\psi))
                     + \frac{m v_{||}^2}{B} (B I'(\psi) - B_{,\psi} I)\Bigg)\frac{1}{D} \\
-   \dot{v_{||}} = \Bigg(\frac{Bq}{m} \Big(-m \mu (B_{,\zeta}(1 + \alpha_{,\psi} I + \alpha I'(\psi)) 
-                     + B_{,\psi} (\alpha_{,\theta} G - \alpha_{,\zeta} I) 
-                     + B_{,\theta} (\iota - \alpha G'(\psi) - \alpha_{,\psi} G)) \\ 
-                     - q \Big(\dot{\alpha} \left(G + I (\iota - \alpha G'(\psi)) + \alpha G I'(\psi)\right) 
+   \dot{v_{||}} = \Bigg(\frac{Bq}{m} \Big(-m \mu (B_{,\zeta}(1 + \alpha_{,\psi} I + \alpha I'(\psi))
+                     + B_{,\psi} (\alpha_{,\theta} G - \alpha_{,\zeta} I)
+                     + B_{,\theta} (\iota - \alpha G'(\psi) - \alpha_{,\psi} G)) \\
+                     - q \Big(\dot{\alpha} \left(G + I (\iota - \alpha G'(\psi)) + \alpha G I'(\psi)\right)
                      + \left(\alpha_{,\theta} G - \alpha_{,\zeta} I\right) \Phi_{,\psi} \\
-                     + \left(\iota - \alpha G_{,\psi} - \alpha_{,\psi} G\right) \Phi_{,\theta} 
-                     + \left(1 + \alpha I'(\psi) + \alpha_{,\psi} I\right) \Phi_{,\zeta}\Big) \Big) \\ 
+                     + \left(\iota - \alpha G_{,\psi} - \alpha_{,\psi} G\right) \Phi_{,\theta}
+                     + \left(1 + \alpha I'(\psi) + \alpha_{,\psi} I\right) \Phi_{,\zeta}\Big) \Big) \\
                      + \frac{q v_{||}}{B} \left((B_{,\theta} G - B_{,\zeta} I) \Phi_{,\psi}
                      + B_{,\psi} \left(I \Phi_{,\zeta} - G \Phi_{,\theta}\right)\right) \\
                      + v_{||} \big(m \mu \left(B_{,\theta} G'(\psi) - B_{,\zeta} I'(\psi)\right) \\
                      + q \left(\dot \alpha \left(G'(\psi) I - G I'(\psi)\right) \\
                      + G'(\psi) \Phi_{,\theta} - I'(\psi)\Phi_{,\zeta}\right)\big)\Bigg)\frac{1}{D} \\
-  D = q (G + I(-\alpha G'(\psi) + \iota) + \alpha G I'(\psi)) 
+  D = q (G + I(-\alpha G'(\psi) + \iota) + \alpha G I'(\psi))
                 + \frac{m v_{\|}}{B} \left(-G'(\psi)I + G I'(\psi)\right)
 ```
 
@@ -223,30 +225,30 @@ In the case of ``mode='gc'`` we solve the general guiding center equations for a
 
 Guiding center integration is continued until the maximum integration time, `tmax`, is reached, or until one of the `StoppingCriteria` is hit. Stopping criteria include:
 - `MaxToroidalFluxStoppingCriterion`: stop when trajectory reaches a maximum value of normalized toroidal flux (e.g., $s=1$ indicates the plasma boundary)
-- `MinToroidalFluxStoppignCriterion`: stop when trajectory reaches a minimum value of normalized toroidal flux. Sometimes a point close to the axis, e.g. $s = 10^{-3}$, is chosen to avoid numerical issues associated with the coordinate singularity. 
+- `MinToroidalFluxStoppignCriterion`: stop when trajectory reaches a minimum value of normalized toroidal flux. Sometimes a point close to the axis, e.g. $s = 10^{-3}$, is chosen to avoid numerical issues associated with the coordinate singularity.
 - `ZetaStoppingCriterion`: stop when the toroidal angle reaches a given value (modulus $2\pi$).
-- `VparStoppingCriterion`: stop when the parallel velocity reaches a given value. For example, can be used to terminate tracing when a particle mirrors. 
+- `VparStoppingCriterion`: stop when the parallel velocity reaches a given value. For example, can be used to terminate tracing when a particle mirrors.
 - `ToroidalTransitStoppingCriterion`: stop when the toroidal angle increases by an integer multiple of $2\pi$. Useful for resonance detection.
-- `IterationStoppingCriterion`: stop when a number of iterations is reached. 
+- `IterationStoppingCriterion`: stop when a number of iterations is reached.
 - `StepSizeStoppingCriterion`: stop when the step size gets too small. When using adaptive timestepping, can avoid particles getting "stuck" due to small step size.
 
 ## Trajectory saving
 
-There are two ways the trajectory information can be saved: by recording "hits" of user-defined coordinate planes (e.g., Poincaré sections), or by recording uniform time intervals of the trajectory. The routines `trace_particles_boozer` or `trace_particles_boozer_perturbed` return this information in the tuple `(res_tys,res_hits)`. 
+There are two ways the trajectory information can be saved: by recording "hits" of user-defined coordinate planes (e.g., Poincaré sections), or by recording uniform time intervals of the trajectory. The routines `trace_particles_boozer` or `trace_particles_boozer_perturbed` return this information in the tuple `(res_tys,res_hits)`.
 
-- If `forget_exact_path=False`, the parameter `dt_save` determines the time interval for trajectory saving. (Note that if this parameter is made too small, one may run into memory issues.) This trajectory information is returned in `res_tys`, which is a list (length = number of particles) of numpy arrays with shape `(nsave,5)`. Here `nsave` is the number of timesteps saved. Each row contains the time and the state, `[t, s, theta, zeta, v_par]`. If `forget_exact_path=True`, only the state at the initial and final time will be returned. 
+- If `forget_exact_path=False`, the parameter `dt_save` determines the time interval for trajectory saving. (Note that if this parameter is made too small, one may run into memory issues.) This trajectory information is returned in `res_tys`, which is a list (length = number of particles) of numpy arrays with shape `(nsave,5)`. Here `nsave` is the number of timesteps saved. Each row contains the time and the state, `[t, s, theta, zeta, v_par]`. If `forget_exact_path=True`, only the state at the initial and final time will be returned.
 - The "hits" are defined through the input lists `zetas`, `omegas`, `vpars`. If `vpars` is specified, the trajectory will be recorded when the parallel velocity hits a given value. For example, the Poincaré map for trapped particles is defined by recording the points with $v_{||} = 0$. If `zetas` is specified, the trajectory will be recorded when $\zeta - \omega t$ hits the values given in the `zetas` array, with the frequency $\omega$ given by the `omegas` array. The `zetas` and `omegas` lists must have same length. If `omegas` is not specified, it defaults to zeros. This feature is useful for defining the Poincaré map for passing particles (with or without a single-harmonic shear Alfvén wave). The hits are returned in `res_hits`, which is a list (length = number of particles) of numpy arrays with shape `(nhits,6)`, where `nhits` is the number of hits of a coordinate plane or stopping criteria. Each row or the array contains `[time] + [idx] + state`, where `idx` tells us which of the hit planes or stopping criteria was hit. If `idx>=0` and `idx<len(zetas)`, then the `zetas[idx]` plane was hit. If `idx>=len(zetas)`, then the `vpars[idx-len(zetas)]` plane was hit. If `idx<0`, then `stopping_criteria[int(-idx)-1]` was hit. The state vector is `[t, s, theta, zeta, v_par]`.
 
 ## Magnetic axis handling
 
-The coordinate singularity at the magnetic axis can be handled in several ways using the keyword argument `axis` passed to 
+The coordinate singularity at the magnetic axis can be handled in several ways using the keyword argument `axis` passed to
 `trace_particles_boozer` and `trace_particles_boozer_perturbed`.
 - If `axis=0`, the trajectory will be integrated in standard Boozer coordinates $(s,\theta,\zeta)$. If this is used, it is recommended that one passes a `MinToroidalFluxStoppingCriterion` to prevent particles from passing to $s < 0$.
-- If `axis=1`, the trajectory will be integrated in the pseudo-Cartesian coordinates $(\sqrt{s}\cos(\theta),\sqrt{s}\sin(\theta),\zeta)$, but all trajectory information will be saved in the standard Boozer coordinates $(s,\theta,\zeta)$. This option prevents particles from passing to $s < 0$. Because the equations of motion are mapped form $(s,\theta,\zeta)$ to $(\sqrt{s}\cos(\theta),\sqrt{s},\sin(\theta),\zeta)$, a division by $\sqrt{s}$ is performed. Thus this option may be ill-behaved near the axis. 
-- If `axis=2`, the trajectory will be integrated in the pseudo-Cartesian coordinates $(s\cos(\theta),s\sin(\theta),\zeta)$, but all trajectory information will be saved in the standard Boozer coordinates $(s,\theta,\zeta)$. This option prevents particles from passing to $s < 0$. No division by $s$ is required to map to this coordinate system. This option is recommended if one would like to integrate near the magnetic axis. 
+- If `axis=1`, the trajectory will be integrated in the pseudo-Cartesian coordinates $(\sqrt{s}\cos(\theta),\sqrt{s}\sin(\theta),\zeta)$, but all trajectory information will be saved in the standard Boozer coordinates $(s,\theta,\zeta)$. This option prevents particles from passing to $s < 0$. Because the equations of motion are mapped form $(s,\theta,\zeta)$ to $(\sqrt{s}\cos(\theta),\sqrt{s},\sin(\theta),\zeta)$, a division by $\sqrt{s}$ is performed. Thus this option may be ill-behaved near the axis.
+- If `axis=2`, the trajectory will be integrated in the pseudo-Cartesian coordinates $(s\cos(\theta),s\sin(\theta),\zeta)$, but all trajectory information will be saved in the standard Boozer coordinates $(s,\theta,\zeta)$. This option prevents particles from passing to $s < 0$. No division by $s$ is required to map to this coordinate system. This option is recommended if one would like to integrate near the magnetic axis.
 
 ## Solvers and solver options
 
-By default the Runge-Kutta Dormand-Prince 5(4) method implemented in [Boost](https://www.boost.org/doc/libs/1_54_0/boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp) is used to integrate the ODEs. Adaptive time stepping is performed to satisfy the user-prescribed relative and absolute error tolerance parameters, `reltol` and `abstol`. 
+By default the Runge-Kutta Dormand-Prince 5(4) method implemented in [Boost](https://www.boost.org/doc/libs/1_54_0/boost/numeric/odeint/stepper/runge_kutta_dopri5.hpp) is used to integrate the ODEs. Adaptive time stepping is performed to satisfy the user-prescribed relative and absolute error tolerance parameters, `reltol` and `abstol`.
 
-If `solveSympl=True` in the `solver_options`, a symplectic solver is used with step size `dt`. The semi-implicit Euler scheme described in[Albert, C. G., et al. (2020). Symplectic integration with non-canonical quadrature for guiding-center orbits in magnetic confinement devices. Journal of computational physics, 403, 109065](https://doi.org/10.1016/j.jcp.2019.109065) is implemented. A root solve is performed to map from non-canonical to canonical variables, with tolerance given by `roottol`. If `predictor_step=True`, the initial guess for the next step is improved using first derivative information. 
+If `solveSympl=True` in the `solver_options`, a symplectic solver is used with step size `dt`. The semi-implicit Euler scheme described in[Albert, C. G., et al. (2020). Symplectic integration with non-canonical quadrature for guiding-center orbits in magnetic confinement devices. Journal of computational physics, 403, 109065](https://doi.org/10.1016/j.jcp.2019.109065) is implemented. A root solve is performed to map from non-canonical to canonical variables, with tolerance given by `roottol`. If `predictor_step=True`, the initial guess for the next step is improved using first derivative information.

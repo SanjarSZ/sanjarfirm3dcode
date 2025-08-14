@@ -2,7 +2,7 @@
 #include "shearalfvenwave.h"
 #include "pybind11/pybind11.h"
 
-template <class ShearAlfvenWaveBase = ShearAlfvenWave> 
+template <class ShearAlfvenWaveBase = ShearAlfvenWave>
 class ShearAlfvenWaveTrampoline : public ShearAlfvenWaveBase {
 public:
     using ShearAlfvenWaveBase::ShearAlfvenWaveBase; // Inherit constructors

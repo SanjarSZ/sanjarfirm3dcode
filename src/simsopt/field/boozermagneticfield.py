@@ -1,15 +1,14 @@
-import simsoptpp as sopp
-from scipy.interpolate import make_interp_spline
-import numpy as np
-from booz_xform import Booz_xform
-from .._core.util import (
-    parallel_loop_bounds,
-    align_and_pad,
-    allocate_aligned_and_padded_array,
-)
-from ..saw.ae3d import AE3DEigenvector
 import os.path
 import warnings
+
+import numpy as np
+from booz_xform import Booz_xform
+from scipy.interpolate import make_interp_spline
+
+import simsoptpp as sopp
+
+from .._core.util import align_and_pad, allocate_aligned_and_padded_array
+from ..saw.ae3d import AE3DEigenvector
 
 __all__ = [
     "BoozerMagneticField",
@@ -23,7 +22,7 @@ __all__ = [
 
 try:
     from mpi4py import MPI
-except ImportError as e:
+except ImportError:
     MPI = None
 
 
@@ -184,7 +183,7 @@ class CovariantBoozerMetric(BoozerMetric):
     **Returns:**
 
     An instance of :class:`ContravariantBoozerMetric` representing the contravariant form of the metric.
-    
+
     """
 
     def to_contravariant(self):
@@ -210,7 +209,7 @@ class CovariantBoozerMetric(BoozerMetric):
         matrices[:, 1, 1] = self.tt
         matrices[:, 1, 2] = matrices[:, 2, 1] = self.tz
         matrices[:, 2, 2] = self.zz
-        
+
         inv_matrices_full = np.linalg.inv(matrices)
         inv_matrices = np.zeros((n, 6))
         inv_matrices[:, 0] = inv_matrices_full[:, 0, 0]  # gss
@@ -298,7 +297,7 @@ class ContravariantBoozerMetric(BoozerMetric):
         matrices[:, 1, 1] = self.tt
         matrices[:, 1, 2] = matrices[:, 2, 1] = self.tz
         matrices[:, 2, 2] = self.zz
-        
+
         inv_matrices_full = np.linalg.inv(matrices)
         inv_matrices = np.zeros((n, 6))
         inv_matrices[:, 0] = inv_matrices_full[:, 0, 0]  # gss
@@ -366,7 +365,7 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
     def __init__(self, psi0, field_type="vac", nfp=1, stellsym=True):
         self.psi0 = psi0
         self.nfp = nfp
-        self.stellsym = stellsym 
+        self.stellsym = stellsym
         field_type = field_type.lower()
         assert field_type in ["vac", "nok", ""]
         self.field_type = field_type
@@ -439,9 +438,9 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
         """
         points = self.get_points_ref()
         s = points[:, 0]
-        assert np.all(s > 0), (
-            "Metric is singular on magnetic axis s=0, can not compute. Choose different point."
-        )
+        assert np.all(
+            s > 0
+        ), "Metric is singular on magnetic axis s=0, can not compute. Choose different point."
         zetas = points[:, 2]
         R = self.R()[:, 0]
         dRdtheta = self.dRdtheta()[:, 0]
@@ -684,7 +683,7 @@ class BoozerAnalytic(BoozerMagneticField):
         self.set_points(self.get_points_ref())  # Force cache invalidation
 
     def set_N(self, N):
-        self.N = N 
+        self.N = N
         self.set_points(self.get_points_ref())  # Force cache invalidation
 
     def set_G0(self, G0):
@@ -1010,25 +1009,33 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         self.spline_derivative = spline_derivative
         if (helicity_M is not None) and (helicity_N is not None):
             if helicity_M % 1 != 0:
-                raise ValueError("helicity_M must be an integer for field to be 2π-periodic in Boozer poloidal angle.")
-                
+                raise ValueError(
+                    "helicity_M must be an integer for field to be 2π-periodic in Boozer poloidal angle."
+                )
+
             if helicity_N % 1 != 0:
-                raise ValueError("helicity_N must be an integer for field to be 2π-periodic in Boozer toroidal angle.")
+                raise ValueError(
+                    "helicity_N must be an integer for field to be 2π-periodic in Boozer toroidal angle."
+                )
 
             self.helicity_M = helicity_M
             self.helicity_N = helicity_N
             self.enforce_qs = True
         elif (helicity_M is not None) or (helicity_N is not None):
-            raise ValueError("Both helicity_M and helicity_N must be specified when enforcing field symmetry.")
+            raise ValueError(
+                "Both helicity_M and helicity_N must be specified when enforcing field symmetry."
+            )
 
         if self.proc0:
             self.asym = self.bx.asym  # Bool for stellarator asymmetry
-            self.psi0 = -self.bx.phi[-1] / (2 * np.pi) # Sign flip to account for VMEC convention. 
+            self.psi0 = -self.bx.phi[-1] / (
+                2 * np.pi
+            )  # Sign flip to account for VMEC convention.
             # See https://terpconnect.umd.edu/~mattland/assets/notes/vmec_signs.pdf for phiedge definition
             self.nfp = self.bx.nfp
             self.mpol = self.bx.mboz
             self.ntor = self.bx.nboz
-            self.s_half_ext = np.zeros((self.bx.ns_b + 2))
+            self.s_half_ext = np.zeros(self.bx.ns_b + 2)
             self.s_half_ext[1:-1] = self.bx.s_b
             self.s_half_ext[-1] = 1
             self.init_splines()
@@ -1107,16 +1114,18 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         if not self.no_K:
             self.compute_K()
 
-        BoozerMagneticField.__init__(self, self.psi0, self.field_type, self.nfp, self.asym==0)
+        BoozerMagneticField.__init__(
+            self, self.psi0, self.field_type, self.nfp, self.asym == 0
+        )
 
     def init_splines(self):
         self.xm_b = self.bx.xm_b
         self.xn_b = self.bx.xn_b
 
         # Define quantities on extended half grid
-        iota = np.zeros((self.bx.ns_b + 2))
-        G = np.zeros((self.bx.ns_b + 2))
-        I = np.zeros((self.bx.ns_b + 2))
+        iota = np.zeros(self.bx.ns_b + 2)
+        G = np.zeros(self.bx.ns_b + 2)
+        I = np.zeros(self.bx.ns_b + 2)
 
         ds = self.bx.s_b[1] - self.bx.s_b[0]
 
@@ -1162,7 +1171,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             # Cache size for efficiency
             nm_b = len(self.xm_b)
             ns_b2 = self.bx.ns_b + 2
-            
+
             bmnc = np.zeros((nm_b, ns_b2))
             bmnc[:, 1:-1] = self.bx.bmnc_b
             bmnc[:, 0] = 1.5 * bmnc[:, 1] - 0.5 * bmnc[:, 2]
@@ -1226,18 +1235,10 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         self.psip_spline = make_interp_spline(s_full, psip, k=self.order)
         if not self.enforce_vacuum:
-            self.G_spline = make_interp_spline(
-                self.s_half_ext, G, k=self.order
-            )
-            self.I_spline = make_interp_spline(
-                self.s_half_ext, I, k=self.order
-            )
-            self.dGds_spline = make_interp_spline(
-                s_full[1:-1], dGds, k=self.order
-            )
-            self.dIds_spline = make_interp_spline(
-                s_full[1:-1], dIds, k=self.order
-            )
+            self.G_spline = make_interp_spline(self.s_half_ext, G, k=self.order)
+            self.I_spline = make_interp_spline(self.s_half_ext, I, k=self.order)
+            self.dGds_spline = make_interp_spline(s_full[1:-1], dGds, k=self.order)
+            self.dIds_spline = make_interp_spline(s_full[1:-1], dIds, k=self.order)
         else:
             self.G_spline = make_interp_spline(
                 self.s_half_ext,
@@ -1254,9 +1255,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                 s_full[1:-1], np.zeros_like(s_full[1:-1]), k=self.order
             )
         if not self.no_shear:
-            self.iota_spline = make_interp_spline(
-                self.s_half_ext, iota, k=self.order
-            )
+            self.iota_spline = make_interp_spline(self.s_half_ext, iota, k=self.order)
             self.diotads_spline = make_interp_spline(
                 s_full[1:-1], diotads, k=self.order
             )
@@ -1264,30 +1263,32 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             self.iota_spline = make_interp_spline(
                 self.s_half_ext,
                 np.mean(iota) * np.ones_like(self.s_half_ext),
-                k=self.order
+                k=self.order,
             )
             self.diotads_spline = make_interp_spline(
                 s_full[1:-1], np.zeros_like(s_full[1:-1]), k=self.order
             )
 
         self.numns_splines = make_interp_spline(
-                    s_half_mn, (mn_factor * numns).T, k=self.order, axis=0
-                )
+            s_half_mn, (mn_factor * numns).T, k=self.order, axis=0
+        )
         self.rmnc_splines = make_interp_spline(
-                    s_half_mn, (mn_factor * rmnc).T, k=self.order, axis=0
-                )
+            s_half_mn, (mn_factor * rmnc).T, k=self.order, axis=0
+        )
         self.zmns_splines = make_interp_spline(
-                    s_half_mn, (mn_factor * zmns).T, k=self.order, axis=0
-                )
+            s_half_mn, (mn_factor * zmns).T, k=self.order, axis=0
+        )
         self.mn_factor_splines = make_interp_spline(
-                    s_half_mn, mn_factor.T, k=self.order, axis=0
-                )
+            s_half_mn, mn_factor.T, k=self.order, axis=0
+        )
         self.d_mn_factor_splines = make_interp_spline(
-                    s_half_mn, d_mn_factor.T, k=self.order, axis=0
-                )
+            s_half_mn, d_mn_factor.T, k=self.order, axis=0
+        )
         if self.enforce_qs:
             bmnc_filtered = bmnc.copy()
-            bmnc_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
+            bmnc_filtered[
+                self.helicity_M * self.xn_b != self.helicity_N * self.xm_b
+            ] = 0
             self.bmnc_splines = make_interp_spline(
                 s_half_mn, (mn_factor * bmnc_filtered).T, k=self.order, axis=0
             )
@@ -1295,28 +1296,30 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                 self.dbmncds_splines = self.bmnc_splines.derivative()
             else:
                 dbmncds_filtered = dbmncds.copy()
-                dbmncds_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
+                dbmncds_filtered[
+                    self.helicity_M * self.xn_b != self.helicity_N * self.xm_b
+                ] = 0
                 self.dbmncds_splines = make_interp_spline(
                     s_full[1:-1], (dbmncds_filtered).T, k=self.order, axis=0
                 )
         else:
             self.bmnc_splines = make_interp_spline(
-                    s_half_mn, (mn_factor * bmnc).T, k=self.order, axis=0
-                )
+                s_half_mn, (mn_factor * bmnc).T, k=self.order, axis=0
+            )
             if self.spline_derivative:
                 self.dbmncds_splines = self.bmnc_splines.derivative()
             else:
                 self.dbmncds_splines = make_interp_spline(
-                        s_full[1:-1], dbmncds.T, k=self.order, axis=0
-                    )
+                    s_full[1:-1], dbmncds.T, k=self.order, axis=0
+                )
         if self.spline_derivative:
             self.dnumnsds_splines = self.numns_splines.derivative()
             self.drmncds_splines = self.rmnc_splines.derivative()
             self.dzmnsds_splines = self.zmns_splines.derivative()
         else:
             self.dnumnsds_splines = make_interp_spline(
-                    s_full[1:-1], dnumnsds.T, k=self.order, axis=0
-                )
+                s_full[1:-1], dnumnsds.T, k=self.order, axis=0
+            )
             self.drmncds_splines = make_interp_spline(
                 s_full[1:-1], drmncds.T, k=self.order, axis=0
             )
@@ -1336,15 +1339,19 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             )
             if self.enforce_qs:
                 bmns_filtered = bmns.copy()
-                bmns_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
+                bmns_filtered[
+                    self.helicity_M * self.xn_b != self.helicity_N * self.xm_b
+                ] = 0
                 self.bmns_splines = make_interp_spline(
-                        s_half_mn, (mn_factor * bmns_filtered).T, k=self.order, axis=0
-                    )
+                    s_half_mn, (mn_factor * bmns_filtered).T, k=self.order, axis=0
+                )
                 if self.spline_derivative:
                     self.dbmnsds_splines = self.bmns_splines.derivative()
                 else:
                     dbmnsds_filtered = dbmnsds.copy()
-                    dbmnsds_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
+                    dbmnsds_filtered[
+                        self.helicity_M * self.xn_b != self.helicity_N * self.xm_b
+                    ] = 0
                     self.dbmnsds_splines = make_interp_spline(
                         s_full[1:-1], dbmnsds_filtered.T, k=self.order, axis=0
                     )
@@ -1365,8 +1372,8 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                 self.dzmncds_splines = self.zmnc_splines.derivative()
             else:
                 self.dnumncds_splines = make_interp_spline(
-                        s_full[1:-1], dnumncds.T, k=self.order, axis=0
-                    )
+                    s_full[1:-1], dnumncds.T, k=self.order, axis=0
+                )
                 self.drmnsds_splines = make_interp_spline(
                     s_full[1:-1], drmnsds.T, k=self.order, axis=0
                 )
@@ -1424,7 +1431,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         # Evaluate splines and fill pre-allocated arrays
         mn_factor = self.mn_factor_splines(self.s_half_ext)
         d_mn_factor = self.d_mn_factor_splines(self.s_half_ext)
-        
+
         # Fill pre-allocated arrays to maintain alignment
         # Only fill the actual data portion, not the padding
         n_modes = len(self.xm_b)
@@ -1432,12 +1439,19 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         rmnc_half[:, :n_modes] = self.rmnc_splines(self.s_half_ext) / mn_factor
         zmns_half[:, :n_modes] = self.zmns_splines(self.s_half_ext) / mn_factor
         numns_half[:, :n_modes] = self.numns_splines(self.s_half_ext) / mn_factor
-        
+
         # For derivatives, need to compute the values first
-        dnumnsds_vals = (self.dnumnsds_splines(self.s_half_ext) - numns_half[:, :n_modes] * d_mn_factor) / mn_factor
-        drmncds_vals = (self.drmncds_splines(self.s_half_ext) - rmnc_half[:, :n_modes] * d_mn_factor) / mn_factor
-        dzmnsds_vals = (self.dzmnsds_splines(self.s_half_ext) - zmns_half[:, :n_modes] * d_mn_factor) / mn_factor
-        
+        dnumnsds_vals = (
+            self.dnumnsds_splines(self.s_half_ext)
+            - numns_half[:, :n_modes] * d_mn_factor
+        ) / mn_factor
+        drmncds_vals = (
+            self.drmncds_splines(self.s_half_ext) - rmnc_half[:, :n_modes] * d_mn_factor
+        ) / mn_factor
+        dzmnsds_vals = (
+            self.dzmnsds_splines(self.s_half_ext) - zmns_half[:, :n_modes] * d_mn_factor
+        ) / mn_factor
+
         dnumnsds_half[:, :n_modes] = dnumnsds_vals
         drmncds_half[:, :n_modes] = drmncds_vals
         dzmnsds_half[:, :n_modes] = dzmnsds_vals
@@ -1446,12 +1460,21 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             rmns_half[:, :n_modes] = self.rmns_splines(self.s_half_ext) / mn_factor
             zmnc_half[:, :n_modes] = self.zmnc_splines(self.s_half_ext) / mn_factor
             numnc_half[:, :n_modes] = self.numnc_splines(self.s_half_ext) / mn_factor
-            
+
             # For derivatives, compute values first
-            dnumncds_vals = (self.dnumncds_splines(self.s_half_ext) - numnc_half[:, :n_modes] * d_mn_factor) / mn_factor
-            drmnsds_vals = (self.drmnsds_splines(self.s_half_ext) - rmns_half[:, :n_modes] * d_mn_factor) / mn_factor
-            dzmncds_vals = (self.dzmncds_splines(self.s_half_ext) - zmnc_half[:, :n_modes] * d_mn_factor) / mn_factor
-            
+            dnumncds_vals = (
+                self.dnumncds_splines(self.s_half_ext)
+                - numnc_half[:, :n_modes] * d_mn_factor
+            ) / mn_factor
+            drmnsds_vals = (
+                self.drmnsds_splines(self.s_half_ext)
+                - rmns_half[:, :n_modes] * d_mn_factor
+            ) / mn_factor
+            dzmncds_vals = (
+                self.dzmncds_splines(self.s_half_ext)
+                - zmnc_half[:, :n_modes] * d_mn_factor
+            ) / mn_factor
+
             dnumncds_half[:, :n_modes] = dnumncds_vals
             drmnsds_half[:, :n_modes] = drmnsds_vals
             dzmncds_half[:, :n_modes] = dzmncds_vals
@@ -1521,27 +1544,40 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             self.kmns_splines = []
             if self.enforce_qs:
                 kmns_filtered = kmns.copy()
-                kmns_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
+                kmns_filtered[
+                    self.helicity_M * self.xn_b != self.helicity_N * self.xm_b
+                ] = 0
                 self.kmns_splines = make_interp_spline(
-                    self.s_half_ext, kmns_filtered[:, :n_modes_actual], k=self.order, axis=0
+                    self.s_half_ext,
+                    kmns_filtered[:, :n_modes_actual],
+                    k=self.order,
+                    axis=0,
                 )
             else:
                 self.kmns_splines = make_interp_spline(
-                    self.s_half_ext, self.mn_factor_splines(self.s_half_ext) * kmns[:, :n_modes_actual], 
-                    k=self.order, axis=0
+                    self.s_half_ext,
+                    self.mn_factor_splines(self.s_half_ext) * kmns[:, :n_modes_actual],
+                    k=self.order,
+                    axis=0,
                 )
 
             if self.asym:
                 if self.enforce_qs:
                     kmnc_filtered = kmnc.copy()
-                    kmnc_filtered[self.helicity_M * self.xn_b != self.helicity_N * self.xm_b] = 0
+                    kmnc_filtered[
+                        self.helicity_M * self.xn_b != self.helicity_N * self.xm_b
+                    ] = 0
                     self.kmnc_splines = make_interp_spline(
-                        self.s_half_ext, kmnc_filtered[:, :n_modes_actual], k=self.order, axis=0
+                        self.s_half_ext,
+                        kmnc_filtered[:, :n_modes_actual],
+                        k=self.order,
+                        axis=0,
                     )
                 else:
                     self.kmnc_splines = make_interp_spline(
                         self.s_half_ext,
-                        self.mn_factor_splines(self.s_half_ext) * kmnc[:, :n_modes_actual],
+                        self.mn_factor_splines(self.s_half_ext)
+                        * kmnc[:, :n_modes_actual],
                         k=self.order,
                         axis=0,
                     )
@@ -1581,7 +1617,9 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         @self.iterate_and_invert
         def _harmonics(im, s):
             return (
-                self.kmns_splines(s)[:, im] * self.xm_b[im] / self.mn_factor_splines(s)[:, im]
+                self.kmns_splines(s)[:, im]
+                * self.xm_b[im]
+                / self.mn_factor_splines(s)[:, im]
             )
 
         inverse_fourier = sopp.inverse_fourier_transform_even
@@ -1778,7 +1816,9 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         @self.iterate_and_invert
         def _harmonics(im, s):
             return (
-                self.rmnc_splines(s)[:, im] * self.xn_b[im] / self.mn_factor_splines(s)[:, im]
+                self.rmnc_splines(s)[:, im]
+                * self.xn_b[im]
+                / self.mn_factor_splines(s)[:, im]
             )
 
         inverse_fourier = sopp.inverse_fourier_transform_odd
@@ -1857,7 +1897,9 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         @self.iterate_and_invert
         def _harmonics(im, s):
             return (
-                self.zmns_splines(s)[:, im] * self.xm_b[im] / self.mn_factor_splines(s)[:, im]
+                self.zmns_splines(s)[:, im]
+                * self.xm_b[im]
+                / self.mn_factor_splines(s)[:, im]
             )
 
         inverse_fourier = sopp.inverse_fourier_transform_even
@@ -2057,7 +2099,9 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         @self.iterate_and_invert
         def _harmonics(im, s):
             return (
-                self.xn_b[im] * self.bmnc_splines(s)[:, im] / self.mn_factor_splines(s)[:, im]
+                self.xn_b[im]
+                * self.bmnc_splines(s)[:, im]
+                / self.mn_factor_splines(s)[:, im]
             )
 
         inverse_fourier = sopp.inverse_fourier_transform_odd
@@ -2116,13 +2160,13 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             mn_idxs = np.array([i * len(self.xm_b) // size for i in range(size + 1)])
             first_mn, last_mn = mn_idxs[rank], mn_idxs[rank + 1]
-            
+
             # Pre-allocate and reuse buffers if possible
-            if not hasattr(self, '_compute_buffers'):
+            if not hasattr(self, "_compute_buffers"):
                 self._compute_buffers = {}
-            
+
             # Reuse recv_buffer if shape matches
-            recv_key = ('recv', output.shape)
+            recv_key = ("recv", output.shape)
             if recv_key not in self._compute_buffers:
                 self._compute_buffers[recv_key] = np.zeros(output.shape)
             recv_buffer = self._compute_buffers[recv_key]
@@ -2135,28 +2179,32 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         thetas = points[:, 1]
         zetas = points[:, 2]
         us, inv = np.unique(s, return_inverse=True)
-        
+
         # Pre-allocate and reuse buffers if possible
-        if not hasattr(self, '_compute_buffers'):
+        if not hasattr(self, "_compute_buffers"):
             self._compute_buffers = {}
-        
+
         if len(s) > 1:
             padded_thetas = align_and_pad(thetas)
             padded_zetas = align_and_pad(zetas)
-            
+
             # Reuse padded_buffer if shape matches
-            buffer_key = ('padded', output.shape)
+            buffer_key = ("padded", output.shape)
             if buffer_key not in self._compute_buffers:
-                self._compute_buffers[buffer_key] = allocate_aligned_and_padded_array(output.shape)
+                self._compute_buffers[buffer_key] = allocate_aligned_and_padded_array(
+                    output.shape
+                )
             padded_buffer = self._compute_buffers[buffer_key]
             padded_buffer.fill(0)  # Clear the buffer
-            
+
             # Reuse chunk_mn if shape matches
-            chunk_key = ('chunk', (last_mn - first_mn, len(inv)))
+            chunk_key = ("chunk", (last_mn - first_mn, len(inv)))
             if chunk_key not in self._compute_buffers:
-                self._compute_buffers[chunk_key] = allocate_aligned_and_padded_array((last_mn - first_mn, len(inv)))
+                self._compute_buffers[chunk_key] = allocate_aligned_and_padded_array(
+                    (last_mn - first_mn, len(inv))
+                )
             chunk_mn = self._compute_buffers[chunk_key]
-            
+
             # release memory manually. maybe not be needed anymore
             s, thetas, zetas = None, None, None
             harmonics(us, chunk_mn, inv, 0, last_mn - first_mn, first_mn)
@@ -2166,13 +2214,15 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             padded_thetas = thetas
             padded_zetas = zetas
             padded_buffer = np.zeros(output.shape)
-            
+
             # Reuse chunk_mn for scalar case
-            chunk_key = ('chunk_scalar', (last_mn - first_mn,))
+            chunk_key = ("chunk_scalar", (last_mn - first_mn,))
             if chunk_key not in self._compute_buffers:
-                self._compute_buffers[chunk_key] = allocate_aligned_and_padded_array((last_mn - first_mn,))
+                self._compute_buffers[chunk_key] = allocate_aligned_and_padded_array(
+                    (last_mn - first_mn,)
+                )
             chunk_mn = self._compute_buffers[chunk_key]
-            
+
             harmonics(us, chunk_mn, inv, 0, last_mn - first_mn, first_mn)
             xm = align_and_pad(self.xm_b[first_mn:last_mn])
             xn = align_and_pad(self.xn_b[first_mn:last_mn])
@@ -2215,11 +2265,11 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField):
     r"""
     This field takes an existing :class:`BoozerMagneticField` and interpolates it on a
-    regular grid in :math:`s,\theta,\zeta`. the field is represented as a piecewise 
+    regular grid in :math:`s,\theta,\zeta`. the field is represented as a piecewise
     polynomial in (s,theta,zeta) of a given degree. The number of nodes in each direction
-    are defined by ns_interp, ntheta_interp, and nzeta_interp. It is recommended to use 
-    this field representation in the tracing loop due to its speed in comparison to 
-    :class:`BoozerRadialInterpolant`. 
+    are defined by ns_interp, ntheta_interp, and nzeta_interp. It is recommended to use
+    this field representation in the tracing loop due to its speed in comparison to
+    :class:`BoozerRadialInterpolant`.
     """
 
     def __init__(
@@ -2260,7 +2310,7 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
             stellsym: Whether to exploit stellarator symmetry. In this case
                       ``theta`` is always mapped to the interval :math:`[0, \pi]`,
                       hence it makes sense to use ``thetamin=0`` and ``thetamax=np.pi``. By default
-                      this is obtained from field.stellsym. 
+                      this is obtained from field.stellsym.
             initialize: A list of strings, each of which is the name of a
                 field quantitty, e.g., `modB`, to be initialized when the interpolant is created.
                 By default, this list is determined by field.field_type.
@@ -2356,7 +2406,7 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
             extrapolate,
             nfp,
             stellsym,
-            field_type
+            field_type,
         )
 
         if initialize:
@@ -2441,7 +2491,7 @@ class ShearAlfvenWave(sopp.ShearAlfvenWave):
         super().__init__(B0)
 
 
-class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic,ShearAlfvenWave):
+class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic, ShearAlfvenWave):
     r"""
     Class representing a single harmonic Shear Alfvén Wave (SAW) in a given equilibrium magnetic field.
 
@@ -2467,7 +2517,7 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic,ShearAlfvenWave):
         Toroidal mode number `n`.
     omega : float
         Frequency of the harmonic wave.
-    phase : float
+    phi_0 : float
         Phase of the harmonic wave.
     """
 
@@ -2480,7 +2530,7 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic,ShearAlfvenWave):
         phase: float,
         B0: sopp.BoozerMagneticField,
     ):
-        """
+        r"""
         Initialize a single harmonic Shear Alfvén Wave (SAW) in a given equilibrium magnetic field.
 
         Parameters
@@ -2534,11 +2584,9 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic,ShearAlfvenWave):
             s_vals = [s_vals[i] for i in indices]
 
             if s_vals[0] < 0 or s_vals[-1] > 1:
-                raise ValueError(
-                    "s_values must be in the range [0, 1]."
-                )
+                raise ValueError("s_values must be in the range [0, 1].")
 
-            # Add on s = 0 boundary condition 
+            # Add on s = 0 boundary condition
             if s_vals[0] > 0:
                 if Phim == 0:
                     s_vals.insert(0, 0)
@@ -2560,10 +2608,15 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic,ShearAlfvenWave):
                 )
 
         # Call the constructor of the base C++ class
-        sopp.ShearAlfvenHarmonic.__init__(self,phihat_object, Phim, Phin, omega, phase, B0)
+        sopp.ShearAlfvenHarmonic.__init__(
+            self, phihat_object, Phim, Phin, omega, phase, B0
+        )
         ShearAlfvenWave.__init__(self, B0)
 
-class ShearAlfvenWavesSuperposition(sopp.ShearAlfvenWavesSuperposition,ShearAlfvenWave):
+
+class ShearAlfvenWavesSuperposition(
+    sopp.ShearAlfvenWavesSuperposition, ShearAlfvenWave
+):
     r"""
     Class representing a superposition of multiple Shear Alfvén Waves (SAWs).
 
@@ -2617,7 +2670,7 @@ class ShearAlfvenWavesSuperposition(sopp.ShearAlfvenWavesSuperposition,ShearAlfv
             raise ValueError("At least one ShearAlfvenWave object must be provided.")
 
         # Initialize the base C++ class with the first wave as the base wave
-        sopp.ShearAlfvenWavesSuperposition.__init__(self,SAWs[0])
+        sopp.ShearAlfvenWavesSuperposition.__init__(self, SAWs[0])
         ShearAlfvenWave.__init__(self, SAWs[0].B0)
 
         # Add subsequent waves to the superposition
@@ -2625,12 +2678,14 @@ class ShearAlfvenWavesSuperposition(sopp.ShearAlfvenWavesSuperposition,ShearAlfv
             self.add_wave(SAW)
 
     @classmethod
-    def from_ae3d(cls,
-        eigenvector: AE3DEigenvector, 
-        B0: BoozerMagneticField, 
-        max_dB_normal_by_B0: float = 1e-3, 
-        minor_radius_meters = 1.7, 
-        phase = 0.0):
+    def from_ae3d(
+        cls,
+        eigenvector: AE3DEigenvector,
+        B0: BoozerMagneticField,
+        max_dB_normal_by_B0: float = 1e-3,
+        minor_radius_meters=1.7,
+        phase=0.0,
+    ):
         """
         Converts AE3DEigenvector harmonics into ShearAlfvenHarmonics submerged in the given BoozerMagneticField.
 
@@ -2647,7 +2702,7 @@ class ShearAlfvenWavesSuperposition(sopp.ShearAlfvenWavesSuperposition,ShearAlfv
         m_list = []
         n_list = []
         s_list = []
-        omega = np.sqrt(eigenvector.eigenvalue)*1000
+        omega = np.sqrt(eigenvector.eigenvalue) * 1000
 
         if eigenvector.eigenvalue <= 0:
             raise ValueError("The eigenvalue must be positive to compute omega.")
@@ -2662,22 +2717,22 @@ class ShearAlfvenWavesSuperposition(sopp.ShearAlfvenWavesSuperposition,ShearAlfv
                 Phin=harmonic.n,
                 omega=omega,
                 phase=phase,
-                B0=B0
+                B0=B0,
             )
             m_list.append(harmonic.m)
             n_list.append(harmonic.n)
             s_list += list(sbump)
             harmonic_list.append(sah)
-        #start with arbitrary magnitude SAW, then rescale it:
+        # start with arbitrary magnitude SAW, then rescale it:
         unscaled_SAW = ShearAlfvenWavesSuperposition(harmonic_list)
-        #Make radial grid that captures all unique radial values for all harmonic:
+        # Make radial grid that captures all unique radial values for all harmonic:
         s_unique = sorted(set(s_list))
-        #Make angle grids that resolve maxima of highest harmonics
-        thetas = np.linspace(0, 2 * np.pi, 5*np.max(np.abs(m_list)))
-        zetas  = np.linspace(0, 2 * np.pi, 5*np.max(np.abs(n_list)))
+        # Make angle grids that resolve maxima of highest harmonics
+        thetas = np.linspace(0, 2 * np.pi, 5 * np.max(np.abs(m_list)))
+        zetas = np.linspace(0, 2 * np.pi, 5 * np.max(np.abs(n_list)))
         # Create 3D mesh grids:
-        thetas2d, zetas2d, s2d = np.meshgrid(thetas, zetas, s_unique, indexing='ij')
-        points = np.zeros((len(thetas2d.flatten()), 4)) #s theta zeta time
+        thetas2d, zetas2d, s2d = np.meshgrid(thetas, zetas, s_unique, indexing="ij")
+        points = np.zeros((len(thetas2d.flatten()), 4))  # s theta zeta time
         points[:, 0] = s2d.flatten()  # s values
         points[:, 1] = thetas2d.flatten()  # theta values
         points[:, 2] = zetas2d.flatten()  # zeta values
@@ -2685,27 +2740,33 @@ class ShearAlfvenWavesSuperposition(sopp.ShearAlfvenWavesSuperposition,ShearAlfv
         G = unscaled_SAW.B0.G()
         iota = unscaled_SAW.B0.iota()
         I = unscaled_SAW.B0.I()
-        Bpsi_default = (1/((iota*I+G)*minor_radius_meters)
-                    *(G*unscaled_SAW.dalphadtheta() - I*unscaled_SAW.dalphadzeta()))
+        Bpsi_default = (
+            1
+            / ((iota * I + G) * minor_radius_meters)
+            * (G * unscaled_SAW.dalphadtheta() - I * unscaled_SAW.dalphadzeta())
+        )
         max_Bpsi_value = np.max(np.abs(Bpsi_default))
         max_index = np.argmax(np.abs(Bpsi_default))
-        max_s, max_theta, max_zeta = points[max_index, 0], points[max_index, 1], points[max_index, 2]
+        max_s, max_theta, max_zeta = (
+            points[max_index, 0],
+            points[max_index, 1],
+            points[max_index, 2],
+        )
 
-        Phihat_scale_factor = max_dB_normal_by_B0/np.max(np.abs(Bpsi_default))
+        Phihat_scale_factor = max_dB_normal_by_B0 / np.max(np.abs(Bpsi_default))
 
-        #Having determine the scale factor, initialize harmonics with corrected amplitudes:
+        # Having determine the scale factor, initialize harmonics with corrected amplitudes:
         harmonic_list = []
         for harmonic in eigenvector.harmonics:
             sbump = eigenvector.s_coords
             bump = harmonic.amplitudes
             sah = ShearAlfvenHarmonic(
-                Phihat_value_or_tuple = (sbump, bump*Phihat_scale_factor),
-                Phim = harmonic.m,
-                Phin = harmonic.n,
-                omega = omega,
-                phase = phase,
-                B0 = B0
+                Phihat_value_or_tuple=(sbump, bump * Phihat_scale_factor),
+                Phim=harmonic.m,
+                Phin=harmonic.n,
+                omega=omega,
+                phase=phase,
+                B0=B0,
             )
             harmonic_list.append(sah)
         return ShearAlfvenWavesSuperposition(harmonic_list)
-

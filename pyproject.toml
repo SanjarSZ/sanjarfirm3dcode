@@ -1,3 +1,29 @@
 [build-system]
 requires = ["setuptools","cmake","wheel","ninja","pybind11<=2.13.6","numpy","plotly"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "simsopt"
+version = "0.0.0"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "scipy>=1.5.4",
+    "Deprecated>=1.2.10",
+    "nptyping>=1.3.0",
+    "ruamel.yaml",
+    "plotly",
+    "jupyter",
+    "pyevtk",
+    "matplotlib"
+]
+
+[project.optional-dependencies]
+docs = [
+    "sphinx>=4.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "myst-parser>=0.18.0",
+    "numpy",
+    "matplotlib",
+    "scipy"
+]

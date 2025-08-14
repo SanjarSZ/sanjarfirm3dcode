@@ -33,29 +33,12 @@ f90wrap_*.f90
 # IDE
 .idea
 
-# VMEC specific
-modules/VMEC/vmec.py
-modules/VMEC/vmec_pkg/
-wout*
-mercier*
-jxbout*
-parvmecinfo.txt
-*threed*
-vmec_f90wrap.py
-fort.9
-parvmec*.txt
-
-# SPEC specific
-spec*.sp
-spec*.sp.end
-spec*.sp.h5
-
 # examples
-examples/VMEC/
 examples/*.log
 examples/**/*.txt
 examples/**/*.pdf
 examples/**/*.png
+examples/**/*.vt*
 
 # Sphinx related files
 docs/build/

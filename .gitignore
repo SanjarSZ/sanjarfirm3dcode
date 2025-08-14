@@ -53,9 +53,13 @@ spec*.sp.h5
 # examples
 examples/VMEC/
 examples/*.log
+examples/**/*.txt
+examples/**/*.pdf
+examples/**/*.png
 
 # Sphinx related files
 docs/build/
+docs/_build/
 
 # IDE related
 .idea

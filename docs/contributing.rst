@@ -39,6 +39,8 @@ The project includes a ``pyproject.toml`` file with ruff configuration that excl
 **Pre-commit Hooks:**
 Install with ``pre-commit install`` to automatically run code quality checks before each commit.
 
+**Note:** Ruff linting checks are configured as **informational only** and will not block commits. This allows you to commit your work while still having access to linting feedback. You can address linting issues at your convenience.
+
 Development Workflow
 -------------------
 
@@ -53,5 +55,19 @@ Development Workflow
       python -m unittest discover tests/
       cd docs && make html
 
-4. **Push and monitor CI**: Check GitHub Actions for automated tests
-5. **Submit a pull request**
+4. **Commit your changes**: Pre-commit hooks will run automatically but won't block commits
+5. **Optional: Address linting issues** when convenient:
+
+   .. code-block:: bash
+
+      # Check for linting issues
+      ruff check .
+
+      # Auto-fix what can be fixed
+      ruff check --fix .
+
+      # Format code
+      ruff format .
+
+6. **Push and monitor CI**: Check GitHub Actions for automated tests
+7. **Submit a pull request**

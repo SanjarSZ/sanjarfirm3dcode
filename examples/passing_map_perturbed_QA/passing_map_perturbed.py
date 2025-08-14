@@ -1,30 +1,21 @@
-import numpy as np
-import time
 import sys
+import time
+
+import numpy as np
 
 from simsopt.field.boozermagneticfield import (
     BoozerRadialInterpolant,
     InterpolatedBoozerField,
     ShearAlfvenHarmonic,
 )
+from simsopt.field.trajectory_helpers import PassingPerturbedPoincare
 from simsopt.util.constants import (
+    ALPHA_PARTICLE_CHARGE,
     ALPHA_PARTICLE_MASS,
     FUSION_ALPHA_PARTICLE_ENERGY,
-    ALPHA_PARTICLE_CHARGE,
 )
 from simsopt.util.functions import proc0_print
-from simsopt.field.trajectory_helpers import PassingPerturbedPoincare
-
-try:
-    from mpi4py import MPI
-
-    comm = MPI.COMM_WORLD
-    comm_size = comm.size
-    verbose = comm.rank == 0
-except ImportError:
-    comm = None
-    comm_size = 1
-    verbose = True
+from simsopt.util.mpi import comm_size, comm_world, verbose
 
 boozmn_filename = "../inputs/boozmn_beta2.5_QA.nc"
 
@@ -62,7 +53,7 @@ bri = BoozerRadialInterpolant(
     boozmn_filename,
     order,
     no_K=True,
-    comm=comm,
+    comm=comm_world,
     helicity_M=helicity_M,
     helicity_N=helicity_N,
 )
@@ -94,7 +85,7 @@ poinc = PassingPerturbedPoincare(
     ns_poinc=ns_poinc,
     nchi_poinc=nchi_poinc,
     Nmaps=Nmaps,
-    comm=comm,
+    comm=comm_world,
     solver_options={"reltol": tol, "abstol": tol},
 )
 

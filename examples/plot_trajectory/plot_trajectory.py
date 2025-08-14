@@ -1,36 +1,27 @@
 import sys
-import numpy as np
 import time
+
+import numpy as np
 
 from simsopt.field.boozermagneticfield import (
     BoozerRadialInterpolant,
     InterpolatedBoozerField,
 )
 from simsopt.field.tracing import (
-    trace_particles_boozer,
     MaxToroidalFluxStoppingCriterion,
+    trace_particles_boozer,
 )
-from simsopt.util.constants import (
-    ALPHA_PARTICLE_MASS,
-    ALPHA_PARTICLE_CHARGE,
-    FUSION_ALPHA_PARTICLE_ENERGY,
-)
-from simsopt.util.functions import proc0_print
 from simsopt.plotting.plotting_helpers import (
     plot_trajectory_overhead_cyl,
     plot_trajectory_poloidal,
 )
-
-try:
-    from mpi4py import MPI
-
-    comm = MPI.COMM_WORLD
-    verbose = comm.rank == 0
-    comm_size = comm.size
-except ImportError:
-    comm = None
-    verbose = True
-    comm_size = 1
+from simsopt.util.constants import (
+    ALPHA_PARTICLE_CHARGE,
+    ALPHA_PARTICLE_MASS,
+    FUSION_ALPHA_PARTICLE_ENERGY,
+)
+from simsopt.util.functions import proc0_print
+from simsopt.util.mpi import comm_size, comm_world, verbose
 
 time1 = time.time()
 
@@ -48,7 +39,7 @@ nzeta_interp = resolution
 sys.stdout = open(f"stdout_trajectory_{resolution}_{comm_size}.txt", "a", buffering=1)
 
 ## Setup radial interpolation
-bri = BoozerRadialInterpolant(boozmn_filename, order, no_K=True, comm=comm)
+bri = BoozerRadialInterpolant(boozmn_filename, order, no_K=True, comm=comm_world)
 nfp = bri.nfp
 
 ## Setup 3d interpolation

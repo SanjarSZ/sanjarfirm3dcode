@@ -1,33 +1,27 @@
 import sys
-import numpy as np
 import time
+
+import numpy as np
 
 from simsopt.field.boozermagneticfield import (
     BoozerRadialInterpolant,
     InterpolatedBoozerField,
 )
 from simsopt.field.tracing import (
-    trace_particles_boozer,
     MaxToroidalFluxStoppingCriterion,
+    trace_particles_boozer,
 )
-from simsopt.field.tracing_helpers import initialize_position_uniform_surf, initialize_velocity_uniform
+from simsopt.field.tracing_helpers import (
+    initialize_position_uniform_surf,
+    initialize_velocity_uniform,
+)
 from simsopt.util.constants import (
-    ALPHA_PARTICLE_MASS,
     ALPHA_PARTICLE_CHARGE,
+    ALPHA_PARTICLE_MASS,
     FUSION_ALPHA_PARTICLE_ENERGY,
 )
 from simsopt.util.functions import proc0_print
-
-try:
-    from mpi4py import MPI
-
-    comm = MPI.COMM_WORLD
-    verbose = comm.rank == 0
-    comm_size = comm.size
-except ImportError:
-    comm = None
-    verbose = True
-    comm_size = 1
+from simsopt.util.mpi import comm_size, comm_world, verbose
 
 time1 = time.time()
 
@@ -46,7 +40,7 @@ nzeta_interp = resolution
 sys.stdout = open(f"stdout_{nParticles}_{resolution}_{comm_size}.txt", "a", buffering=1)
 
 ## Setup radial interpolation
-bri = BoozerRadialInterpolant(boozmn_filename, order, no_K=True, comm=comm)
+bri = BoozerRadialInterpolant(boozmn_filename, order, no_K=True, comm=comm_world)
 
 ## Setup 3d interpolation
 field = InterpolatedBoozerField(
@@ -57,16 +51,14 @@ field = InterpolatedBoozerField(
     nzeta_interp=nzeta_interp,
 )
 
-points = initialize_position_uniform_surf(field, nParticles, 0.3, comm=comm)
+points = initialize_position_uniform_surf(field, nParticles, 0.3, comm=comm_world)
 
 Ekin = FUSION_ALPHA_PARTICLE_ENERGY
 mass = ALPHA_PARTICLE_MASS
 charge = ALPHA_PARTICLE_CHARGE
 # Initialize uniformly distributed parallel velocities
 vpar0 = np.sqrt(2 * Ekin / mass)
-vpar_init = initialize_velocity_uniform(
-    vpar0, nParticles, comm=comm
-) 
+vpar_init = initialize_velocity_uniform(vpar0, nParticles, comm=comm_world)
 
 ## Trace alpha particles in Boozer coordinates until they hit the s = 1 surface
 res_tys, res_zeta_hits = trace_particles_boozer(
@@ -76,7 +68,7 @@ res_tys, res_zeta_hits = trace_particles_boozer(
     tmax=tmax,
     mass=mass,
     charge=charge,
-    comm=comm,
+    comm=comm_world,
     Ekin=Ekin,
     stopping_criteria=[MaxToroidalFluxStoppingCriterion(1.0)],
     forget_exact_path=True,

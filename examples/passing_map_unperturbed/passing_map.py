@@ -1,29 +1,20 @@
-import numpy as np
-import time
 import sys
+import time
+
+import numpy as np
 
 from simsopt.field.boozermagneticfield import (
     BoozerRadialInterpolant,
     InterpolatedBoozerField,
 )
+from simsopt.field.trajectory_helpers import PassingPoincare
 from simsopt.util.constants import (
+    ALPHA_PARTICLE_CHARGE,
     ALPHA_PARTICLE_MASS,
     FUSION_ALPHA_PARTICLE_ENERGY,
-    ALPHA_PARTICLE_CHARGE,
 )
 from simsopt.util.functions import proc0_print
-from simsopt.field.trajectory_helpers import PassingPoincare
-
-try:
-    from mpi4py import MPI
-
-    comm = MPI.COMM_WORLD
-    comm_size = comm.size
-    verbose = comm.rank == 0
-except ImportError:
-    comm = None
-    comm_size = 1
-    verbose = True
+from simsopt.util.mpi import comm_size, comm_world, verbose
 
 boozmn_filename = "../inputs/boozmn_aten_rescaled.nc"
 
@@ -48,7 +39,7 @@ sys.stdout = open(f"stdout_passing_map_{resolution}_{comm_size}.txt", "a", buffe
 
 time1 = time.time()
 
-bri = BoozerRadialInterpolant(boozmn_filename, order, no_K=True, comm=comm)
+bri = BoozerRadialInterpolant(boozmn_filename, order, no_K=True, comm=comm_world)
 
 field = InterpolatedBoozerField(
     bri,
@@ -68,7 +59,7 @@ poinc = PassingPoincare(
     ns_poinc=ns_poinc,
     ntheta_poinc=ntheta_poinc,
     Nmaps=Nmaps,
-    comm=comm,
+    comm=comm_world,
     solver_options={"reltol": tol, "abstol": tol},
 )
 

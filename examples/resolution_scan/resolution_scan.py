@@ -1,4 +1,3 @@
-import sys
 import time
 
 import numpy as np
@@ -22,7 +21,7 @@ from simsopt.util.constants import (
     ALPHA_PARTICLE_MASS,
     FUSION_ALPHA_PARTICLE_ENERGY,
 )
-from simsopt.util.functions import proc0_print
+from simsopt.util.functions import proc0_print, setup_logging
 from simsopt.util.mpi import comm_size, comm_world, verbose
 
 time1 = time.time()
@@ -35,7 +34,8 @@ nParticles = 10
 helicity_M = 1  # Enforce quasihelical symmetry in radial interpolation
 helicity_N = -4
 
-sys.stdout = open(f"stdout_resolution_scan_{comm_size}.txt", "a", buffering=1)
+# Setup logging to redirect output to file
+setup_logging(f"stdout_resolution_scan_{comm_size}.txt")
 
 Ekin = FUSION_ALPHA_PARTICLE_ENERGY
 mass = ALPHA_PARTICLE_MASS
@@ -99,7 +99,7 @@ for i in range(len(resolutions)):
         reltol = tols[j]
         abstol = tols[j]
 
-        first, last = parallel_loop_bounds(comm, nParticles)
+        first, last = parallel_loop_bounds(comm_world, nParticles)
         errors = []
         for k in range(first, last):
             point = np.zeros((1, 3))
@@ -135,7 +135,7 @@ for i in range(len(resolutions)):
             peta_error = (peta - peta[0]) / peta[0]
             errors.append(np.max(np.abs(peta_error)))
 
-        errors = [i for o in comm.allgather(errors) for i in o]
+        errors = [i for o in comm_world.allgather(errors) for i in o]
         proc0_print("  Max error in p_eta = ", np.max(errors))
         errors_grid[i, j] = np.max(errors)
 

@@ -35,7 +35,8 @@ class BoozerMetric:
      - :math:`\theta` is the poloidal Boozer angle.
      - :math:`\zeta` is the toroidal Boozer angle.
 
-     The metric tensor defines the local geometry of the magnetic field in these coordinates.
+     The metric tensor defines the local geometry of the magnetic field in
+     these coordinates.
      Given the symmetry of the metric tensor, the components stored are:
 
      .. math::
@@ -45,16 +46,23 @@ class BoozerMetric:
          g_{s\zeta} & g_{\theta\zeta} & g_{\zeta\zeta}
          \end{pmatrix},
 
-     where the metric components :math:`g_{ij}` are functions of :math:`(s, \theta, \zeta)`.
+     where the metric components :math:`g_{ij}` are functions of
+     :math:`(s, \theta, \zeta)`.
 
      **Attributes:**
 
-     - `gss` : Co-(Counter-)variant metric component :math:`g_{ss}` (`g^{ss}`)).
-     - `gst` : Co-(Counter-)variant metric component :math:`g_{s\theta}` (`g^{s\theta}`).
-     - `gsz` : Co-(Counter-)variant metric component :math:`g_{s\zeta}` (`g^{s\zeta}`).
-     - `gtt` : Co-(Counter-)variant metric component :math:`g_{\theta\theta}` (`g^{\theta\theta}`).
-     - `gtz` : Co-(Counter-)variant metric component :math:`g_{\theta\zeta}` (`g^{\theta\theta}`).
-     - `gzz` : Co-(Counter-)variant metric component :math:`g_{\zeta\zeta}` (`g^{\zeta\zeta}`).
+     - `gss` : Co-(Counter-)variant metric component :math:`g_{ss}`
+       (`g^{ss}`)).
+     - `gst` : Co-(Counter-)variant metric component :math:`g_{s\theta}`
+       (`g^{s\theta}`).
+     - `gsz` : Co-(Counter-)variant metric component :math:`g_{s\zeta}`
+       (`g^{s\zeta}`).
+     - `gtt` : Co-(Counter-)variant metric component :math:`g_{\theta\theta}`
+       (`g^{\theta\theta}`).
+     - `gtz` : Co-(Counter-)variant metric component :math:`g_{\theta\zeta}`
+       (`g^{\theta\theta}`).
+     - `gzz` : Co-(Counter-)variant metric component :math:`g_{\zeta\zeta}`
+       (`g^{\zeta\zeta}`).
 
      **Usage Example:**
 
@@ -155,14 +163,14 @@ class CovariantBoozerMetric(BoozerMetric):
         g_{s\zeta} & g_{\theta\zeta} & g_{\zeta\zeta}
         \end{pmatrix},
 
-    where each component :math:`g_{ij}` is a function of the Boozer coordinates
-    :math:`(s, \theta, \zeta)`.
+    where each component :math:`g_{ij}` is a function of the Boozer
+    coordinates :math:`(s, \theta, \zeta)`.
 
     **Methods:**
 
-    - `to_contravariant()`: Converts the covariant metric to its contravariant form by inverting
-        the metric tensor. This operation is mathematically equivalent to computing the inverse
-        of the covariant metric matrix.
+    - `to_contravariant()`: Converts the covariant metric to its contravariant
+        form by inverting the metric tensor. This operation is mathematically
+        equivalent to computing the inverse of the covariant metric matrix.
 
     **Usage Example:**
 
@@ -182,7 +190,8 @@ class CovariantBoozerMetric(BoozerMetric):
 
     **Returns:**
 
-    An instance of :class:`ContravariantBoozerMetric` representing the contravariant form of the metric.
+    An instance of :class:`ContravariantBoozerMetric` representing the
+    contravariant form of the metric.
 
     """
 
@@ -230,9 +239,10 @@ class CovariantBoozerMetric(BoozerMetric):
 
 class ContravariantBoozerMetric(BoozerMetric):
     r"""
-    Represents the contravariant metric tensor for normalized Boozer coordinates
-    :math:`(s, \theta, \zeta)` in a magnetic field. The contravariant metric is
-    associated with the basis vectors :math:`(\partial / \partial s, \partial / \partial \theta, \partial / \partial \zeta)`.
+    Represents the contravariant metric tensor for normalized Boozer
+    coordinates :math:`(s, \theta, \zeta)` in a magnetic field. The
+    contravariant metric is associated with the basis vectors
+    :math:`(\partial_s, \partial_\theta, \partial_\zeta)`.
 
     The contravariant metric tensor :math:`g^{ij}` in Boozer coordinates is given by:
 
@@ -243,14 +253,14 @@ class ContravariantBoozerMetric(BoozerMetric):
         g^{s\zeta} & g^{\theta\zeta} & g^{\zeta\zeta}
         \end{pmatrix},
 
-    where each component :math:`g^{ij}` is a function of the Boozer coordinates
-    :math:`(s, \theta, \zeta)`.
+    where each component :math:`g^{ij}` is a function of the Boozer
+    coordinates :math:`(s, \theta, \zeta)`.
 
     **Methods:**
 
-    - `to_covariant()`: Converts the contravariant metric to its covariant form by inverting
-        the metric tensor. This operation is mathematically equivalent to computing the inverse
-        of the contravariant metric matrix.
+    - `to_covariant()`: Converts the contravariant metric to its covariant
+        form by inverting the metric tensor. This operation is mathematically
+        equivalent to computing the inverse of the contravariant metric matrix.
 
     **Usage Example:**
 
@@ -270,7 +280,8 @@ class ContravariantBoozerMetric(BoozerMetric):
 
     **Returns:**
 
-    An instance of :class:`CovariantBoozerMetric` representing the covariant form of the metric.
+    An instance of :class:`CovariantBoozerMetric` representing the covariant
+    form of the metric.
 
     """
 
@@ -320,16 +331,19 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
     r"""
     Generic class that represents a magnetic field in Boozer coordinates
     :math:`(s,\theta,\zeta)`. Here :math:`s = \psi/\psi_0` is the normalized
-    toroidal flux where :math:`2\pi\psi_0` is the toroidal flux at the boundary.
+    toroidal flux where :math:`2\pi\psi_0` is the toroidal flux at the
+    boundary.
     The magnetic field in the covariant form is,
 
     .. math::
-        \textbf B(s,\theta,\zeta) = G(s) \nabla \zeta + I(s) \nabla \theta + K(s,\theta,\zeta) \nabla \psi,
+        \textbf B(s,\theta,\zeta) = G(s) \nabla \zeta + I(s) \nabla \theta +
+        K(s,\theta,\zeta) \nabla \psi,
 
     and the contravariant form is,
 
     .. math::
-        \textbf B(s,\theta,\zeta) = \frac{1}{\sqrt{g}} \left(\frac{\partial \mathbf r}{\partial \zeta} + \iota(s)\frac{\partial \mathbf r}{\partial \theta}\right),
+        \textbf B(s,\theta,\zeta) = \frac{1}{\sqrt{g}} \left(\mathbf r_\zeta +
+        \iota(s)\mathbf r_\theta\right),
 
     where,
 
@@ -342,8 +356,8 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
     :math:`B`, :math:`G`, :math:`I`, :math:`\iota`, :math:`\psi_P`, and their
     derivatives. The cylindrical coordinates :math:`R(s,\theta,\zeta)` and
     :math:`Z(s,\theta,\zeta)` in addition to :math:`K(s,\theta,\zeta)` and
-    :math:`\nu` where :math:`\zeta = \phi + \nu(s,\theta,\zeta)` and :math:`\phi`
-    is the cylindrical azimuthal angle are also implemented by
+    :math:`\nu` where :math:`\zeta = \phi + \nu(s,\theta,\zeta)` and
+    :math:`\phi` is the cylindrical azimuthal angle are also implemented by
     :class:`BoozerRadialInterpolant` and :class:`InterpolatedBoozerField`.
     The usage is similar to the :class:`MagneticField` class.
 
@@ -351,15 +365,17 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
 
     .. code-block::
 
-        booz = BoozerAnalytic(etabar,B0,N,G0,psi0,iota0) # An instance of BoozerMagneticField
-        points = ... # points is a (n, 3) numpy array defining :math:`(s,\theta,\zeta)`
+        booz = BoozerAnalytic(etabar,B0,N,G0,psi0,iota0) # An instance of
+        BoozerMagneticField
+        points = ... # points is a (n, 3) numpy array defining
+        :math:`(s,\theta,\zeta)`
         booz.set_points(points)
         modB = bfield.modB() # returns the magnetic field strength at `points`
 
     Args:
         psi0: The enclosed toroidal flux divided by 2*pi
-        field_type: A string identifying additional assumptions made on the magnetic field. Can be
-            'vac', 'nok', or ''.
+        field_type: A string identifying additional assumptions made on the
+            magnetic field. Can be 'vac', 'nok', or ''.
     """
 
     def __init__(self, psi0, field_type="vac", nfp=1, stellsym=True):
@@ -397,16 +413,17 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
 
     def get_covariant_metric(self):
         r"""
-        Computes and returns the covariant metric tensor for normalized Boozer coordinates
-        :math:`(s, \theta, \zeta)`.
+        Computes and returns the covariant metric tensor for normalized
+        Boozer coordinates :math:`(s, \theta, \zeta)`.
 
-        In normalized Boozer coordinates, the metric tensor defines the local geometry of space
-        with respect to the covariant basis vectors :math:`(\nabla s, \nabla \theta, \nabla \zeta)`.
+        In normalized Boozer coordinates, the metric tensor defines the local
+        geometry of space with respect to the covariant basis vectors
+        :math:`(\nabla s, \nabla \theta, \nabla \zeta)`.
 
-
-        The metric components are computed by evaluating the derivatives of the cylindrical coordinates
-        and the Boozer angle with respect to :math:`s`, :math:`\theta`, and :math:`\zeta`.
-        The determinant of the metric tensor is computed and compared to the inverse Jacobian
+        The metric components are computed by evaluating the derivatives of
+        the cylindrical coordinates and the Boozer angle with respect to
+        :math:`s`, :math:`\theta`, and :math:`\zeta`. The determinant of
+        the metric tensor is computed and compared to the inverse Jacobian
         for consistency. If the discrepancy exceeds 0.1%, a warning is issued.
 
         Returns
@@ -440,7 +457,8 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
         s = points[:, 0]
         assert np.all(
             s > 0
-        ), "Metric is singular on magnetic axis s=0, can not compute. Choose different point."
+        ), ("Metric is singular on magnetic axis s=0, can not compute. "
+            "Choose different point.")
         zetas = points[:, 2]
         R = self.R()[:, 0]
         dRdtheta = self.dRdtheta()[:, 0]
@@ -515,17 +533,21 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
             )
 
             warnings.warn(
-                f"\nLarge maximum relative error ({max_relative_error_percent:.2f}%) between "
-                f"metric determinant and Jacobian at:\n"
-                f"  (s, theta, zeta) = ({s_error:.3f}, {theta_error:.3f}, {zeta_error:.3f})\n"
+                f"\nLarge maximum relative error ({max_relative_error_percent:.2f}%) "
+                f"between metric determinant and Jacobian at:\n"
+                f"  (s, theta, zeta) = ({s_error:.3f}, {theta_error:.3f}, "
+                f"{zeta_error:.3f})\n"
                 f"  sqrt(detg) = {np.sqrt(detg[max_error_idx]):.6e}\n"
                 f"  sqrtg     = {sqrtg[max_error_idx]:.6e}\n"
                 f"Metric tensor at this point:\n"
-                f"  [[ {metric_at_error[0, 0]:.6e}  {metric_at_error[0, 1]:.6e}  {metric_at_error[0, 2]:.6e} ]\n"
-                f"   [ {metric_at_error[1, 0]:.6e}  {metric_at_error[1, 1]:.6e}  {metric_at_error[1, 2]:.6e} ]\n"
-                f"   [ {metric_at_error[2, 0]:.6e}  {metric_at_error[2, 1]:.6e}  {metric_at_error[2, 2]:.6e} ]]\n"
+                f"  [[ {metric_at_error[0, 0]:.6e}  {metric_at_error[0, 1]:.6e}  "
+                f"{metric_at_error[0, 2]:.6e} ]\n"
+                f"   [ {metric_at_error[1, 0]:.6e}  {metric_at_error[1, 1]:.6e}  "
+                f"{metric_at_error[1, 2]:.6e} ]\n"
+                f"   [ {metric_at_error[2, 0]:.6e}  {metric_at_error[2, 1]:.6e}  "
+                f"{metric_at_error[2, 2]:.6e} ]]\n"
                 "exceeds 0.1% tolerance.",
-                RuntimeWarning,
+                RuntimeWarning, stacklevel=2,
             )
 
         return CovariantBoozerMetric(
@@ -539,12 +561,14 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
 
     def get_contravariant_metric(self):
         r"""
-        Computes and returns the contravariant metric tensor for normalized Boozer coordinates
+        Computes and returns the contravariant metric tensor for normalized
+        Boozer coordinates
         :math:`(s, \theta, \zeta)`.
 
-        In normalized Boozer coordinates, the contravariant metric tensor defines the local geometry
+        In normalized Boozer coordinates, the contravariant metric tensor
+        defines the local geometry
         of space with respect to the contravariant basis vectors
-        :math:`(\partial / \partial s, \partial / \partial \theta, \partial / \partial \zeta)`.
+        :math:`(\partial_s, \partial_\theta, \partial_\zeta)`.
 
         The contravariant metric is computed by inverting the covariant metric tensor.
 
@@ -581,10 +605,12 @@ class BoozerAnalytic(BoozerMagneticField):
     r"""
     Computes a :class:`BoozerMagneticField` based on a first-order expansion in
     distance from the magnetic axis (Landreman & Sengupta, Journal of Plasma
-    Physics 2018). A possibility to include QS-breakign perturbation is added, so the magnetic field strength is expressed as,
+    Physics 2018). A possibility to include QS-breaking perturbation is added,
+    so the magnetic field strength is expressed as,
 
     .. math::
-        B(s,\theta,\zeta) = B_0 \left(1 + \overline{\eta} \sqrt{2s\psi_0/\overline{B}}\cos(\theta - N \zeta)\right) + B_{0z}\cos{m\theta-n\zeta},
+        B(s,\theta,\zeta) = B_0 \left(1 + \overline{\eta} \sqrt{2s\psi_0/\overline{B}}
+        \cos(\theta - N \zeta)\right) + B_{0z}\cos{m\theta-n\zeta},
 
     the covariant components of equilibrium field are,
 
@@ -634,10 +660,16 @@ class BoozerAnalytic(BoozerMagneticField):
         I1=0.0,
         K1=0.0,
         iota1=0.0,
-        B0z=[0.0],
-        n=[1],
-        m=[2],
+        B0z=None,
+        n=None,
+        m=None,
     ):
+        if m is None:
+            m = [2]
+        if n is None:
+            n = [1]
+        if B0z is None:
+            B0z = [0.0]
         assert len(B0z) == len(n)
         assert len(m) == len(n)
         self.etabar = etabar
@@ -852,10 +884,14 @@ class BoozerAnalytic(BoozerMagneticField):
 
 class BoozerRadialInterpolant(BoozerMagneticField):
     r"""
-     The magnetic field can be computed at any point in Boozer coordinates using radial spline interpolation
-     (``scipy.interpolate.make_interp_spline``) and an inverse Fourier transform in the two angles.
-     If given a `VMEC` output file, performs a Boozer coordinate transformation using ``BOOZXFORM``.
-     If given a ``BOOZXFORM`` output file, the Boozer transformation must be performed with all surfaces on the VMEC
+     The magnetic field can be computed at any point in Boozer coordinates
+     using radial spline interpolation
+           (``scipy.interpolate.make_interp_spline``) and an inverse Fourier
+      transform in the two angles.
+           If given a `VMEC` output file, performs a Boozer coordinate
+      transformation using ``BOOZXFORM``.
+           If given a ``BOOZXFORM`` output file, the Boozer transformation must
+      be performed with all surfaces on the VMEC
      half grid, and with `phip`, `chi`, `pres`, and `phi` saved in the file.
 
     Args:
@@ -872,15 +908,23 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         ntor: (int) number of toroidal mode numbers for BOOZXFORM (defaults to
             32). Only used if a wout_*.nc file is passed.
         helicity_M : Poloidal helicity coefficient for enforcing field
-            quasi-symmetry If specified, then the non-symmetric Fourier harmonics of :math:`B` and :math:`K` are filtered out, so the field is a function of `chi = helicity_M*theta - helicity_N*zeta`. If helicity is unspecified, all harmonics are kept.
+            quasi-symmetry If specified, then the non-symmetric Fourier
+            harmonics of :math:`B` and :math:`K` are filtered out, so the
+            field is a function of `chi = helicity_M*theta - helicity_N*zeta`.
+            If helicity is unspecified, all harmonics are kept.
             (defaults to ``None``)
         helicity_N : Toroidal helicity coefficient for enforcing field
-            quasi-symmetry If specified, then the non-symmetric Fourier harmonics of :math:`B` and :math:`K` are filtered out, so the field is a function of `chi = helicity_M*theta - helicity_N*zeta`. If helicity is unspecified, all harmonics are kept.
+            quasi-symmetry If specified, then the non-symmetric Fourier
+            harmonics of :math:`B` and :math:`K` are filtered out, so the
+            field is a function of `chi = helicity_M*theta - helicity_N*zeta`.
+            If helicity is unspecified, all harmonics are kept.
         enforce_vacuum: If True, a vacuum field is assumed, :math:`G` is
             set to its mean value, :math:`I = 0`, and :math:`K = 0`.
         rescale: If True, use the interpolation method in the DELTA5D code.
-            Here, a few of the first radial grid points or (``bmnc``, ``rmnc``, ``zmns``, ``numns``, ``kmns``)
-            are deleted (determined by ``ns_delete``). The Fourier harmonics are then rescaled as:
+            Here, a few of the first radial grid points or
+            (``bmnc``, ``rmnc``, ``zmns``, ``numns``, ``kmns``)
+            are deleted (determined by ``ns_delete``). The Fourier harmonics
+            are then rescaled as:
                 bmnc(s)/s^(1/2) for m = 1
 
                 bmnc(s)/s for m even and >= 2
@@ -888,8 +932,10 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                 bmnc(s)/s^(3/2) for m odd and >=3
 
             before performing interpolation and finite-difference differentiation to
-            obtain ``dbmncds``. If ``False``, interpolation of the unscaled Fourier harmonics and its
-            finite-difference derivative wrt ``s`` is performed instead (defaults to ``False``)
+            obtain ``dbmncds``. If ``False``, interpolation of the unscaled
+            Fourier harmonics and its
+            finite-difference derivative wrt ``s`` is performed instead
+            (defaults to ``False``)
         ns_delete: (see ``rescale``) (defaults to 0)
         no_K: (bool) If ``True``, the Boozer :math:`K` will not be computed or
             interpolated.
@@ -903,9 +949,12 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         verbose: If True, additional output is written by booz_xform. (defaults
             to False).
         no_shear: If True, the shear in the rotational transform will be
-            eliminated, and iota will be taken to be the mean value. (defaults to False).
-        field_type: A string identifying additional assumptions made on the magnetic field. Can be
-            ``'vac'``, ``'nok'``, or ``''``.  Be default, this is determined from the options ``enforce_vacuum``
+            eliminated, and iota will be taken to be the mean value.
+            (defaults to False).
+        field_type: A string identifying additional assumptions made on the
+            magnetic field. Can be
+            ``'vac'``, ``'nok'``, or ``''``.  By default, this is determined
+            from the options ``enforce_vacuum``
             and ``no_K``.
     """
 
@@ -944,13 +993,15 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             if self.proc0:
                 if enforce_vacuum != (field_type == "vac"):
                     warnings.warn(
-                        f"Prescribed field_type is inconsistent with enforce_vacuum. Proceeding with field_type={field_type}.",
-                        RuntimeWarning,
+                        f"Prescribed field_type is inconsistent with enforce_vacuum. "
+                        f"Proceeding with field_type={field_type}.",
+                        RuntimeWarning, stacklevel=2,
                     )
                 if no_K != (field_type == "nok"):
                     warnings.warn(
-                        f"Prescribed field_type is inconsistent with no_K. Proceeding with field_type={field_type}.",
-                        RuntimeWarning,
+                        f"Prescribed field_type is inconsistent with no_K. "
+                        f"Proceeding with field_type={field_type}.",
+                        RuntimeWarning, stacklevel=2,
                     )
             self.field_type = field_type
         else:
@@ -1010,12 +1061,14 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         if (helicity_M is not None) and (helicity_N is not None):
             if helicity_M % 1 != 0:
                 raise ValueError(
-                    "helicity_M must be an integer for field to be 2π-periodic in Boozer poloidal angle."
+                    "helicity_M must be an integer for field to be 2π-periodic "
+                    "in Boozer poloidal angle."
                 )
 
             if helicity_N % 1 != 0:
                 raise ValueError(
-                    "helicity_N must be an integer for field to be 2π-periodic in Boozer toroidal angle."
+                    "helicity_N must be an integer for field to be 2π-periodic "
+                    "in Boozer toroidal angle."
                 )
 
             self.helicity_M = helicity_M
@@ -1023,7 +1076,8 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             self.enforce_qs = True
         elif (helicity_M is not None) or (helicity_N is not None):
             raise ValueError(
-                "Both helicity_M and helicity_N must be specified when enforcing field symmetry."
+                "Both helicity_M and helicity_N must be specified when "
+                "enforcing field symmetry."
             )
 
         if self.proc0:
@@ -1031,7 +1085,8 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             self.psi0 = -self.bx.phi[-1] / (
                 2 * np.pi
             )  # Sign flip to account for VMEC convention.
-            # See https://terpconnect.umd.edu/~mattland/assets/notes/vmec_signs.pdf for phiedge definition
+            # See https://terpconnect.umd.edu/~mattland/assets/notes/vmec_signs.pdf
+            # for phiedge definition
             self.nfp = self.bx.nfp
             self.mpol = self.bx.mboz
             self.ntor = self.bx.nboz
@@ -2241,7 +2296,8 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         if self.comm is not None:
             # In place reduce is slightly slower
-            # self.mpi.comm_world.Allreduce(MPI.IN_PLACE, [padded_buffer[:len(inv)], MPI.DOUBLE], op=MPI.SUM)
+            # self.mpi.comm_world.Allreduce(MPI.IN_PLACE,
+            # [padded_buffer[:len(inv)], MPI.DOUBLE], op=MPI.SUM)
             self.comm.Allreduce(
                 [padded_buffer[: len(inv)], MPI.DOUBLE], recv_buffer, op=MPI.SUM
             )
@@ -2266,7 +2322,8 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
     r"""
     This field takes an existing :class:`BoozerMagneticField` and interpolates it on a
     regular grid in :math:`s,\theta,\zeta`. the field is represented as a piecewise
-    polynomial in (s,theta,zeta) of a given degree. The number of nodes in each direction
+    polynomial in (s,theta,zeta) of a given degree. The number of nodes in
+    each direction
     are defined by ns_interp, ntheta_interp, and nzeta_interp. It is recommended to use
     this field representation in the tracing loop due to its speed in comparison to
     :class:`BoozerRadialInterpolant`.
@@ -2285,7 +2342,7 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
         extrapolate=True,
         nfp=None,
         stellsym=None,
-        initialize=[],
+        initialize=None,
     ):
         r"""
         Args:
@@ -2309,12 +2366,16 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
                  ``zetamax=2*np.pi/nfp``. By default this is obtained from field.nfp.
             stellsym: Whether to exploit stellarator symmetry. In this case
                       ``theta`` is always mapped to the interval :math:`[0, \pi]`,
-                      hence it makes sense to use ``thetamin=0`` and ``thetamax=np.pi``. By default
+                      hence it makes sense to use ``thetamin=0`` and
+                      ``thetamax=np.pi``. By default
                       this is obtained from field.stellsym.
             initialize: A list of strings, each of which is the name of a
-                field quantitty, e.g., `modB`, to be initialized when the interpolant is created.
+                field quantity, e.g., `modB`, to be initialized when the
+                interpolant is created.
                 By default, this list is determined by field.field_type.
         """
+        if initialize is None:
+            initialize = []
         field_type = field.field_type.lower()
         assert field_type in ["", "vac", "nok"]
         self.field_type = field.field_type
@@ -2352,8 +2413,9 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
                 or (field_type == "" and (initialize != initialize_gen))
             ):
                 warnings.warn(
-                    f"initialize list does not match field_type={field_type}. Proceeding with initialize={initialize}",
-                    RuntimeWarning,
+                    f"initialize list does not match field_type={field_type}. "
+                    f"Proceeding with initialize={initialize}",
+                    RuntimeWarning, stacklevel=2,
                 )
         if nfp is None:
             nfp = field.nfp
@@ -2384,16 +2446,20 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
             or np.any(np.asarray(thetarange[0:2]) > np.pi)
         ):
             warnings.warn(
-                rf"Sure about thetarange=[{thetarange[0]},{thetarange[1]}]? When exploiting stellarator symmetry, the interpolant is only evaluated for theta in [0,pi].",
-                RuntimeWarning,
+                rf"Sure about thetarange=[{thetarange[0]},{thetarange[1]}]? "
+                rf"When exploiting stellarator symmetry, the interpolant is "
+                rf"only evaluated for theta in [0,pi].",
+                RuntimeWarning, stacklevel=2,
             )
         if nfp > 1 and (
             np.any(np.asarray(zetarange[0:2]) < 0)
             or np.any(np.asarray(zetarange[0:2]) > 2 * np.pi / nfp)
         ):
             warnings.warn(
-                rf"Sure about zetarange=[{zetarange[0]},{zetarange[1]}]? When exploiting rotational symmetry, the interpolant is only evaluated for zeta in [0,2\pi/nfp].",
-                RuntimeWarning,
+                rf"Sure about zetarange=[{zetarange[0]},{zetarange[1]}]? "
+                rf"When exploiting rotational symmetry, the interpolant is "
+                rf"only evaluated for zeta in [0,2\pi/nfp].",
+                RuntimeWarning, stacklevel=2,
             )
 
         sopp.InterpolatedBoozerField.__init__(
@@ -2418,14 +2484,19 @@ class ShearAlfvenWave(sopp.ShearAlfvenWave):
     r"""
     Class representing a generic Shear Alfvén Wave (SAW).
 
-    The Shear Alfvén Wave (SAW) propagates in an equilibrium magnetic field `B0` and is represented by
-    the scalar potential `Phi` and vector potential parameter `alpha`. The SAW magnetic field is defined
+    The Shear Alfvén Wave (SAW) propagates in an equilibrium magnetic field
+    `B0` and is represented by
+    the scalar potential `Phi` and vector potential parameter `alpha`. The SAW
+    magnetic field is defined
     as the curl of `(alpha * B0)`.
 
-    This class provides a framework for representing SAWs in Boozer coordinates with attributes for computing
-    the scalar and vector potentials and their derivatives: `Phi`, `dPhidpsi`, `Phidot`, etc.
+    This class provides a framework for representing SAWs in Boozer
+    coordinates with attributes for computing
+    the scalar and vector potentials and their derivatives: `Phi`, `dPhidpsi`,
+    `Phidot`, etc.
 
-    This class is designed to be a base class that can be extended to implement specific behaviors or
+    This class is designed to be a base class that can be extended to implement
+    specific behaviors or
     variations of Shear Alfvén Waves.
 
     The usage of :class:`ShearAlfvenWave` is as follows:
@@ -2438,7 +2509,8 @@ class ShearAlfvenWave(sopp.ShearAlfvenWave):
         # Create an instance of ShearAlfvenWave using the equilibrium field B0
         saw = ShearAlfvenWave(B0)
 
-        # Points is a (n, 4) numpy array defining :math:`(s, \theta, \zeta, \text{time})`
+        # Points is a (n, 4) numpy array defining
+        # :math:`(s, \theta, \zeta, \text{time})`
         points = ...
         saw.set_points(points)
 
@@ -2462,19 +2534,24 @@ class ShearAlfvenWave(sopp.ShearAlfvenWave):
     alphadot : function
         Computes the time derivative of the vector potential parameter `alpha`.
     dalphadtheta : function
-        Computes the derivative of the vector potential parameter `alpha` with respect to `theta`.
+        Computes the derivative of the vector potential parameter `alpha` with
+        respect to `theta`.
     dalphadpsi : function
-        Computes the derivative of the vector potential parameter `alpha` with respect to `psi`.
+        Computes the derivative of the vector potential parameter `alpha` with
+        respect to `psi`.
     dalphadzeta : function
-        Computes the derivative of the vector potential parameter `alpha` with respect to `zeta`.
+        Computes the derivative of the vector potential parameter `alpha` with
+        respect to `zeta`.
 
-    For further details, see Paul et al., JPP (2023; 89(5): 905890515. doi:10.1017/S0022377823001095)
+    For further details, see Paul et al., JPP (2023; 89(5): 905890515.
+    doi:10.1017/S0022377823001095)
     and references therein.
 
     Parameters
     ----------
     B0 : BoozerMagneticField
-        Instance of a magnetic field in Boozer coordinates that provides the equilibrium field `B0`.
+        Instance of a magnetic field in Boozer coordinates that provides the
+        equilibrium field `B0`.
 
     Raises
     ------
@@ -2493,16 +2570,21 @@ class ShearAlfvenWave(sopp.ShearAlfvenWave):
 
 class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic, ShearAlfvenWave):
     r"""
-    Class representing a single harmonic Shear Alfvén Wave (SAW) in a given equilibrium magnetic field.
+    Class representing a single harmonic Shear Alfvén Wave (SAW) in a given
+    equilibrium magnetic field.
 
     This class initializes a Shear Alfvén Wave with a scalar potential of the form:
 
     .. math::
-        \Phi(s, \theta, \zeta, t) = \hat{\Phi}(s) \sin(m \theta - n \zeta + \omega t + \text{phase}),
+        \Phi(s, \theta, \zeta, t) = \hat{\Phi}(s) \sin(m \theta - n \zeta +
+        \omega t + \text{phase}),
 
-    where :math:`\hat{\Phi}(s)` is a radial profile, :math:`m` is the poloidal mode number, :math:`n` is the toroidal mode number,
-    :math:`\omega` is the frequency, and `phase` is the phase shift. The vector potential `\alpha` is determined by the ideal
-    Ohm's law (i.e., zero electric field along the field line). This representation is used to describe SAWs propagating in
+    where :math:`\hat{\Phi}(s)` is a radial profile, :math:`m` is the poloidal
+    mode number, :math:`n` is the toroidal mode number,
+    :math:`\omega` is the frequency, and `phase` is the phase shift. The vector
+    potential `\alpha` is determined by the ideal
+    Ohm's law (i.e., zero electric field along the field line). This
+    representation is used to describe SAWs propagating in
     an equilibrium magnetic field :math:`B_0`.
 
     Attributes
@@ -2510,7 +2592,8 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic, ShearAlfvenWave):
     Phihat_value_or_tuple : Union[float, Tuple[List[float], List[float]]]
         The radial profile of the scalar potential `\hat{\Phi}(s)`. It can be either:
         - A constant value (float) that represents a uniform `\hat{\Phi}`.
-        - A tuple of two lists: `s_values` and `Phihat_values`, defining a varying profile.
+        - A tuple of two lists: `s_values` and `Phihat_values`, defining a
+          varying profile.
     Phim : int
         Poloidal mode number `m`.
     Phin : int
@@ -2531,7 +2614,8 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic, ShearAlfvenWave):
         B0: sopp.BoozerMagneticField,
     ):
         r"""
-        Initialize a single harmonic Shear Alfvén Wave (SAW) in a given equilibrium magnetic field.
+        Initialize a single harmonic Shear Alfvén Wave (SAW) in a given
+        equilibrium magnetic field.
 
         Parameters
         ----------
@@ -2539,7 +2623,8 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic, ShearAlfvenWave):
             The radial profile of the scalar potential `\hat{\Phi}(s)`.
             It can be either:
             - A constant value (float or int) that represents a uniform `\hat{\Phi}`.
-            - A tuple of two lists: `s_values` and `Phihat_values`, defining a varying profile.
+            - A tuple of two lists: `s_values` and `Phihat_values`, defining a
+              varying profile.
         Phim : int
             Poloidal mode number `m`.
         Phin : int
@@ -2549,7 +2634,8 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic, ShearAlfvenWave):
         phase : float
             Phase of the harmonic wave.
         B0 : BoozerMagneticField
-            Instance of a magnetic field in Boozer coordinates that provides the equilibrium field `B_0`.
+            Instance of a magnetic field in Boozer coordinates that provides
+            the equilibrium field `B_0`.
 
         Raises
         ------
@@ -2567,7 +2653,8 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic, ShearAlfvenWave):
         if isinstance(Phihat_value_or_tuple, tuple):
             if len(Phihat_value_or_tuple) != 2:
                 raise TypeError(
-                    "Phihat_value_or_tuple must be a tuple of two lists: (s_values, Phihat_values)."
+                    "Phihat_value_or_tuple must be a tuple of two lists: "
+                    "(s_values, Phihat_values)."
                 )
 
             s_vals, Phihat_vals = Phihat_value_or_tuple
@@ -2600,12 +2687,14 @@ class ShearAlfvenHarmonic(sopp.ShearAlfvenHarmonic, ShearAlfvenWave):
             # Try to convert Phihat_value_or_tuple to a float if possible
             try:
                 Phihat_value = float(Phihat_value_or_tuple)
-                # If Phihat_value_or_tuple can be converted to a float, use it as a constant value
+                # If Phihat_value_or_tuple can be converted to a float, use it
+                # as a constant value
                 phihat_object = sopp.Phihat([0, 1], [Phihat_value, Phihat_value])
-            except (TypeError, ValueError):
+            except (TypeError, ValueError) as err:
                 raise TypeError(
-                    "Phihat_value_or_tuple must be either a float, an int, or a tuple of (s_values, Phihat_values)."
-                )
+                    "Phihat_value_or_tuple must be either a float, an int, or "
+                    "a tuple of (s_values, Phihat_values)."
+                ) from err
 
         # Call the constructor of the base C++ class
         sopp.ShearAlfvenHarmonic.__init__(
@@ -2620,21 +2709,28 @@ class ShearAlfvenWavesSuperposition(
     r"""
     Class representing a superposition of multiple Shear Alfvén Waves (SAWs).
 
-    This class models the superposition of multiple Shear Alfvén waves, combining their scalar
-    potential `Phi`, vector potential `alpha`, and their respective derivatives to represent a more
+    This class models the superposition of multiple Shear Alfvén waves,
+    combining their scalar
+    potential `Phi`, vector potential `alpha`, and their respective derivatives
+    to represent a more
     complex wave structure in the equilibrium field `B0`.
 
-    The superposition of waves is initialized with a base wave, which defines the reference
-    equilibrium field `B0` for all subsequent waves added to the superposition. All added waves
+    The superposition of waves is initialized with a base wave, which defines
+    the reference
+    equilibrium field `B0` for all subsequent waves added to the superposition.
+    All added waves
     must have the same `B0` field.
 
-    See Paul et al., JPP (2023; 89(5):905890515. doi:10.1017/S0022377823001095) for more details.
+    See Paul et al., JPP (2023; 89(5):905890515.
+    doi:10.1017/S0022377823001095) for more details.
 
     Parameters
     ----------
     SAWs : list of ShearAlfvenWave
-        A list of ShearAlfvenWave objects to be superposed. The first wave in the list is used
-        as the base wave and defines the reference `B0` field for the superposition. All other
+        A list of ShearAlfvenWave objects to be superposed. The first wave in
+        the list is used
+        as the base wave and defines the reference `B0` field for the
+        superposition. All other
         waves in the list must have the same `B0`.
 
     Raises
@@ -2687,13 +2783,18 @@ class ShearAlfvenWavesSuperposition(
         phase=0.0,
     ):
         """
-        Converts AE3DEigenvector harmonics into ShearAlfvenHarmonics submerged in the given BoozerMagneticField.
+        Converts AE3DEigenvector harmonics into ShearAlfvenHarmonics submerged
+        in the given BoozerMagneticField.
 
         Args:
-            eigenvector (AE3DEigenvector): The eigenvector object containing harmonics from the AE3D simulation.
-            B0 (BoozerMagneticField): The background magnetic field (computed separately), in Tesla
-            max_dB_normal_by_B0 (float): Desired ration of maximum normal B from SAW mode over B0 field
-            minor_radius_meters (float): Stellarator's minor radius, in meters. User can get this from VMEC wout equilibrium
+            eigenvector (AE3DEigenvector): The eigenvector object containing
+                harmonics from the AE3D simulation.
+            B0 (BoozerMagneticField): The background magnetic field
+                (computed separately), in Tesla
+            max_dB_normal_by_B0 (float): Desired ratio of maximum normal B
+                from SAW mode over B0 field
+            minor_radius_meters (float): Stellarator's minor radius, in meters.
+                User can get this from VMEC wout equilibrium
 
         Returns:
             ShearAlfvenWavesSuperposition: A superposition of ShearAlfvenHarmonics.
@@ -2745,9 +2846,9 @@ class ShearAlfvenWavesSuperposition(
             / ((iota * I + G) * minor_radius_meters)
             * (G * unscaled_SAW.dalphadtheta() - I * unscaled_SAW.dalphadzeta())
         )
-        max_Bpsi_value = np.max(np.abs(Bpsi_default))
+        np.max(np.abs(Bpsi_default))
         max_index = np.argmax(np.abs(Bpsi_default))
-        max_s, max_theta, max_zeta = (
+        _max_s, _max_theta, _max_zeta = (
             points[max_index, 0],
             points[max_index, 1],
             points[max_index, 2],
@@ -2755,7 +2856,8 @@ class ShearAlfvenWavesSuperposition(
 
         Phihat_scale_factor = max_dB_normal_by_B0 / np.max(np.abs(Bpsi_default))
 
-        # Having determine the scale factor, initialize harmonics with corrected amplitudes:
+        # Having determined the scale factor, initialize harmonics with
+        # corrected amplitudes:
         harmonic_list = []
         for harmonic in eigenvector.harmonics:
             sbump = eigenvector.s_coords

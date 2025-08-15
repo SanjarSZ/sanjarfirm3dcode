@@ -16,12 +16,14 @@ def plot_trajectory_poloidal(res_ty, helicity_M=1, helicity_N=0, ax=None):
     is the initial flux surface, and the solid circle is the plasma boundary.
 
     Args:
-        res_ty : A 2D numpy array of shape (nsteps, 5) containing the trajectory of a single particle in Boozer coordinates
-                (s, theta, zeta, vpar). Tracing should be performed with forget_exact_path=False to save the trajectory
-                information.
+        res_ty : A 2D numpy array of shape (nsteps, 5) containing the
+                 trajectory of a single particle in Boozer coordinates
+                 (s, theta, zeta, vpar). Tracing should be performed with
+                 forget_exact_path=False to save the trajectory information.
         helicity_M : Helicity M value for the transformation (default: 1)
         helicity_N : Helicity N value for the transformation (default: 0)
-        ax : Optional matplotlib Axes object to plot on. If None, a new figure and axes will be created.
+        ax : Optional matplotlib Axes object to plot on. If None, a new
+             figure and axes will be created.
 
     Returns:
         ax : The matplotlib Axes object containing the plot.
@@ -65,14 +67,18 @@ def plot_trajectory_overhead_cyl(res_ty, field, ax=None):
     r"""
     Given the trajectory of a single particle in Boozer coordinates, plot
     in the overhead cylindrical plane (X,Y) where X = R cos(phi) and Y = R sin(phi).
-    This plot visualizes an overhead view of the particle trajectory in cylindrical coordinates.
+    This plot visualizes an overhead view of the particle trajectory in
+    cylindrical coordinates.
     The dashed circle corresponds to the magnetic axis.
 
     Args:
-        res_ty : A 2D numpy array of shape (nsteps, 5) containing the trajectory of a single particle in Boozer coordinates
-                (s, theta, zeta, vpar).
-        field : The :class:`BoozerMagneticField` instance used to set the points for the field.
-        ax : Optional matplotlib Axes object to plot on. If None, a new figure and axes will be created.
+        res_ty : A 2D numpy array of shape (nsteps, 5) containing the
+                 trajectory of a single particle in Boozer coordinates
+                 (s, theta, zeta, vpar).
+        field : The :class:`BoozerMagneticField` instance used to set
+                the points for the field.
+        ax : Optional matplotlib Axes object to plot on. If None, a new
+             figure and axes will be created.
 
     Returns:
         ax : The matplotlib Axes object containing the plot.
@@ -89,7 +95,6 @@ def plot_trajectory_overhead_cyl(res_ty, field, ax=None):
     points[:, 2] = zetas_grid
     field.set_points(points)
     R_axis = field.R()[:, 0]
-    Z_axis = field.Z()[:, 0]
     nu = field.nu()[:, 0]
     phi_axis = zetas_grid - nu
 

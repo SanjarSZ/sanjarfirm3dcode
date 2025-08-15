@@ -25,14 +25,17 @@ def compute_loss_fraction(res_tys, tmin=1e-7, tmax=1e-2, ntime=1000):
     Compute the fraction of particles lost as a function of time.
 
     Args:
-        res_tys : List of particle trajectories, where each trajectory is a 2D array with shape (nsteps, 5)
-                 containing time and coordinates (t, s, theta, zeta, vpar).
+        res_tys : List of particle trajectories, where each trajectory is a 2D
+                  array with shape (nsteps, 5) containing time and coordinates
+                  (t, s, theta, zeta, vpar).
         tmin : Minimum time to consider for loss fraction (default: 1e-7)
         tmax : Maximum time to consider for loss fraction (default: 1e-2)
         ntime : Number of time points to evaluate the loss fraction (default: 1000)
     Returns:
-        times : A numpy array of shape (ntime,) containing the time points at which the loss fraction is evaluated.
-        loss_frac : A numpy array of shape (ntime,) containing the fraction of particles lost at each time point.
+        times : A numpy array of shape (ntime,) containing the time points at
+                which the loss fraction is evaluated.
+        loss_frac : A numpy array of shape (ntime,) containing the fraction of
+                    particles lost at each time point.
     """
     nparticles = len(res_tys)
 
@@ -51,18 +54,24 @@ def compute_loss_fraction(res_tys, tmin=1e-7, tmax=1e-2, ntime=1000):
 
 def compute_trajectory_cylindrical(res_ty, field):
     r"""
-    Compute the cylindrical coordinates (R, Z, phi) in a given BoozerMagneticField for each particle trajectory.
+    Compute the cylindrical coordinates (R, Z, phi) in a given
+    BoozerMagneticField for each particle trajectory.
 
     Args:
-        res_ty : A 2D numpy array of shape (nsteps, 5) containing the trajectory of a single particle in Boozer coordinates
-                (s, theta, zeta, vpar). Tracing should be performed with forget_exact_path=False to save the trajectory
-                information.
-        field : The :class:`BoozerMagneticField` instance used to set the points for the field.
+        res_ty : A 2D numpy array of shape (nsteps, 5) containing the
+                 trajectory of a single particle in Boozer coordinates
+                 (s, theta, zeta, vpar). Tracing should be performed with
+                 forget_exact_path=False to save the trajectory information.
+        field : The :class:`BoozerMagneticField` instance used to set the
+                points for the field.
 
     Returns:
-        R_traj : A numpy array with shape (nsteps,) containing the radial coordinate R for the particle trajectory.
-        Z_traj : A numpy array with shape (nsteps,) containing the vertical coordinate Z for the particle trajectory.
-        phi_traj : A numpy array with shape (nsteps,) containing the azimuthal angle phi for the particle trajectory.
+        R_traj : A numpy array with shape (nsteps,) containing the radial
+                 coordinate R for the particle trajectory.
+        Z_traj : A numpy array with shape (nsteps,) containing the vertical
+                 coordinate Z for the particle trajectory.
+        phi_traj : A numpy array with shape (nsteps,) containing the
+                   azimuthal angle phi for the particle trajectory.
     """
     nsteps = len(res_ty[:, 0])
     points = np.zeros((nsteps, 3))
@@ -81,7 +90,8 @@ def compute_trajectory_cylindrical(res_ty, field):
 
 class PassingPoincare:
     """
-    Class to compute and store passing Poincare maps and related quantities for a given BoozerMagneticField.
+    Class to compute and store passing Poincare maps and related quantities
+    for a given BoozerMagneticField.
     """
 
     def __init__(
@@ -99,29 +109,38 @@ class PassingPoincare:
         Nmaps=500,
         comm=None,
         tmax=1e-2,
-        solver_options={},
+        solver_options=None,
     ):
         """
-        Initialize and compute the passing Poincare map, evaluated by integrating the guiding
-        center equations until the trajectory returns to the zeta = 0 plane.
-        We assume that the particle is passing, so the parallel velocity does not change sign.
+        Initialize and compute the passing Poincare map, evaluated by
+        integrating the guiding center equations until the trajectory returns
+        to the zeta = 0 plane.
+        We assume that the particle is passing, so the parallel velocity does
+        not change sign.
 
         Args:
-            field : The BoozerMagneticField instance used for integration.
-            lam : The pitch-angle variable, lambda = v_perp^2/(v^2 B).
-            sign_vpar : The sign of the parallel velocity. Should be either +1 or -1.
+            field : The :class:`BoozerMagneticField` instance.
             mass : Particle mass.
             charge : Particle charge.
             Ekin : Particle total energy.
-            s_init : List of initial s coordinates for the Poincare map. (default: None, ns_poinc is used instead)
-            thetas_init : List of initial theta coordinates for the Poincare map. (default: None, ntheta_poinc is used instead)
-            ns_poinc : Number of initial conditions in s for Poincare plot (default: 120).
-            ntheta_poinc : Number of initial conditions in theta for Poincare plot (default: 2).
-            Nmaps : Number of Poincare return maps to compute for each initial condition (default: 500).
+            s_init : List of initial s coordinates for the Poincare map.
+                     (default: None, ns_poinc is used instead)
+            thetas_init : List of initial theta coordinates for the Poincare
+                          map. (default: None, ntheta_poinc is used instead)
+            ns_poinc : Number of initial conditions in s for Poincare plot
+                       (default: 120).
+            ntheta_poinc : Number of initial conditions in theta for Poincare
+                           plot (default: 2).
+            Nmaps : Number of Poincare return maps to compute for each initial
+                    condition (default: 500).
             comm : MPI communicator for parallel execution (default: None).
-            tmax : Maximum integration time for each segment of the Poincare map (default: 1e-2 s).
-            solver_options : Dictionary of options to pass to the ODE solver (default: {}).
+            tmax : Maximum integration time for each segment of the Poincare
+                   map (default: 1e-2 s).
+            solver_options : Dictionary of options to pass to the ODE solver
+                             (default: {}).
         """
+        if solver_options is None:
+            solver_options = {}
         if sign_vpar not in [-1, 1]:
             raise ValueError("sign_vpar should be either -1 or +1")
 
@@ -159,9 +178,10 @@ class PassingPoincare:
 
     def initialize_passing_map(self):
         r"""
-        Given a :class:`BoozerMagneticField` instance, this function generates initial positions
-        for the passing Poincare return map. Particles are initialized on the zeta = 0 plane
-        such that the parallel velocity is consistent with the prescribed total energy and pitch-angle
+        Given a :class:`BoozerMagneticField` instance, this function generates
+        initial positions for the passing Poincare return map. Particles are
+        initialized on the zeta = 0 plane such that the parallel velocity is
+        consistent with the prescribed total energy and pitch-angle
         variable, :math:`\lambda = v_\perp^2/(v^2 B)`.
 
         Returns:
@@ -257,7 +277,8 @@ class PassingPoincare:
 
     def compute_passing_map(self):
         r"""
-        Evaluates the passing Poincare return map for the initialized particle positions.
+        Evaluates the passing Poincare return map for the initialized particle
+        positions.
         """
         Ntrj = len(self.s_init)
 
@@ -272,7 +293,7 @@ class PassingPoincare:
             thetas_traj = [tr[1]]
             vpars_traj = [tr[2]]
             t_traj = [0]
-            for jj in range(self.Nmaps):
+            for _jj in range(self.Nmaps):
                 try:
                     tr, time = self.passing_map(tr)
                     s_traj.append(tr[0])
@@ -296,13 +317,17 @@ class PassingPoincare:
 
     def compute_frequencies(self):
         """
-        Compute the passing particle poloidal and toroidal transit frequencies and mean radial position.
-        The frequency is only computed if the trajectory has completed at least one full Poincare return map
-        before the trajectory is terminated due to a time limit or stopping criterion. Since the frequency
-        will depend on field-line label and trapping well in a general 3D field, an average is taken over
-        all trajectories initialized on the same flux surface and all Poincare return maps along each trajectory.
-        Since the frequency profile will flatten in a phase-space island, it is sometimes easier to interpret the
-        frequency profile in a field with enforced quasisymmetry (i.e., initialize BoozerRadialInterpolant with N
+        Compute the passing particle poloidal and toroidal transit frequencies
+        and mean radial position.
+        The frequency is only computed if the trajectory has completed at least
+        one full Poincare return map before the trajectory is terminated due to
+        a time limit or stopping criterion. Since the frequency will depend on
+        field-line label and trapping well in a general 3D field, an average is
+        taken over all trajectories initialized on the same flux surface and
+        all Poincare return maps along each trajectory.
+        Since the frequency profile will flatten in a phase-space island, it is
+        sometimes easier to interpret the frequency profile in a field with
+        enforced quasisymmetry (i.e., initialize BoozerRadialInterpolant with N
         prescribed).
 
         Returns:
@@ -310,11 +335,11 @@ class PassingPoincare:
             omega_zeta : List of toroidal transit frequencies.
             init_s : List of initial s values for each trajectory.
         """
-        if "axis" in self.solver_options:
-            if self.solver_options["axis"] != 0:
-                raise ValueError(
-                    'ODE solver must integrate with solver_options["axis"]=0 to compute passing frequencies.'
-                )
+        if "axis" in self.solver_options and self.solver_options["axis"] != 0:
+            raise ValueError(
+                'ODE solver must integrate with solver_options["axis"]=0 to '
+                'compute passing frequencies.'
+            )
 
         self.field.set_points(np.array([[1], [0], [0]]).T)
         sign_G = np.sign(self.field.G()[0])
@@ -322,7 +347,7 @@ class PassingPoincare:
         omega_theta = []
         omega_zeta = []
         init_s = []
-        for s_traj, theta_traj, vpar_traj, t_traj in zip(
+        for s_traj, theta_traj, _vpar_traj, t_traj in zip(
             self.s_all, self.thetas_all, self.vpars_all, self.t_all
         ):
             if (
@@ -372,8 +397,10 @@ class PassingPoincare:
         call this function on MPI rank 0.
 
         Args:
-            ax : Matplotlib axis to plot on. If None, a new figure and axis are created.
-            filename : Name of the file to save the plot (default: 'passing_poincare.pdf').
+            ax : Matplotlib axis to plot on. If None, a new figure and axis are
+                 created.
+            filename : Name of the file to save the plot
+                       (default: 'passing_poincare.pdf').
         Returns:
             ax : The Matplotlib axis containing the plot.
         """
@@ -404,7 +431,8 @@ class PassingPoincare:
 
 class TrappedPoincare:
     """
-    Class to compute and store trapped Poincare maps and related quantities for a given BoozerMagneticField.
+    Class to compute and store trapped Poincare maps and related quantities
+    for a given BoozerMagneticField.
     """
 
     def __init__(
@@ -425,38 +453,46 @@ class TrappedPoincare:
         Nmaps=500,
         comm=None,
         tmax=1e-2,
-        solver_options={},
+        solver_options=None,
     ):
         r"""
-        Initialize and compute the trapped Poincare map, evaluated by integrating the guiding
-        center equations from the v_{\|} = 0 plane until the trajectory returns to the v_{\|} = 0 plane.
-        The field strength contours are assumed to have helicity (M,N) in Boozer coordinates. The mapping
-        coordinate, eta, is chosen based on the helicity of the field strength contours: if M = 0 (e.g., QP or OP),
-        then eta=theta is used, if N = 0 (e.g., QA/OA, QH/OA), then eta = nfp*zeta is used.
+        Initialize and compute the trapped Poincare map, evaluated by
+        integrating the guiding center equations from the v_{\|} = 0 plane
+        until the trajectory returns to the v_{\|} = 0 plane.
+        The field strength contours are assumed to have helicity (M,N) in
+        Boozer coordinates. The mapping coordinate, eta, is chosen based on
+        the helicity of the field strength contours: if M = 0 (e.g., QP or
+        OP), then eta=theta is used, if N = 0 (e.g., QA/OA, QH/OA), then
+        eta = nfp*zeta is used.
 
-        The particle mu is selected by providing a single mirror point, (s_mirror, theta_mirror, zeta_mirror), where
-        the parallel velocity is zero. The pitch-angle variable, :math:`\lambda = v_\perp^2/(v^2 B)`, is computed and held
-        fixed for all trajectories.
+        The particle mu is selected by providing a single mirror point,
+        (s_mirror, theta_mirror, zeta_mirror), where the parallel velocity is
+        zero. The pitch-angle variable, :math:`\lambda = v_\perp^2/(v^2 B)`,
+        is computed and held fixed for all trajectories.
 
         Args:
-            field : The BoozerMagneticField instance used for integration.
-            helicity_M : The poloidal helicity of the magnetic field.
-            helicity_N : The toroidal helicity of the magnetic field.
-            s_mirror : The flux surface where the particle mirrors.
-            theta_mirror : The poloidal angle where the particle mirrors.
-            zeta_mirror : The toroidal angle where the particle mirrors.
+            field : The :class:`BoozerMagneticField` instance.
             mass : Particle mass.
             charge : Particle charge.
             Ekin : Particle total energy.
-            s_init : List of initial s coordinates for the Poincare map. (default: None, ns_poinc is used instead)
-            etas_init : List of initial eta coordinates for the Poincare map. (default: None, neta_poinc is used instead)
-            ns_poinc : Number of initial conditions in s for Poincare plot (default: 120).
-            neta_poinc : Number of initial conditions in eta for Poincare plot (default: 2).
-            Nmaps : Number of Poincare return maps to compute for each initial condition (default: 500).
+            s_init : List of initial s coordinates for the Poincare map.
+                     (default: None, ns_poinc is used instead)
+            etas_init : List of initial eta coordinates for the Poincare map.
+                        (default: None, neta_poinc is used instead)
+            ns_poinc : Number of initial conditions in s for Poincare plot
+                       (default: 120).
+            neta_poinc : Number of initial conditions in eta for Poincare plot
+                         (default: 2).
+            Nmaps : Number of Poincare return maps to compute for each initial
+                    condition (default: 500).
             comm : MPI communicator for parallel execution (default: None).
-            tmax : Maximum integration time for each segment of the Poincare map (default: 1e-2 s).
-            solver_options : Dictionary of options to pass to the ODE solver (default: {}).
+            tmax : Maximum integration time for each segment of the Poincare
+                   map (default: 1e-2 s).
+            solver_options : Dictionary of options to pass to the ODE solver
+                             (default: {}).
         """
+        if solver_options is None:
+            solver_options = {}
         self.field = field
 
         self.helicity_M = helicity_M
@@ -603,10 +639,12 @@ class TrappedPoincare:
 
     def initialize_trapped_map(self):
         r"""
-        For the given :class:`BoozerMagneticField` instance, this function generates initial positions
-        for the trapped Poincare return map. Particles are initialized on the vpar = 0 plane
-        such that the parallel velocity is consistent with the prescribed total energy and pitch-angle
-        variable, :math:`\lambda = v_\perp^2/(v^2 B)` (i.e., all points are mirror points).
+        For the given :class:`BoozerMagneticField` instance, this function
+        generates initial positions for the trapped Poincare return map.
+        Particles are initialized on the vpar = 0 plane such that the parallel
+        velocity is consistent with the prescribed total energy and pitch-angle
+        variable, :math:`\lambda = v_\perp^2/(v^2 B)` (i.e., all points are
+        mirror points).
 
         Returns:
             s_init : List of initial s coordinates for the Poincare map.
@@ -651,13 +689,15 @@ class TrappedPoincare:
                     method="toms748",
                     bracket=[0, np.pi],
                 )
-            except Exception:
+            except Exception as err:
                 raise RuntimeError(
-                    f"Root solve for chi_mirror failed! s = {s}, eta/(2*pi) = {eta / (2 * np.pi)}"
-                )
+                    f"Root solve for chi_mirror failed! s = {s}, "
+                    f"eta/(2*pi) = {eta / (2 * np.pi)}"
+                ) from err
             if not sol.converged:
                 raise RuntimeError(
-                    f"Root solve for chi_mirror did not converge! s = {s}, eta/(2*pi) = {eta / (2 * np.pi)}"
+                    f"Root solve for chi_mirror did not converge! s = {s}, "
+                    f"eta/(2*pi) = {eta / (2 * np.pi)}"
                 )
             return sol.root
 
@@ -685,7 +725,9 @@ class TrappedPoincare:
                 etas_init.append(etas2d[i])
             except RuntimeError:
                 warn(
-                    f"Root solve for chi_mirror failed! s = {s2d[i]}, eta/(2*pi) = {etas2d[i] / (2 * np.pi)}"
+                    f"Root solve for chi_mirror failed! s = {s2d[i]}, "
+                    f"eta/(2*pi) = {etas2d[i] / (2 * np.pi)}",
+                    stacklevel=2
                 )
 
         if self.comm is not None:
@@ -697,7 +739,8 @@ class TrappedPoincare:
 
     def compute_trapped_map(self):
         r"""
-        Evaluates the trapped Poincare return map for the initialized particle positions.
+        Evaluates the trapped Poincare return map for the initialized particle
+        positions.
         """
         self.s_init, self.chis_init, self.etas_init = self.initialize_trapped_map()
         Ntrj = len(self.s_init)
@@ -714,13 +757,14 @@ class TrappedPoincare:
             etas_traj = [tr[2]]
             t_traj = [0]
             broken = False
-            for jj in range(self.Nmaps):
+            for _jj in range(self.Nmaps):
                 try:
                     # Apply trapped map twice to return to same vpar = 0 plane
                     tr, time = self.trapped_map(tr)
                     tr, time = self.trapped_map(tr)
                     if np.abs(tr[1] - chis_traj[-1]) > 2 * np.pi:
-                        warn("Barely trapped particle detected in trapped_map.")
+                        warn("Barely trapped particle detected in trapped_map.",
+                             stacklevel=2)
                         broken = True
                         break
                     s_traj.append(tr[0])
@@ -750,8 +794,10 @@ class TrappedPoincare:
         call this function on MPI rank 0.
 
         Args:
-            ax : Matplotlib axis to plot on. If None, a new figure and axis are created.
-            filename : Name of the file to save the plot (default: 'trapped_poincare.pdf').
+            ax : Matplotlib axis to plot on. If None, a new figure and axis are
+                 created.
+            filename : Name of the file to save the plot
+                       (default: 'trapped_poincare.pdf').
         Returns:
             ax : The Matplotlib axis containing the plot.
         """
@@ -790,13 +836,17 @@ class TrappedPoincare:
 
     def compute_frequencies(self):
         """
-        Compute the trapped particle eta and bounce frequencies and mean radial position.
-        The frequency is only computed if the trajectory has completed at least one full Poincare return map
-        before the trajectory is terminated due to a time limit or stopping criterion. Since the frequency
-        will depend on field-line label and trapping well in a general 3D field, an average is taken over
-        all trajectories initialized on the same flux surface and all Poincare return maps along each trajectory.
-        Since the frequency profile will flatten in a phase-space island, it is sometimes easier to interpret the
-        frequency profile in a field with enforced quasisymmetry (i.e., initialize BoozerRadialInterpolant with N
+        Compute the trapped particle eta and bounce frequencies and mean
+        radial position.
+        The frequency is only computed if the trajectory has completed at least
+        one full Poincare return map before the trajectory is terminated due to
+        a time limit or stopping criterion. Since the frequency will depend on
+        field-line label and trapping well in a general 3D field, an average is
+        taken over all trajectories initialized on the same flux surface and
+        all Poincare return maps along each trajectory.
+        Since the frequency profile will flatten in a phase-space island, it is
+        sometimes easier to interpret the frequency profile in a field with
+        enforced quasisymmetry (i.e., initialize BoozerRadialInterpolant with N
         prescribed).
 
         Returns:
@@ -806,13 +856,14 @@ class TrappedPoincare:
         """
         if self.solver_options["axis"] != 0:
             raise ValueError(
-                'ODE solver must integrate with solver_options["axis"]=0 to compute trapped frequencies.'
+                'ODE solver must integrate with solver_options["axis"]=0 to '
+                'compute trapped frequencies.'
             )
 
         omega_eta = []
         omega_b = []
         init_s = []
-        for s_traj, chi_traj, eta_traj, t_traj in zip(
+        for s_traj, _chi_traj, eta_traj, t_traj in zip(
             self.s_all, self.chis_all, self.etas_all, self.t_all
         ):
             if (
@@ -845,20 +896,24 @@ class TrappedPoincare:
 
 def compute_peta(field_or_saw, points, vpar, mass, charge, helicity_M, helicity_N):
     r"""
-    Given a ShearAlfvenWave or BoozerMagneticField instance, a point in Boozer coordinates, and particle properties, compute the
-    value of the canonical momentum, :math:`p_{\eta}`. This quantity is conserved under the unperturbed guiding center equations
-    if the field strength is exactly quasisymmetric with helicity (M,N) and :math:`\alpha = 0`.
+    Given a ShearAlfvenWave or BoozerMagneticField instance, a point in
+    Boozer coordinates, and particle properties, compute the value of the
+    canonical momentum, :math:`p_{\eta}`. This quantity is conserved under
+    the unperturbed guiding center equations if the field strength is exactly
+    quasisymmetric with helicity (M,N) and :math:`\alpha = 0`.
 
-    :math:`p_{\eta} = (M G + N I) \left(\frac{m v_{\|\|}}{B} + q \alpha \right) + q (M \psi - M \psi')`
+    :math:`p_{\eta} = (M G + N I) \left(\frac{m v_{\|\|}}{B} + q \alpha \right) +
+    q (M \psi - M \psi')`
 
     If field_or_saw is a BoozerMagneticField instance, then alpha = 0.
 
     Args:
         field_or_saw : The BoozerMagneticField or ShearAlfvenWave instance.
-        points : A numpy array of shape (npoints,4) containing the coordinates (s,theta,zeta,t).
+        points : A numpy array of shape (npoints,4) containing the coordinates
+                 (s,theta,zeta,t).
             If field_or_saw is a ShearAlfvenWave, then t is the time coordinate.
-            If field_or_saw is a BoozerMagneticField, then t is ignored, and points is allowed to
-            have shape (npoints,3) for (s,theta,zeta).
+            If field_or_saw is a BoozerMagneticField, then t is ignored, and
+            points is allowed to have shape (npoints,3) for (s,theta,zeta).
         vpar : A numpy array of shape (npoints,) containing the parallel velocity.
         mass : Mass of the particle.
         charge : Charge of the particle.
@@ -871,7 +926,8 @@ def compute_peta(field_or_saw, points, vpar, mass, charge, helicity_M, helicity_
     """
     if points.shape[1] not in [3, 4]:
         raise ValueError(
-            "Points must have shape (npoints, 4) for (s, theta, zeta, t) or (npoints, 3) for (s, theta, zeta)"
+            "Points must have shape (npoints, 4) for (s, theta, zeta, t) or "
+            "(npoints, 3) for (s, theta, zeta)"
         )
     if isinstance(vpar, float):
         vpar = np.array([vpar])
@@ -919,11 +975,13 @@ def compute_peta(field_or_saw, points, vpar, mass, charge, helicity_M, helicity_
 
 def compute_Eprime(saw, points, vpar, mu, mass, charge, helicity_M, helicity_N):
     r"""
-    Compute the invariant Eprime for a ShearAlfvenHarmonic instance given points in Boozer coordinates.
+    Compute the invariant Eprime for a ShearAlfvenHarmonic instance given
+    points in Boozer coordinates.
 
     Args:
         saw : An instance of ShearAlfvenHarmonic.
-        points : A numpy array of shape (npoints,4) containing the coordinates (s,theta,zeta,t).
+        points : A numpy array of shape (npoints,4) containing the coordinates
+                 (s,theta,zeta,t).
         vpar : A numpy array of shape (npoints,) containing the parallel velocity.
         mu : Magnetic moment of the particle, vperp^2/(2 B).
         mass : Mass of the particle.
@@ -994,33 +1052,42 @@ class PassingPerturbedPoincare:
         Nmaps=500,
         comm=None,
         tmax=1e-2,
-        solver_options={},
+        solver_options=None,
     ):
         """
-        Initialize the PassingPerturbedPoincare class, which computes the Poincare return map
-        for passing particles in a ShearAlfvenHarmonic magnetic field.
+        Initialize the PassingPerturbedPoincare class, which computes the
+        Poincare return map for passing particles in a ShearAlfvenHarmonic
+        magnetic field.
 
-        The field strength contours are assumed to have helicity (M,N) in Boozer coordinates such that
-        the field strength can be expressed as B(s,chi), where chi = M*theta - N*zeta is the helical angle.
-        The mapping coordinate, eta, is chosen based on the helicity of the field strength contours: if M = 0 (e.g., QP or OP),
-        then eta=theta is used, if N = 0 (e.g., QA/OA, QH/OA), then eta = zeta is used.
+        The field strength contours are assumed to have helicity (M,N) in
+        Boozer coordinates such that the field strength can be expressed as
+        B(s,chi), where chi = M*theta - N*zeta is the helical angle.
+        The mapping coordinate, eta, is chosen based on the helicity of the
+        field strength contours: if M = 0 (e.g., QP or OP), then eta=theta is
+        used, if N = 0 (e.g., QA/OA, QH/OA), then eta = zeta is used.
 
-        The ShearAlfvenHarmonic can then be expressed in terms of the mapping coordinates with phase,
-        m'*chi - n'*eta + omega * t.
+        The ShearAlfvenHarmonic can then be expressed in terms of the mapping
+        coordinates with phase, m'*chi - n'*eta + omega * t.
 
-        The map is evaluated by integrating the guiding center equations from the eta - omega/n' * t = 0 plane until the
-        trajectory returns to the same plane.
+        The map is evaluated by integrating the guiding center equations from
+        the eta - omega/n' * t = 0 plane until the trajectory returns to the
+        same plane.
 
-        The map is well-defined (i.e., trajectories don't cross in the (s,chi=M*theta - N*zeta) plane) if
-        the unperturbed field is quasisymmetric with helicity (M,N). However, the map can still be computed
-        for a non-quasisymmetric field, but the trajectories may cross in the (s,chi) plane.
+        The map is well-defined (i.e., trajectories don't cross in the
+        (s,chi=M*theta - N*zeta) plane) if the unperturbed field is
+        quasisymmetric with helicity (M,N). However, the map can still be
+        computed for a non-quasisymmetric field, but the trajectories may
+        cross in the (s,chi) plane.
 
-        The constants of motion are the magnetic moment, mu = vperp^2/(2 B), and the shifted energy,
-        Eprime = n' * E - omega * p_eta, E is the total energy, and p_eta is the canonical momentum.
+        The constants of motion are the magnetic moment, mu = vperp^2/(2 B),
+        and the shifted energy, Eprime = n' * E - omega * p_eta, E is the
+        total energy, and p_eta is the canonical momentum.
 
-        These constants of motion can be prescribed directly with the Eprime and mu parameters. Alternatively,
-        they can be computed from the prescribed pitch-angle variable, lam = vperp^2/(v^2 B), total unperturbed kinetic energy, Ekin,
-        and a given point p0 in Boozer coordinates.
+        These constants of motion can be prescribed directly with the Eprime
+        and mu parameters. Alternatively, they can be computed from the
+        prescribed pitch-angle variable, lam = vperp^2/(v^2 B), total
+        unperturbed kinetic energy, Ekin, and a given point p0 in Boozer
+        coordinates.
 
         Args:
             saw : An instance of ShearAlfvenHarmonic representing the magnetic field.
@@ -1031,18 +1098,29 @@ class PassingPerturbedPoincare:
             helicity_N : Toroidal helicity of the magnetic field.
             Eprime: Shifted energy, Eprime = n' * E - omega * p_eta.
             mu: Magnetic moment, mu = vperp^2/(2 B).
-            Ekin: Total unperturbed kinetic energy of the particle, used to compute Eprime if not provided.
+            Ekin: Total unperturbed kinetic energy of the particle, used to
+                compute Eprime if not provided.
             p0: Initial point in Boozer coordinates for evaluation of Eprime.
-            lam: Pitch angle variable, lambda = vperp^2/(v^2 B), used to compute mu if not provided.
-            s_init : List of initial s coordinates for the Poincare map. (default: None, ns_poinc is used instead)
-            chis_init : List of initial chi coordinates for the Poincare map. (default: None, nchi_poinc is used instead)
-            ns_poinc : Number of initial conditions in s for Poincare plot (default: 120).
-            nchi_poinc : Number of initial conditions in chi for Poincare plot (default: 2).
-            Nmaps : Number of Poincare return maps to compute for each initial condition (default: 500).
+            lam: Pitch angle variable, lambda = vperp^2/(v^2 B), used to
+                compute mu if not provided.
+            s_init : List of initial s coordinates for the Poincare map.
+                (default: None, ns_poinc is used instead)
+            chis_init : List of initial chi coordinates for the Poincare map.
+                (default: None, nchi_poinc is used instead)
+            ns_poinc : Number of initial conditions in s for Poincare plot
+                (default: 120).
+            nchi_poinc : Number of initial conditions in chi for Poincare plot
+                (default: 2).
+            Nmaps : Number of Poincare return maps to compute for each initial
+                condition (default: 500).
             comm : MPI communicator for parallel execution (default: None).
-            tmax : Maximum integration time for each segment of the Poincare map (default: 1e-2 s).
-            solver_options : Dictionary of options to pass to the ODE solver (default: {}).
+            tmax : Maximum integration time for each segment of the Poincare
+                map (default: 1e-2 s).
+            solver_options : Dictionary of options to pass to the ODE solver
+                (default: {}).
         """
+        if solver_options is None:
+            solver_options = {}
         if not isinstance(saw, ShearAlfvenHarmonic):
             raise TypeError("Expected saw to be an instance of ShearAlfvenHarmonic")
         if sign_vpar not in [-1, 1]:
@@ -1094,7 +1172,8 @@ class PassingPerturbedPoincare:
             self.Ekin = None
         elif Ekin is not None and lam is not None and p0 is not None:
             """
-            Compute unperturbed values of mu, p_eta, and Eprime from the given parameters.
+            Compute unperturbed values of mu, p_eta, and Eprime from the given
+            parameters.
             """
             v0 = np.sqrt(2 * Ekin / mass)  # Total velocity from kinetic energy
             self.mu = 0.5 * lam * v0**2  # mu = vperp^2/(2 B)
@@ -1118,7 +1197,8 @@ class PassingPerturbedPoincare:
             self.Eprime = self.nprime * Ekin - self.omega * Peta0
         else:
             raise ValueError(
-                "Either Eprime and mu must be provided, or Ekin, lam, and p0 must be provided."
+                "Either Eprime and mu must be provided, or Ekin, lam, and p0 "
+                "must be provided."
             )
 
         # Initialize the passing map
@@ -1179,7 +1259,8 @@ class PassingPerturbedPoincare:
             )
             if (b**2 - 4 * a * c) < 0:
                 raise RuntimeError(
-                    "No solution for vpar found! Check the parameters and initial conditions."
+                    "No solution for vpar found! Check the parameters and "
+                    "initial conditions."
                 )
             else:
                 return (-b + self.sign_vpar * np.sqrt(b**2 - 4 * a * c)) / (2 * a)
@@ -1260,19 +1341,23 @@ class PassingPerturbedPoincare:
 
     def passing_map(self, point, t, eta):
         r"""
-        Integrates the GC equations from the provided point on the eta - omega/n' * t plane
-        to the next intersection with this plane. An assumption is made that the particle
-        is passing, so a RuntimeError is raised if the particle mirrors.
+        Integrates the GC equations from the provided point on the eta -
+        omega/n' * t plane to the next intersection with this plane. An
+        assumption is made that the particle is passing, so a RuntimeError
+        is raised if the particle mirrors.
 
-        Since the phase of the ShearAlfvenWave depends on time, the initial time, t, is
-        passed as an argument.
+        Since the phase of the ShearAlfvenWave depends on time, the initial
+        time, t, is passed as an argument.
 
         Args:
-            point : A numpy array of shape (3,) containing the initial coordinates (s,chi,eta).
+            point : A numpy array of shape (3,) containing the initial
+                coordinates (s,chi,eta).
             t : Initial time at which the map is evaluated
         Returns:
-            point : A numpy array of shape (3,) containing the coordinates (s,chi,eta).
-            time : The time at which the trajectory returns to the eta - omega/n' * t plane.
+            point : A numpy array of shape (3,) containing the coordinates
+                (s,chi,eta).
+            time : The time at which the trajectory returns to the eta -
+                omega/n' * t plane.
         """
         phase = self.omega * t
         self.saw.phase = phase
@@ -1338,7 +1423,8 @@ class PassingPerturbedPoincare:
 
     def compute_passing_map(self):
         r"""
-        Evaluates the passing Poincare return map for the initialized particle positions.
+        Evaluates the passing Poincare return map for the initialized particle
+        positions.
         """
         Ntrj = len(self.s_init)
 
@@ -1355,7 +1441,7 @@ class PassingPerturbedPoincare:
             eta_traj = [0]
             vpars_traj = [tr[2]]
             t_traj = [0]
-            for jj in range(self.Nmaps):
+            for _jj in range(self.Nmaps):
                 try:
                     tr, time, eta = self.passing_map(tr, t_traj[-1], eta_traj[-1])
                     s_traj.append(tr[0])
@@ -1386,8 +1472,10 @@ class PassingPerturbedPoincare:
         call this function on MPI rank 0.
 
         Args:
-            ax : Matplotlib axis to plot on. If None, a new figure and axis are created.
-            filename : Name of the file to save the plot (default: 'passing_poincare.pdf').
+            ax : Matplotlib axis to plot on. If None, a new figure and axis are
+                 created.
+            filename : Name of the file to save the plot
+                       (default: 'passing_poincare.pdf').
         Returns:
             ax : The Matplotlib axis containing the plot.
         """

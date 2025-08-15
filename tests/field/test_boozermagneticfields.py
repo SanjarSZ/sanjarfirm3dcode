@@ -1,3 +1,4 @@
+import functools
 import unittest
 from pathlib import Path
 
@@ -45,7 +46,6 @@ class TestingAnalytic(unittest.TestCase):
     def test_boozeranalytic(self):
         etabar = 1.1
         B0 = 1.0
-        Bbar = 1.0
         N = 0
         G0 = 1.1
         psi0 = 0.8
@@ -179,8 +179,6 @@ class TestingFiniteBeta(unittest.TestCase):
                 thetas = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
                 zetas = np.linspace(0, 2 * np.pi / bri.nfp, nzeta, endpoint=False)
 
-                dtheta = thetas[1] - thetas[0]
-                dzeta = zetas[1] - zetas[0]
                 thetas, zetas = np.meshgrid(thetas, zetas)
                 thetas_flat = thetas.flatten()
                 zetas_flat = zetas.flatten()
@@ -223,7 +221,9 @@ class TestingFiniteBeta(unittest.TestCase):
                         comm=comm,
                     )
 
-        # These tests require higher resolution equilibrium, since they check for consistency of the Jacobian and satisfying the magnetic differential equation
+        # These tests require higher resolution equilibrium, since they check
+        # for consistency of the Jacobian and satisfying the magnetic
+        # differential equation
         for asym in [False, True]:
             if asym:
                 filename = filename_mhd_lasym
@@ -266,7 +266,9 @@ class TestingFiniteBeta(unittest.TestCase):
                 )
 
                 """
-                These evluation points test that K() satisfies the magnetic differential equation: iota dK/dtheta + dK/dzeta = sqrt(g) mu0*p'(psi) + G'(psi) + iota*I'(psi)
+                These evluation points test that K() satisfies the magnetic
+                differential equation: iota dK/dtheta + dK/dzeta = sqrt(g)
+                mu0*p'(psi) + G'(psi) + iota*I'(psi)
                 """
                 isurf = round(0.75 * len(bri.s_half_ext))
                 points = np.zeros((len(thetas_flat), 3))
@@ -334,7 +336,8 @@ class TestingFiniteBeta(unittest.TestCase):
 
                 """
                 These evaluation points test G(), iota(), modB(), R(), and
-                associated derivatives by comparing with linear interpolation onto vmec full grid.
+                associated derivatives by comparing with linear interpolation
+                onto vmec full grid.
                 """
                 # Perform interpolation from full grid
                 points = np.zeros((len(bri.s_half_ext) - 3, 3))
@@ -350,10 +353,7 @@ class TestingFiniteBeta(unittest.TestCase):
                 iota_full = (iotas[1:-1] + iotas[2::]) / 2.0
                 # magnitude of B at theta = 0, zeta = 0
                 if comm is not None:
-                    if comm.rank == 0:
-                        modB00 = np.sum(bri.bx.bmnc_b, axis=0)
-                    else:
-                        modB00 = None
+                    modB00 = np.sum(bri.bx.bmnc_b, axis=0) if comm.rank == 0 else None
                     modB00 = comm.bcast(modB00, root=0)
                 else:
                     modB00 = np.sum(bri.bx.bmnc_b, axis=0)
@@ -396,13 +396,9 @@ class TestingFiniteBeta(unittest.TestCase):
                 assert np.allclose(bri.modB()[:, 0], modB_full, rtol=1e-2)
                 assert np.allclose(bri.R()[:, 0], R00_full, rtol=1e-2)
 
-                # Only compare away from axis since inacurracies are introduced through
-                # spline due to r ~ sqrt(s) behavior
-                if bri.asym:
-                    mean_dGds = np.mean(np.abs(bri.dGds()[5::, 0]))
-                else:
-                    # This is a vacuum case, so dGds is close to zero
-                    mean_dGds = 1
+                # Only compare away from axis since inacurracies are introduced
+                # through spline due to r ~ sqrt(s) behavior
+                mean_dGds = np.mean(np.abs(bri.dGds()[5:, 0])) if bri.asym else 1
 
                 s_full = np.linspace(0, 1, bri.bx.ns_b + 1)
                 assert np.allclose(
@@ -445,25 +441,18 @@ class TestingFiniteBeta(unittest.TestCase):
                 f = netcdf_file(filename_wout, mmap=False)
 
                 zmns = f.variables["zmns"][()].T
-                lmns = f.variables["lmns"][()].T
-                zmns_full = (f.variables["zmns"][()].T)[:, 1:]
                 lmns_half = (f.variables["lmns"][()].T)[:, 1::]
                 zmns_half = 0.5 * (zmns[:, 0:-1] + zmns[:, 1::])
-                lmns_full = 0.5 * (lmns[:, 1:-1] + lmns[:, 2::])
                 if bri.asym:
-                    lmnc = f.variables["lmnc"][()].T
                     lmnc_half = (f.variables["lmnc"][()].T)[:, 1::]
-                    lmnc_full = 0.5 * (lmnc[:, 1:-1] + lmnc[:, 2::])
                     zmnc = f.variables["zmnc"][()].T
-                    zmnc_full = (f.variables["zmnc"][()].T)[:, 1:-1]
                     zmnc_half = 0.5 * (zmnc[:, 0:-1] + zmnc[:, 1::])
                 else:
-                    lmnc_full = np.zeros_like(lmns_full)
-                    zmnc_full = np.zeros_like(zmns_full)
                     lmnc_half = np.zeros_like(lmns_half)
                     zmnc_half = np.zeros_like(zmns_half)
 
-                # Determine the vmec theta/phi corresponding to theta_b = 0, zeta_b = pi/3
+                # Determine the vmec theta/phi corresponding to theta_b = 0,
+                # zeta_b = pi/3
                 # Here zeta_b = phi + nu
                 # theta + lambda - iota * phi = theta_b - iota * zeta_b
                 # theta + lambda - iota * (pi/3 - nu) = - iota * pi/3
@@ -472,7 +461,7 @@ class TestingFiniteBeta(unittest.TestCase):
                 xm = f.variables["xm"][()]
                 xn = f.variables["xn"][()]
 
-                def theta_diff(theta, isurf):
+                def theta_diff(theta, isurf, lmns_half, xm, xn, nu, lmnc_half, iota):
                     lam = np.sum(
                         lmns_half[:, isurf]
                         * np.sin(xm * theta - xn * (np.pi / 3 - nu[isurf, 0]))
@@ -485,7 +474,17 @@ class TestingFiniteBeta(unittest.TestCase):
                 s_half_grid = bri.s_half_ext[1:-1]
                 thetas_vmec = np.zeros((len(s_half_grid),))
                 for isurf in range(len(s_half_grid)):
-                    opt = minimize(theta_diff, 0, args=(isurf))
+                    theta_diff_bound = functools.partial(
+                        theta_diff,
+                        isurf=isurf,
+                        lmns_half=lmns_half,
+                        xm=xm,
+                        xn=xn,
+                        nu=nu,
+                        lmnc_half=lmnc_half,
+                        iota=iota
+                    )
+                    opt = minimize(theta_diff_bound, 0)
                     thetas_vmec[isurf] = opt.x
 
                 # Compute Z at theta_b = 0, zeta_b = pi/2  and compare with vmec result
@@ -620,7 +619,6 @@ class TestingFiniteBeta(unittest.TestCase):
         order = 3
         bri = BoozerRadialInterpolant(filename_vac, order, rescale=True, comm=comm)
 
-        nfp = bri.nfp
         n = 8
         smin = 0.4
         smax = 0.6
@@ -629,7 +627,7 @@ class TestingFiniteBeta(unittest.TestCase):
         thetamax = np.pi
         thetasteps = n
         zetamin = 0
-        zetamax = 2 * np.pi / (nfp)
+        zetamax = 2 * np.pi / (bri.nfp)
         zetasteps = n * 2
         bsh = InterpolatedBoozerField(
             bri,
@@ -639,7 +637,7 @@ class TestingFiniteBeta(unittest.TestCase):
             [zetamin, zetamax, zetasteps],
             True,
             stellsym=True,
-            nfp=nfp,
+            nfp=bri.nfp,
         )
 
         # Compute points outside of interpolation range
@@ -648,8 +646,8 @@ class TestingFiniteBeta(unittest.TestCase):
         points = np.random.uniform(size=(N, 3))
         thetamin = -np.pi
         thetamax = 2 * np.pi
-        zetamin = -2 * np.pi / nfp
-        zetamax = 4 * np.pi / nfp
+        zetamin = -2 * np.pi / bri.nfp
+        zetamax = 4 * np.pi / bri.nfp
         points[:, 0] = points[:, 0] * (smax - smin) + smin
         points[:, 1] = points[:, 1] * (thetamax - thetamin) + thetamin
         points[:, 2] = points[:, 2] * (zetamax - zetamin) + zetamin
@@ -773,7 +771,6 @@ class TestingFiniteBeta(unittest.TestCase):
         order = 3
         bri = BoozerRadialInterpolant(filename_vac, order, rescale=True, comm=comm)
 
-        nfp = bri.nfp
         n = 16
         smin = 0.4
         smax = 0.6

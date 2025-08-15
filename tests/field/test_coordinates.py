@@ -186,7 +186,8 @@ class TestCoordinates(unittest.TestCase):
             )
 
     def test_boozer_to_cylindrical_vs_vmec_route(self):
-        """Test that boozer_to_cylindrical matches boozer_to_vmec->vmec_to_cylindrical."""
+        """Test that boozer_to_cylindrical matches
+        boozer_to_vmec->vmec_to_cylindrical."""
         print("\n=== Boozer -> Cylindrical vs Boozer -> VMEC -> Cylindrical Test ===")
 
         # Test with multiple points
@@ -234,7 +235,8 @@ class TestCoordinates(unittest.TestCase):
         print(f"  Z diff: {Z_diff}")
 
         # Check that the transformations agree within reasonable tolerance
-        # Use more relaxed tolerance since VMEC route involves additional numerical steps
+        # Use more relaxed tolerance since VMEC route involves additional
+        # numerical steps
         np.testing.assert_allclose(R_diff, 0, atol=1e-5)
         np.testing.assert_allclose(phi_diff_normalized, 0, atol=1e-5)
         np.testing.assert_allclose(Z_diff, 0, atol=1e-5)
@@ -424,7 +426,8 @@ class TestCoordinates(unittest.TestCase):
         print(f"  phi_vmec: {phi_vmec_back}")
 
         # Check that we get back close to original values with stricter tolerances
-        # The s coordinate should be recovered very accurately since it's directly computed
+        # The s coordinate should be recovered very accurately since it's
+        # directly computed
         np.testing.assert_allclose(s_vmec_back, s_vmec, rtol=1e-12, atol=1e-12)
 
         # Take modulus of angles with 2π to ensure they are in the same range
@@ -442,7 +445,8 @@ class TestCoordinates(unittest.TestCase):
         self.assertTrue(np.all(theta_diff < 1e-9))
         self.assertTrue(np.all(phi_diff < 1e-12))
 
-        # The phi coordinate should be recovered exactly since it's the same in both systems
+        # The phi coordinate should be recovered exactly since it's the same
+        # in both systems
         np.testing.assert_allclose(phi_vmec_back, phi_vmec, rtol=1e-12, atol=1e-12)
 
     def test_multiple_points(self):
@@ -473,8 +477,10 @@ class TestCoordinates(unittest.TestCase):
         print(f"  theta: {theta_back}")
         print(f"  zeta: {zeta_back}")
 
-        # Check that we get back close to original values (reduced tolerance for better accuracy)
-        # Note: Root finding may fail for some points, so we check that at least some points are close
+        # Check that we get back close to original values (reduced tolerance
+        # for better accuracy)
+        # Note: Root finding may fail for some points, so we check that at
+        # least some points are close
         s_close = np.abs(s_back - s_multi) < 0.1
 
         # Take modulus of angles with 2π to ensure they are in the same range

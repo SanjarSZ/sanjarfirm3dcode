@@ -37,14 +37,15 @@ class ModeContinuum:
 
     def __init__(self, m: int, n: int, s=None, freq=None):
         r"""
-        Initialize a ModeContinuum instance. s and frequencies can be specified but are not necessary
-        to initialize.
+        Initialize a ModeContinuum instance. s and frequencies can be specified
+        but are not necessary to initialize.
 
         Args:
             m (int): Poloidal mode number.
             n (int): Toroidal mode number.
             s (np.array, optional): Array of flux surfaces. Defaults to None.
-            freq (np.array, optional): Array of frequencies corresponding to the flux surfaces. Defaults to None.
+            freq (np.array, optional): Array of frequencies corresponding to
+                                      the flux surfaces. Defaults to None.
         Raises:
             Exception: If a negative flux label is provided.
         """
@@ -152,7 +153,8 @@ class ModeContinuum:
 
 class AlfvenSpecData(np.ndarray):
     r"""
-    Subclass of numpy.ndarray with dtype specific to STELLGAP output in alfven_spec files.
+    Subclass of numpy.ndarray with dtype specific to STELLGAP output in
+    alfven_spec files.
     """
 
     def __new__(cls, filenames: list[str]):
@@ -253,13 +255,15 @@ class AlfvenSpecData(np.ndarray):
 
     def condition_number(self):
         r"""
-        For each s, compute the condition number as the ratio of largest to smallest eigenvalue
-        return the array of s and corresponding condition numbers.
+        For each s, compute the condition number as the ratio of largest
+        to smallest eigenvalue return the array of s and corresponding
+        condition numbers.
 
         Returns:
             tuple: A tuple containing:
                 - s (np.array): Unique flux surface values.
-                - condition_numbers (np.array): Condition numbers for each unique flux surface.
+                - condition_numbers (np.array): Condition numbers for each
+                  unique flux surface.
         """
         data = self.nonzero_beta().sort_by_s()
         s = np.unique(data["s"])
@@ -275,22 +279,26 @@ class AlfvenSpecData(np.ndarray):
         return s, condition_numbers
 
 
-def plot_continuum(
+def plot_continuum_modes(
     overlays: list[list[ModeContinuum]],
     show_legend: bool = False,
-    normalized_modes=False,
-    yrange=None,
+    normalized_modes: bool = False,
+    yrange: list = None,
 ) -> go.Figure:
     r"""
-    Plot the continuum modes using Plotly. Several overlays can be provided. This is useful, for example, in comparing
-    AE3D and STELLGAP results.
+    Plot the continuum modes using Plotly. Several overlays can be provided.
+    This is useful, for example, in comparing AE3D and STELLGAP results.
 
     Args:
-        overlays: List[List[ModeContinuum]]:
-            A list of lists, where each inner list contains ModeContinuum instances representing different overlays.
-        show_legend (bool, optional): Whether to show the legend in the plot. Defaults to False.
-        normalized_modes (bool, optional): If True, normalize the frequencies by the Alfven frequency. Defaults to False.
-        yrange (list, optional): Custom y-axis range for the plot. If None, defaults are used based on normalized_modes.
+        overlays: list[list[ModeContinuum]]:
+            A list of lists, where each inner list contains ModeContinuum
+            instances representing different overlays.
+        show_legend (bool, optional): Whether to show the legend in the plot.
+                                      Defaults to False.
+        normalized_modes (bool, optional): If True, normalize the frequencies
+                                          by the Alfven frequency. Defaults to False.
+        yrange (list, optional): Custom y-axis range for the plot. If None,
+                                 defaults are used based on normalized_modes.
     """
     fig = go.Figure()
 
@@ -302,7 +310,6 @@ def plot_continuum(
         marker = markers[idx % len(markers)]
 
         for md in modes:
-            formatted_freq = [f"{f:.10g}" for f in md.get_frequencies()]
             fig.add_trace(
                 go.Scatter(
                     x=md.get_flux_surfaces(),
@@ -312,18 +319,20 @@ def plot_continuum(
                         f"m={md.get_poloidal_mode()}, "
                         + f"n={md.get_toroidal_mode()} (Overlay {idx + 1})"
                     ),
-                    marker=dict(size=3, symbol=marker, color=color),
-                    line=dict(width=0.5, color=color),
+                    marker={"size": 3, "symbol": marker, "color": color},
+                    line={"width": 0.5, "color": color},
                     text=[
                         (
-                            f"freq = {f}, "
-                            + f"m={md.get_poloidal_mode()}, "
-                            + f"n={md.get_toroidal_mode()}"
-                        )
-                        for f in formatted_freq
+                            f"m={md.get_poloidal_mode()}, "
+                            + f"n={md.get_toroidal_mode()} (Overlay {idx + 1})"
+                        ),
                     ],
                     hoverinfo="text+x+y",
-                    hoverlabel=dict(font_size=16, bgcolor="white", bordercolor=color),
+                    hoverlabel={
+                        "font_size": 16,
+                        "bgcolor": "white",
+                        "bordercolor": color
+                    },
                 )
             )
 
@@ -342,8 +351,8 @@ def plot_continuum(
         title=r"$\text{Continuum: }$",
         xaxis_title=r"$\text{Normalized flux }s$",
         yaxis_title=yaxis_title,
-        xaxis=dict(
-            range=[
+        xaxis={
+            "range": [
                 np.min(
                     [
                         np.min(md.get_flux_surfaces())
@@ -359,16 +368,16 @@ def plot_continuum(
                     ]
                 ),
             ]
-        ),
-        yaxis=dict(range=yaxis_range),
-        legend=dict(
-            title=r"$\text{Mode: }$",
-            yanchor="top",
-            y=1.4,
-            xanchor="center",
-            x=0.5,
-            orientation="h",
-        ),
+        },
+        yaxis={"range": yaxis_range},
+        legend={
+            "title": r"$\text{Mode: }$",
+            "yanchor": "top",
+            "y": 1.4,
+            "xanchor": "center",
+            "x": 0.5,
+            "orientation": "h",
+        },
         showlegend=show_legend,
     )
 

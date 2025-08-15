@@ -1,4 +1,3 @@
-import sys
 import time
 
 import numpy as np
@@ -20,7 +19,7 @@ from simsopt.util.constants import (
     ALPHA_PARTICLE_MASS,
     FUSION_ALPHA_PARTICLE_ENERGY,
 )
-from simsopt.util.functions import proc0_print
+from simsopt.util.functions import proc0_print, setup_logging
 from simsopt.util.mpi import comm_size, comm_world, verbose
 
 time1 = time.time()
@@ -36,7 +35,8 @@ ns_interp = resolution
 ntheta_interp = resolution
 nzeta_interp = resolution
 
-sys.stdout = open(f"stdout_trajectory_{resolution}_{comm_size}.txt", "a", buffering=1)
+# Setup logging to redirect output to file
+setup_logging(f"stdout_trajectory_{resolution}_{comm_size}.txt")
 
 ## Setup radial interpolation
 bri = BoozerRadialInterpolant(boozmn_filename, order, no_K=True, comm=comm_world)
@@ -54,7 +54,8 @@ field = InterpolatedBoozerField(
 Ekin = FUSION_ALPHA_PARTICLE_ENERGY
 mass = ALPHA_PARTICLE_MASS
 charge = ALPHA_PARTICLE_CHARGE
-# Initialize single trapped particle on s = 0.5 surface with random theta and zeta, and zero parallel velocity
+# Initialize single trapped particle on s = 0.5 surface with random theta and
+# zeta, and zero parallel velocity
 vpar0 = np.sqrt(2 * Ekin / mass)
 vpar_init = [0]
 points = np.zeros((1, 3))

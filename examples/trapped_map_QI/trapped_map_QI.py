@@ -1,4 +1,3 @@
-import sys
 import time
 
 import numpy as np
@@ -13,7 +12,7 @@ from simsopt.util.constants import (
     ALPHA_PARTICLE_MASS,
     FUSION_ALPHA_PARTICLE_ENERGY,
 )
-from simsopt.util.functions import proc0_print
+from simsopt.util.functions import proc0_print, setup_logging
 from simsopt.util.mpi import comm_size, comm_world, verbose
 
 boozmn_filename = "../inputs/boozmn_nfp3_rescaled.nc"
@@ -36,9 +35,8 @@ theta_mirror = 0  # poloidal angle for mirroring
 helicity_M = 0  # helicity of field strength contours
 degree = 3  # Degree for Lagrange interpolation
 
-sys.stdout = open(
-    f"stdout_trapped_map_QI_{resolution}_{comm_size}.txt", "a", buffering=1
-)
+# Setup logging to redirect output to file
+setup_logging(f"stdout_trapped_map_QI_{resolution}_{comm_size}.txt")
 
 time1 = time.time()
 

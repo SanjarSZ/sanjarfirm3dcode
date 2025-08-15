@@ -19,14 +19,20 @@ def boozer_to_cylindrical(field, s, theta, zeta):
 
     Args:
         field : The :class:`BoozerMagneticField` instance used for field evaluation.
-        s : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
-        theta : A scalar or a numpy array of shape (npoints,) containing the Boozer poloidal angle.
-        zeta : A scalar or a numpy array of shape (npoints,) containing the Boozer toroidal angle.
+        s : A scalar or a numpy array of shape (npoints,) containing the
+            normalized toroidal flux.
+        theta : A scalar or a numpy array of shape (npoints,) containing the
+            Boozer poloidal angle.
+        zeta : A scalar or a numpy array of shape (npoints,) containing the
+            Boozer toroidal angle.
 
     Returns:
-        R : A scalar or a numpy array of shape (npoints,) containing the radial coordinate.
-        phi : A scalar or a numpy array of shape (npoints,) containing the azimuthal angle.
-        Z : A scalar or a numpy array of shape (npoints,) containing the vertical coordinate.
+        R : A scalar or a numpy array of shape (npoints,) containing the
+            radial coordinate.
+        phi : A scalar or a numpy array of shape (npoints,) containing the
+            azimuthal angle.
+        Z : A scalar or a numpy array of shape (npoints,) containing the
+            vertical coordinate.
     """
     if not isinstance(s, np.ndarray):
         s = np.asarray(s)
@@ -83,9 +89,12 @@ def cylindrical_to_boozer(
 
     Args:
         field : The :class:`BoozerMagneticField` instance used for field evaluation.
-        R : A scalar or a numpy array of shape (npoints,) containing the radial coordinate.
-        phi : A scalar or a numpy array of shape (npoints,) containing the azimuthal angle.
-        Z : A scalar or a numpy array of shape (npoints,) containing the vertical coordinate.
+        R : A scalar or a numpy array of shape (npoints,) containing the
+            radial coordinate.
+        phi : A scalar or a numpy array of shape (npoints,) containing the
+            azimuthal angle.
+        Z : A scalar or a numpy array of shape (npoints,) containing the
+            vertical coordinate.
         s_guess : float, optional
             Initial guess for s (default: None, uses 0.5). Must be a scalar.
         theta_guess : float, optional
@@ -93,14 +102,18 @@ def cylindrical_to_boozer(
         zeta_guess : float, optional
             Initial guess for zeta (default: None, uses phi). Must be a scalar.
         n_guesses : int, optional
-            Number of initial guesses to try for each point (default: 4). Must be a positive integer.
+            Number of initial guesses to try for each point (default: 4).
+            Must be a positive integer.
         ftol : float, optional
             Tolerance for root finding convergence (default: 1e-6).
 
     Returns:
-        s : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
-        theta : A scalar or a numpy array of shape (npoints,) containing the Boozer poloidal angle.
-        zeta : A scalar or a numpy array of shape (npoints,) containing the Boozer toroidal angle.
+        s : A scalar or a numpy array of shape (npoints,) containing the
+            normalized toroidal flux.
+        theta : A scalar or a numpy array of shape (npoints,) containing the
+            Boozer poloidal angle.
+        zeta : A scalar or a numpy array of shape (npoints,) containing the
+            Boozer toroidal angle.
     """
     if not isinstance(R, np.ndarray):
         R = np.asarray(R)
@@ -131,10 +144,7 @@ def cylindrical_to_boozer(
         s_guess = 0.5
     if theta_guess is None:
         theta_guess = 0.0
-    if zeta_guess is None:
-        use_phi_for_zeta = True
-    else:
-        use_phi_for_zeta = False
+    use_phi_for_zeta = zeta_guess is None
 
     # Validate that guesses are scalars
     if hasattr(s_guess, "__len__") and len(s_guess) > 1:
@@ -187,12 +197,12 @@ def cylindrical_to_boozer(
         initial_guesses.append([s_guess, theta_guess, zeta_guess])
 
         # Generate additional random guesses
-        for j in range(1, n_guesses):
+        for _j in range(1, n_guesses):
             initial_guesses.append(
                 [np.random.uniform(0, 1), np.random.uniform(0, 2 * np.pi), phi[i]]
             )
 
-        for attempt, x0 in enumerate(initial_guesses):
+        for _attempt, x0 in enumerate(initial_guesses):
             sol = root(
                 objective_function,
                 x0,
@@ -209,7 +219,8 @@ def cylindrical_to_boozer(
 
         if not success:
             raise RuntimeError(
-                f"Root finding failed for point {i} with coordinates R={R[i]}, phi={phi[i]}, Z={Z[i]}. "
+                f"Root finding failed for point {i} with coordinates "
+                f"R={R[i]}, phi={phi[i]}, Z={Z[i]}. "
                 f"Tried {n_guesses} different initial guesses."
             )
 
@@ -228,14 +239,18 @@ def vmec_to_boozer(wout_filename, field, s_vmec, theta_vmec, phi_vmec, ftol=1e-6
         wout_filename : str
             The name of the VMEC wout file.
         field : The :class:`BoozerMagneticField` instance used for field evaluation.
-        s_vmec : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
-        theta_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC poloidal angle.
-        phi_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC cylindrical angle.
+        s_vmec : A scalar or a numpy array of shape (npoints,) containing the
+            normalized toroidal flux.
+        theta_vmec : A scalar or a numpy array of shape (npoints,) containing
+            the VMEC poloidal angle.
+        phi_vmec : A scalar or a numpy array of shape (npoints,) containing
+            the VMEC cylindrical angle.
         ftol : float, optional
             Tolerance for root finding convergence (default: 1e-6).
 
     Returns:
-        theta_b : A numpy array of shape (npoints,) containing the Boozer poloidal angle.
+        theta_b : A numpy array of shape (npoints,) containing the Boozer
+            poloidal angle.
         zeta_b : A numpy array of shape (npoints,) containing the Boozer toroidal angle.
     """
     # Validate that arrays are not empty
@@ -312,7 +327,8 @@ def vmec_to_boozer(wout_filename, field, s_vmec, theta_vmec, phi_vmec, ftol=1e-6
             zeta_b.append(sol.x[1])
         else:
             raise RuntimeError(
-                f"Root finding failed for point {i} with coordinates s={s_vmec[i]}, theta_vmec={theta_vmec[i]}, phi_vmec={phi_vmec[i]}. "
+                f"Root finding failed for point {i} with coordinates "
+                f"s={s_vmec[i]}, theta_vmec={theta_vmec[i]}, phi_vmec={phi_vmec[i]}. "
             )
 
     return np.array(theta_b), np.array(zeta_b)
@@ -326,15 +342,20 @@ def boozer_to_vmec(wout_filename, field, s, theta_b, zeta_b, ftol=1e-6):
         wout_filename : str
             The name of the VMEC wout file.
         field : The :class:`BoozerMagneticField` instance used for field evaluation.
-        s : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
-        theta_b : A scalar or a numpy array of shape (npoints,) containing the Boozer poloidal angle.
-        zeta_b : A scalar or a numpy array of shape (npoints,) containing the Boozer toroidal angle.
+        s : A scalar or a numpy array of shape (npoints,) containing the
+            normalized toroidal flux.
+        theta_b : A scalar or a numpy array of shape (npoints,) containing
+            the Boozer poloidal angle.
+        zeta_b : A scalar or a numpy array of shape (npoints,) containing
+            the Boozer toroidal angle.
         ftol : float, optional
             Tolerance for root finding convergence (default: 1e-6).
 
     Returns:
-        theta_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC poloidal angle.
-        phi_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC cylindrical angle.
+        theta_vmec : A scalar or a numpy array of shape (npoints,) containing
+            the VMEC poloidal angle.
+        phi_vmec : A scalar or a numpy array of shape (npoints,) containing
+            the VMEC cylindrical angle.
     """
     # Handle scalar inputs - return scalars if any input is a scalar
     input_scalar = np.isscalar(s) or np.isscalar(theta_b) or np.isscalar(zeta_b)
@@ -422,7 +443,8 @@ def boozer_to_vmec(wout_filename, field, s, theta_b, zeta_b, ftol=1e-6):
             vartheta, phi_vmec[i] = vartheta_phi_vmec(s[i], theta_b[i], zeta_b[i])
         else:
             raise RuntimeError(
-                f"Root finding failed for point {i} with coordinates s={s[i]}, theta_b={theta_b[i]}, zeta_b={zeta_b[i]}. "
+                f"Root finding failed for point {i} with coordinates "
+                f"s={s[i]}, theta_b={theta_b[i]}, zeta_b={zeta_b[i]}. "
             )
 
     # Return scalars for scalar inputs, arrays for array inputs
@@ -439,14 +461,20 @@ def vmec_to_cylindrical(wout_filename, s_vmec, theta_vmec, phi_vmec):
     Args:
         wout_filename : str
             The name of the VMEC wout file.
-        s_vmec : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
-        theta_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC poloidal angle.
-        phi_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC cylindrical angle.
+        s_vmec : A scalar or a numpy array of shape (npoints,) containing the
+            normalized toroidal flux.
+        theta_vmec : A scalar or a numpy array of shape (npoints,) containing
+            the VMEC poloidal angle.
+        phi_vmec : A scalar or a numpy array of shape (npoints,) containing
+            the VMEC cylindrical angle.
 
     Returns:
-        R : A scalar or a numpy array of shape (npoints,) containing the radial coordinate.
-        phi_cyl : A scalar or a numpy array of shape (npoints,) containing the azimuthal angle.
-        Z : A scalar or a numpy array of shape (npoints,) containing the vertical coordinate.
+        R : A scalar or a numpy array of shape (npoints,) containing the
+            radial coordinate.
+        phi_cyl : A scalar or a numpy array of shape (npoints,) containing
+            the azimuthal angle.
+        Z : A scalar or a numpy array of shape (npoints,) containing the
+            vertical coordinate.
     """
     # Handle scalar inputs - return scalars if any input is a scalar
     input_scalar = (
@@ -530,24 +558,32 @@ def cylindrical_to_vmec(
     Args:
         wout_filename : str
             The name of the VMEC wout file.
-        R : A scalar or a numpy array of shape (npoints,) containing the radial coordinate.
-        phi : A scalar or a numpy array of shape (npoints,) containing the azimuthal angle.
-        Z : A scalar or a numpy array of shape (npoints,) containing the vertical coordinate.
+        R : A scalar or a numpy array of shape (npoints,) containing the
+            radial coordinate.
+        phi : A scalar or a numpy array of shape (npoints,) containing the
+            azimuthal angle.
+        Z : A scalar or a numpy array of shape (npoints,) containing the
+            vertical coordinate.
         s_guess : float, optional
             Initial guess for s (default: None, uses 0.5). Must be a scalar.
         theta_guess : float, optional
-            Initial guess for theta_vmec (default: None, uses arctan2(Z, R)). Must be a scalar.
+            Initial guess for theta_vmec (default: None, uses arctan2(Z, R)).
+            Must be a scalar.
         zeta_guess : float, optional
             Initial guess for phi_vmec (default: None, uses phi). Must be a scalar.
         n_guesses : int, optional
-            Number of initial guesses to try for each point (default: 4). Must be a positive integer.
+            Number of initial guesses to try for each point (default: 4).
+            Must be a positive integer.
         ftol : float, optional
             Tolerance for root finding convergence (default: 1e-6).
 
     Returns:
-        s_vmec : A scalar or a numpy array of shape (npoints,) containing the normalized toroidal flux.
-        theta_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC poloidal angle.
-        phi_vmec : A scalar or a numpy array of shape (npoints,) containing the VMEC cylindrical angle.
+        s_vmec : A scalar or a numpy array of shape (npoints,) containing the
+            normalized toroidal flux.
+        theta_vmec : A scalar or a numpy array of shape (npoints,) containing
+            the VMEC poloidal angle.
+        phi_vmec : A scalar or a numpy array of shape (npoints,) containing
+            the VMEC cylindrical angle.
     """
     # Handle scalar inputs - return scalars if any input is a scalar
     input_scalar = np.isscalar(R) or np.isscalar(phi) or np.isscalar(Z)
@@ -585,10 +621,7 @@ def cylindrical_to_vmec(
     if theta_guess is None:
         # Use arctan2(Z, R) as initial guess for theta
         theta_guess = 0.0  # Will be computed per point using arctan2
-    if zeta_guess is None:
-        use_phi_for_zeta = True
-    else:
-        use_phi_for_zeta = False
+    use_phi_for_zeta = zeta_guess is None
 
     # Validate that guesses are scalars
     if hasattr(s_guess, "__len__") and len(s_guess) > 1:
@@ -635,10 +668,7 @@ def cylindrical_to_vmec(
         Z_i = Z[i]
 
         # Determine zeta_guess for this point
-        if use_phi_for_zeta:
-            zeta_guess_i = phi_i
-        else:
-            zeta_guess_i = zeta_guess
+        zeta_guess_i = phi_i if use_phi_for_zeta else zeta_guess
 
         # Try multiple initial guesses for better convergence
         success = False
@@ -648,12 +678,12 @@ def cylindrical_to_vmec(
         initial_guesses.append([s_guess, theta_guess, zeta_guess_i])
 
         # Generate additional random guesses
-        for j in range(1, n_guesses):
+        for _j in range(1, n_guesses):
             initial_guesses.append(
                 [np.random.uniform(0, 1), np.random.uniform(0, 2 * np.pi), phi_i]
             )
 
-        for attempt, x0 in enumerate(initial_guesses):
+        for _attempt, x0 in enumerate(initial_guesses):
             try:
                 sol = root(
                     objective_function,
@@ -674,7 +704,8 @@ def cylindrical_to_vmec(
 
         if not success:
             raise RuntimeError(
-                f"Root finding failed for point {i} with coordinates R={R_i}, phi={phi_i}, Z={Z_i}. "
+                f"Root finding failed for point {i} with coordinates "
+                f"R={R_i}, phi={phi_i}, Z={Z_i}. "
                 f"Tried {n_guesses} different initial guesses."
             )
 

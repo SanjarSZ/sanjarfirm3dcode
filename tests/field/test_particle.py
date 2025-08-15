@@ -28,7 +28,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
     def test_field_type(self):
         etabar = 1.2 / 1.2
         B0 = 1.0
-        Bbar = 1.0
         G0 = 1.1
         psi0 = 8
         iota0 = 0.4
@@ -59,7 +58,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         tmax = 1e-7
         solver_options = {"axis": 2}
 
-        # Test that if enforce_vacuum = True, the field_type = 'vac', and tracing mode = 'gc_vac'
+        # Test that if enforce_vacuum = True, the field_type = 'vac', and
+        # tracing mode = 'gc_vac'
         bsh = BoozerAnalytic(etabar, B0, 0, G0, psi0, iota0)
         bri = BoozerRadialInterpolant(equil, order, enforce_vacuum=True)
 
@@ -79,7 +79,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     stellsym=True,
                 )
 
-                # Check that only ["modB","psip","G","iota","modB_derivs"] are initialized
+                # Check that only ["modB","psip","G","iota","modB_derivs"]
+                # are initialized
                 assert (
                     field.status_modB
                     and field.status_psip
@@ -149,7 +150,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     stellsym=True,
                 )
 
-                # Check that only ["modB","psip","G","iota","modB_derivs"] are initialized
+                # Check that only ["modB","psip","G","iota","modB_derivs"] are
+                # initialized
                 assert (
                     field.status_modB
                     and field.status_psip
@@ -216,7 +218,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     stellsym=True,
                 )
 
-                # Check that only ["modB","psip","G","iota","modB_derivs"] are initialized
+                # Check that only ["modB","psip","G","iota","modB_derivs"] are
+                # initialized
                 assert (
                     field.status_modB
                     and field.status_psip
@@ -350,9 +353,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 psip = np.squeeze(bsh.psip())
 
                 energy_gc = np.array([])
-                mu_gc = np.array([])
                 p_gc = np.array([])
-                vParInitial = gc_ty[0, 4]
                 muInitial = mu_inits[i]
                 pInitial = p_inits[i]
                 for j in range(N):
@@ -438,7 +439,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
 
                 energy_gc = np.array([])
                 p_gc = np.array([])
-                vParInitial = gc_ty[0, 4]
                 muInitial = mu_inits[i]
                 pInitial = p_inits[i]
                 for j in range(N):
@@ -543,7 +543,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 assert max(max_energy_gc_error) < -1.0
                 assert max(max_p_gc_error) < -8
 
-            # Now trace with forget_exact_path = True. Check that gc_zeta_hits is the same
+            # Now trace with forget_exact_path = True. Check that
+            # gc_zeta_hits is the same
             gc_tys, gc_zeta_hits_2 = trace_particles_boozer(
                 bsh,
                 stz_inits,
@@ -578,7 +579,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         # First test for BoozerAnalytic field
         etabar = 1.2
         B0 = 1.0
-        Bbar = 1.0
         G0 = 1.1
         psi0 = 0.8
         iota0 = 1.0
@@ -641,7 +641,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         """
         etabar = 1.2 / 1.2
         B0 = 1.0
-        Bbar = 1.0
         G0 = 1.1
         psi0 = 0.8
         iota0 = 1.0
@@ -716,7 +715,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         ]:
             etabar = 1.2
             B0 = 1.0
-            Bbar = 1.0
+            G0 = 1.1
             R0 = 1.0
             G0 = R0 * B0
             psi0 = B0 * (0.1) ** 2 / 2
@@ -777,7 +776,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         # Same field from test_energy_momentum_conservation_boozer
         etabar = 1.2 / 1.2
         B0 = 1.0
-        Bbar = 1.0
         G0 = 1.1
         psi0 = 0.8
         iota0 = 0.4
@@ -857,24 +855,23 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 dt_save=1e-8,
             )
             for i in range(nparticles):
-                if len(gc_zeta_hits[i]):
+                if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
                     # Check that we hit a stopping criteria
-                    if gc_zeta_hits[i][-1][1] >= 0:
-                        idx = int(gc_zeta_hits[i][-1][1])
-                        assert np.isclose(
-                            gc_zeta_hits[i][-1, 4] % (2 * np.pi),
-                            zetas[idx],
-                            rtol=1e-12,
-                            atol=0,
-                        )
-                        if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
-                            lower_bound = zetas[idx]
-                            upper_bound = lower_bound + 1
-                        else:
-                            upper_bound = zetas[idx]
-                            lower_bound = upper_bound - 1
-                        assert np.all(gc_tys[i][1:-1, 3] < upper_bound)
-                        assert np.all(gc_tys[i][1:-1, 3] > lower_bound)
+                    idx = int(gc_zeta_hits[i][-1][1])
+                    assert np.isclose(
+                        gc_zeta_hits[i][-1, 4] % (2 * np.pi),
+                        zetas[idx],
+                        rtol=1e-12,
+                        atol=0,
+                    )
+                    if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
+                        lower_bound = zetas[idx]
+                        upper_bound = lower_bound + 1
+                    else:
+                        upper_bound = zetas[idx]
+                        lower_bound = upper_bound - 1
+                    assert np.all(gc_tys[i][1:-1, 3] < upper_bound)
+                    assert np.all(gc_tys[i][1:-1, 3] > lower_bound)
 
             # add omegas
             omega_zetas = [0.1, 0.2, 0.3, 0.4]
@@ -899,32 +896,31 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 dt_save=1e-8,
             )
             for i in range(nparticles):
-                if len(gc_zeta_hits[i]):
+                if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
                     # Check that we hit a zeta plane
-                    if gc_zeta_hits[i][-1][1] >= 0:
-                        idx = int(gc_zeta_hits[i][-1][1])
-                        assert np.isclose(
-                            gc_zeta_hits[i][-1, 4] % (2 * np.pi),
-                            zetas[idx] + omega_zetas[idx] * gc_zeta_hits[i][-1, 0],
-                            rtol=1e-12,
-                            atol=0,
+                    idx = int(gc_zeta_hits[i][-1][1])
+                    assert np.isclose(
+                        gc_zeta_hits[i][-1, 4] % (2 * np.pi),
+                        zetas[idx] + omega_zetas[idx] * gc_zeta_hits[i][-1, 0],
+                        rtol=1e-12,
+                        atol=0,
+                    )
+                    if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
+                        lower_bound = (
+                            zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
                         )
-                        if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
-                            lower_bound = (
-                                zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
-                            )
-                            upper_bound = (zetas[idx] + 1) + (
-                                omega_zetas[idx] + 0.1
-                            ) * gc_tys[i][1:-1, 0]
-                        else:
-                            upper_bound = (
-                                zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
-                            )
-                            lower_bound = (zetas[idx] - 1) + (
-                                omega_zetas[idx] - 0.1
-                            ) * gc_tys[i][1:-1, 0]
-                        assert np.all(gc_tys[i][1:-1, 3] < upper_bound)
-                        assert np.all(gc_tys[i][1:-1, 3] > lower_bound)
+                        upper_bound = (zetas[idx] + 1) + (
+                            omega_zetas[idx] + 0.1
+                        ) * gc_tys[i][1:-1, 0]
+                    else:
+                        upper_bound = (
+                            zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
+                        )
+                        lower_bound = (zetas[idx] - 1) + (
+                            omega_zetas[idx] - 0.1
+                        ) * gc_tys[i][1:-1, 0]
+                    assert np.all(gc_tys[i][1:-1, 3] < upper_bound)
+                    assert np.all(gc_tys[i][1:-1, 3] > lower_bound)
 
             # thetas_stop with mismatched thetas and omegas
             solver_options["thetas_stop"] = True
@@ -973,24 +969,23 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 dt_save=1e-8,
             )
             for i in range(nparticles):
-                if len(gc_zeta_hits[i]):
+                if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
                     # Check that we hit a stopping criteria
-                    if gc_zeta_hits[i][-1][1] >= 0:
-                        idx = int(gc_zeta_hits[i][-1][1])
-                        assert np.isclose(
-                            gc_zeta_hits[i][-1, 3] % (2 * np.pi),
-                            thetas[idx],
-                            rtol=1e-12,
-                            atol=0,
-                        )
-                        if gc_tys[i][-2, 2] > gc_tys[i][-1, 2]:
-                            lower_bound = thetas[idx]
-                            upper_bound = lower_bound + 1
-                        else:
-                            upper_bound = thetas[idx]
-                            lower_bound = upper_bound - 1
-                        assert np.all(gc_tys[i][1:-1, 2] < upper_bound)
-                        assert np.all(gc_tys[i][1:-1, 2] > lower_bound)
+                    idx = int(gc_zeta_hits[i][-1][1])
+                    assert np.isclose(
+                        gc_zeta_hits[i][-1, 3] % (2 * np.pi),
+                        thetas[idx],
+                        rtol=1e-12,
+                        atol=0,
+                    )
+                    if gc_tys[i][-2, 2] > gc_tys[i][-1, 2]:
+                        lower_bound = thetas[idx]
+                        upper_bound = lower_bound + 1
+                    else:
+                        upper_bound = thetas[idx]
+                        lower_bound = upper_bound - 1
+                    assert np.all(gc_tys[i][1:-1, 2] < upper_bound)
+                    assert np.all(gc_tys[i][1:-1, 2] > lower_bound)
 
             # add omegas
             omega_thetas = [0.1, 0.2, 0.3, 0.4]
@@ -1015,32 +1010,31 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 dt_save=1e-8,
             )
             for i in range(nparticles):
-                if len(gc_zeta_hits[i]):
+                if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
                     # Check that we hit a zeta plane
-                    if gc_zeta_hits[i][-1][1] >= 0:
-                        idx = int(gc_zeta_hits[i][-1][1])
-                        assert np.isclose(
-                            gc_zeta_hits[i][-1, 3] % (2 * np.pi),
-                            thetas[idx] + omega_thetas[idx] * gc_zeta_hits[i][-1, 0],
-                            rtol=1e-12,
-                            atol=0,
+                    idx = int(gc_zeta_hits[i][-1][1])
+                    assert np.isclose(
+                        gc_zeta_hits[i][-1, 3] % (2 * np.pi),
+                        thetas[idx] + omega_thetas[idx] * gc_zeta_hits[i][-1, 0],
+                        rtol=1e-12,
+                        atol=0,
+                    )
+                    if gc_tys[i][-2, 2] > gc_tys[i][-1, 2]:
+                        lower_bound = (
+                            thetas[idx] + omega_thetas[idx] * gc_tys[i][1:-1, 0]
                         )
-                        if gc_tys[i][-2, 2] > gc_tys[i][-1, 2]:
-                            lower_bound = (
-                                thetas[idx] + omega_thetas[idx] * gc_tys[i][1:-1, 0]
-                            )
-                            upper_bound = (thetas[idx] + 1) + (
-                                omega_thetas[idx] + 0.1
-                            ) * gc_tys[i][1:-1, 0]
-                        else:
-                            upper_bound = (
-                                thetas[idx] + omega_thetas[idx] * gc_tys[i][1:-1, 0]
-                            )
-                            lower_bound = (thetas[idx] - 1) + (
-                                omega_thetas[idx] - 0.1
-                            ) * gc_tys[i][1:-1, 0]
-                        assert np.all(gc_tys[i][1:-1, 2] < upper_bound)
-                        assert np.all(gc_tys[i][1:-1, 2] > lower_bound)
+                        upper_bound = (thetas[idx] + 1) + (
+                            omega_thetas[idx] + 0.1
+                        ) * gc_tys[i][1:-1, 0]
+                    else:
+                        upper_bound = (
+                            thetas[idx] + omega_thetas[idx] * gc_tys[i][1:-1, 0]
+                        )
+                        lower_bound = (thetas[idx] - 1) + (
+                            omega_thetas[idx] - 0.1
+                        ) * gc_tys[i][1:-1, 0]
+                    assert np.all(gc_tys[i][1:-1, 2] < upper_bound)
+                    assert np.all(gc_tys[i][1:-1, 2] > lower_bound)
 
             # vpars_stop
             solver_options["zetas_stop"] = False
@@ -1067,7 +1061,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 dt_save=1e-8,
             )
             for i in range(nparticles):
-                if len(gc_zeta_hits[i]):
+                if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
                     idx = int(gc_zeta_hits[i][-1][1])
                     if idx >= 0:
                         assert np.isclose(
@@ -1109,7 +1103,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 dt_save=1e-8,
             )
             for i in range(nparticles):
-                if len(gc_zeta_hits[i]):
+                if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
                     idx = int(gc_zeta_hits[i][-1][1])
                     if idx >= 0:
                         if idx >= len(zetas):

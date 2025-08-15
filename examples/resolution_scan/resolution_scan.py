@@ -104,7 +104,8 @@ for i in range(len(resolutions)):
         for k in range(first, last):
             point = np.zeros((1, 3))
             point[0, :] = points_init[k, :]
-            ## Trace alpha particle in Boozer coordinates until it hits the s = 1 surface
+            ## Trace alpha particle in Boozer coordinates until it hits the
+            ## s = 1 surface
             res_tys, res_zeta_hits = trace_particles_boozer(
                 field,
                 point,
@@ -142,7 +143,8 @@ for i in range(len(resolutions)):
 time2 = time.time()
 proc0_print("Elapsed time for tracing = ", time2 - time1)
 
-## Post-process results to obtain error in p_eta as a function of resolution and tolerance
+## Post-process results to obtain error in p_eta as a function of resolution
+## and tolerance
 if verbose:
     import matplotlib
 

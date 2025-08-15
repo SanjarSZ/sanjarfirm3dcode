@@ -1,4 +1,3 @@
-import sys
 import time
 
 import numpy as np
@@ -20,7 +19,7 @@ from simsopt.util.constants import (
     ALPHA_PARTICLE_MASS,
     FUSION_ALPHA_PARTICLE_ENERGY,
 )
-from simsopt.util.functions import proc0_print
+from simsopt.util.functions import proc0_print, setup_logging
 from simsopt.util.mpi import comm_size, comm_world, verbose
 
 time1 = time.time()
@@ -37,7 +36,8 @@ ns_interp = resolution
 ntheta_interp = resolution
 nzeta_interp = resolution
 
-sys.stdout = open(f"stdout_{nParticles}_{resolution}_{comm_size}.txt", "a", buffering=1)
+# Setup logging to redirect output to file
+setup_logging(f"stdout_{nParticles}_{resolution}_{comm_size}.txt")
 
 ## Setup radial interpolation
 bri = BoozerRadialInterpolant(boozmn_filename, order, no_K=True, comm=comm_world)
@@ -52,7 +52,8 @@ field = InterpolatedBoozerField(
 )
 
 # Define fusion birth distribution
-# Bader, A., et al. "Modeling of energetic particle transport in optimized stellarators." Nuclear Fusion 61.11 (2021): 116060.
+# Bader, A., et al. "Modeling of energetic particle transport in optimized
+# stellarators." Nuclear Fusion 61.11 (2021): 116060.
 nD = lambda s: (1 - s**5)  # Normalized density
 nT = nD
 T = lambda s: 11.5 * (1 - s)  # Temperature in keV

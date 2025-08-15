@@ -1,3 +1,3 @@
-from .plotting_helpers import *
+from . import plotting_helpers
 
 __all__ = plotting_helpers.__all__

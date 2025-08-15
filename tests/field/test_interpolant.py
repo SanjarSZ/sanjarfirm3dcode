@@ -160,7 +160,7 @@ class Testing(unittest.TestCase):
         fhxyz = 100 * np.ones((xyz.shape[0], dim))
 
         interpolant.evaluate_batch(xyz, fhxyz)
-        print("fhxyz %s" % (fhxyz))
+        print(f"fhxyz {fhxyz}")
 
         fxyz = fun(xyz[:, 0], xyz[:, 1], xyz[:, 2], flatten=False)
         assert np.allclose(fhxyz[:3, :], fxyz[:3, :], atol=1e-12, rtol=1e-12)

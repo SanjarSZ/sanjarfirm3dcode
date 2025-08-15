@@ -17,19 +17,9 @@ __all__ = [
 @dataclass
 class EigModeASCI:
     """
-    A class to handle the parsing and storage of eigenmode data from the AE3D output 'eig_mode_asci.dat', which includes
-    eigenmode descriptions, Fourier modes, radial points, and eigenvectors.
-
-    Attributes:
-        sim_dir (str): Directory where the simulation data files are stored.
-        file_path (str): Full path to 'eig_mode_asci.dat'.
-        num_eigenmodes (int): Number of eigenmodes.
-        num_fourier_modes (int): Number of Fourier modes.
-        num_radial_points (int): Number of radial points.
-        modes (np.ndarray): Mode numbers (m, n).
-        egn_values (np.ndarray): Eigenvalue squares for each mode.
-        s_coords (np.ndarray): Radial coordinate values.
-        egn_vectors (np.ndarray): Eigenvector data reshaped according to the dimensions.
+    A class to handle the parsing and storage of eigenmode data from the
+    AE3D output 'eig_mode_asci.dat', which includes eigenmode descriptions,
+    Fourier modes, radial points, and eigenvectors.
     """
 
     sim_dir: str
@@ -48,7 +38,8 @@ class EigModeASCI:
 
     def load_data(self):
         r"""
-        Loads the eigenmode data from the 'eig_mode_asci.dat' file into the class attributes.
+        Loads the eigenmode data from the 'eig_mode_asci.dat' file into
+        the class attributes.
         """
         if not os.path.isfile(self.file_path):
             raise FileNotFoundError(f"Data file {self.file_path} not found.")
@@ -78,14 +69,17 @@ class EigModeASCI:
 
     def get_nearest_eigenvector(self, target_eigenvalue):
         """
-        Finds and returns the eigenvector closest to a specified target eigenvalue, along with its
-        corresponding eigenvalue and sorted mode numbers.
+        Finds and returns the eigenvector closest to a specified target
+        eigenvalue, along with its corresponding eigenvalue and sorted
+        mode numbers.
 
         Args:
-            target_eigenvalue (float): The target eigenvalue to find the closest match to.
+            target_eigenvalue (float): The target eigenvalue to find the
+                                      closest match to.
 
         Returns:
-            tuple: A tuple containing the closest eigenvalue, the normalized eigenvector, and sorted mode numbers.
+            tuple: A tuple containing the closest eigenvalue, the normalized
+                   eigenvector, and sorted mode numbers.
         """
         data = [
             (self.egn_values[I], self.egn_vectors[I])
@@ -104,18 +98,22 @@ class EigModeASCI:
 
     def condition_number(self):
         r"""
-        Computes the condition number, defined as the ratio of the largest to the smallest absolute eigenvalue.
+        Computes the condition number, defined as the ratio of the largest
+        to the smallest absolute eigenvalue.
 
         Returns:
-            float: The condition number
+            float: The condition number.
         """
-        eigenvalues = self.egn_values
-        abs_eigenvalues = np.abs(eigenvalues)
-        max_eigenvalue = np.max(abs_eigenvalues)
-        min_eigenvalue = np.min(abs_eigenvalues)
+        if len(self.egn_values) == 0:
+            return 0
+
+        max_eigenvalue = np.max(np.abs(self.egn_values))
+        min_eigenvalue = np.min(np.abs(self.egn_values))
+
         if min_eigenvalue == 0:
             raise ValueError(
-                "The smallest absolute eigenvalue is zero, condition number is undefined."
+                "The smallest absolute eigenvalue is zero, condition number "
+                "is undefined."
             )
         return max_eigenvalue / min_eigenvalue
 
@@ -123,36 +121,34 @@ class EigModeASCI:
 @dataclass
 class AE3DEigenvector:
     """
-    Stores the details of a specific eigenvector from AE3D simulations, including the eigenvalue,
-    radial coordinates, and a detailed breakdown of harmonics with their amplitudes.
-
-    Attributes:
-        eigenvalue (float): The closest eigenvalue found.
-        s_coords (np.ndarray): Radial coordinate values.
-        harmonics (list[Harmonic]): List of harmonics comprising the eigenvector.
+    Stores the details of a specific eigenvector from AE3D simulations,
+    including the eigenvalue, radial coordinates, and a detailed breakdown
+    of harmonics with their amplitudes.
     """
 
     eigenvalue: float
     s_coords: np.ndarray
     harmonics: list[Harmonic]
 
-    @staticmethod
-    def from_eig_mode_asci(eig_mode_asci: EigModeASCI, target_eigenvalue: float):
+    @classmethod
+    def from_eig_mode_asci(cls, eig_mode_asci: EigModeASCI, target_eigenvalue: float):
         """
-        Factory method to create an AE3DEigenvector instance from an EigModeASCI data class.
+        Factory method to create an AE3DEigenvector instance from an
+        EigModeASCI data class.
 
         Args:
             eig_mode_asci (EigModeASCI): The EigModeASCI instance to process.
-            target_eigenvalue (float): Target eigenvalue to identify the nearest eigenvector.
+            target_eigenvalue (float): Target eigenvalue to identify the
+                                      nearest eigenvector.
 
         Returns:
-            AE3DEigenvector: An initialized AE3DEigenvector object.
+            AE3DEigenvector: An instance containing the eigenvector data.
         """
         (
             egn_value,
             egn_vector_sorted,
             modes_sorted,
-        ) = eig_mode_asci.get_nearest_eigenvector(target_eigenvalue)
+        ) = cls.get_nearest_eigenvector(target_eigenvalue)
         harmonics = [
             Harmonic(
                 m=modes_sorted["m"][i],
@@ -162,7 +158,7 @@ class AE3DEigenvector:
             for i in range(len(modes_sorted))
         ]
         return AE3DEigenvector(
-            eigenvalue=egn_value, s_coords=eig_mode_asci.s_coords, harmonics=harmonics
+            eigenvalue=egn_value, s_coords=cls.s_coords, harmonics=harmonics
         )
 
     def export_to_numpy(
@@ -173,7 +169,8 @@ class AE3DEigenvector:
 
         Args:
             filename (str): The name of the file to export to.
-            num_harmonics (int, optional): The number of harmonics to export. If None, all harmonics are exported.
+            num_harmonics (int, optional): The number of harmonics to export.
+                If None, all harmonics are exported.
         """
         num_harmonics = num_harmonics or len(self.harmonics)
         harmonics_data = {
@@ -182,6 +179,30 @@ class AE3DEigenvector:
             "harmonics": np.array(
                 [
                     (h.m, h.n, h.amplitudes[0:-1:resolution_step])
+                    for h in self.harmonics[:num_harmonics]
+                ],
+                dtype=object,
+            ),
+        }
+        np.save(filename, harmonics_data)
+        print(f"Harmonics exported to {filename}")
+
+    def export_to_csv(self, filename: str, num_harmonics: int = None):
+        """
+        Export the eigenvector data to a CSV file.
+
+        Args:
+            filename (str): The name of the file to export to.
+            num_harmonics (int, optional): The number of harmonics to export.
+                                          If None, all harmonics are exported.
+        """
+        num_harmonics = num_harmonics or len(self.harmonics)
+        harmonics_data = {
+            "eigenvalue": self.eigenvalue,
+            "s_coords": self.s_coords,
+            "harmonics": np.array(
+                [
+                    (h.m, h.n, h.amplitudes)
                     for h in self.harmonics[:num_harmonics]
                 ],
                 dtype=object,
@@ -215,10 +236,12 @@ class AE3DEigenvector:
 
 def plot_ae3d_eigenmode(mode: AE3DEigenvector, harmonics: int = 5):
     """
-    Creates an interactive plot of the top 'harmonics' number of harmonics for a given AE3DEigenvector.
+    Creates an interactive plot of the top 'harmonics' number of harmonics
+    for a given AE3DEigenvector.
 
     Args:
-        mode (AE3DEigenvector): An instance of AE3DEigenvector containing the eigenmode data to plot.
+        mode (AE3DEigenvector): An instance of AE3DEigenvector containing
+                                the eigenmode data to plot.
         harmonics (int): The number of top harmonics to plot (default is 5).
 
     Returns:
@@ -252,18 +275,20 @@ def plot_ae3d_eigenmode(mode: AE3DEigenvector, harmonics: int = 5):
 
 def continuum_from_ae3d(ae3d: EigModeASCI, minevalue=0.0, maxevalue=600**2):
     """
-    Given an AE3D EigModeASCI object, this function extracts the set of eigenvalues
-    between minevalue and maxevalue, and returns a list of ModeContinuum objects. This is
-    used for visualization of the spectral content, which includes the continuum modes.
+    Given an AE3D EigModeASCI object, this function extracts the set of
+    eigenvalues between minevalue and maxevalue, and returns a list of
+    ModeContinuum objects. This is used for visualization of the spectral
+    content, which includes the continuum modes.
 
     Args:
-        ae3d (EigModeASCI): An instance of EigModeASCI containing the eigenmode data.
+        ae3d (EigModeASCI): An instance of EigModeASCI containing the
+                             eigenmode data.
         minevalue (float): Minimum eigenvalue to consider (default is 0.0).
         maxevalue (float): Maximum eigenvalue to consider (default is 600**2).
 
     Returns:
-        List[ModeContinuum]: A list of ModeContinuum objects representing the modes within the
-        specified eigenvalue range.
+        List[ModeContinuum]: A list of ModeContinuum objects representing
+        the modes within the specified eigenvalue range.
     """
     ModeList = []
     mn_set = set()

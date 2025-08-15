@@ -1,4 +1,3 @@
-import sys
 import time
 
 import numpy as np
@@ -13,7 +12,7 @@ from simsopt.util.constants import (
     ALPHA_PARTICLE_MASS,
     FUSION_ALPHA_PARTICLE_ENERGY,
 )
-from simsopt.util.functions import proc0_print
+from simsopt.util.functions import proc0_print, setup_logging
 from simsopt.util.mpi import comm_size, comm_world, verbose
 
 boozmn_filename = "../inputs/boozmn_aten_rescaled.nc"
@@ -35,7 +34,8 @@ order = 3  # order for interpolation
 tol = 1e-8  # Tolerance for ODE solver
 degree = 3  # Degree for Lagrange interpolation
 
-sys.stdout = open(f"stdout_passing_freq_{resolution}_{comm_size}.txt", "a", buffering=1)
+# Setup logging to redirect output to file
+setup_logging(f"stdout_passing_freq_{resolution}_{comm_size}.txt")
 
 time1 = time.time()
 M = 1
@@ -84,7 +84,7 @@ if verbose:
     plt.xlabel("s")
     plt.ylabel(r"$\omega_\theta/\omega_\zeta$")
     plt.legend()
-    plt.savefig(f"passing_frequencies.png")
+    plt.savefig("passing_frequencies.png")
     plt.close()
 
 time2 = time.time()

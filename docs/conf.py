@@ -38,7 +38,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.autosummary",
     "sphinx_rtd_theme",
-    "myst-parser",
+    "myst_parser",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

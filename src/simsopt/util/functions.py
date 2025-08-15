@@ -58,6 +58,12 @@ def setup_logging(filename):
         message = ' '.join(map(str, args))
         logging.info(message)
         # Also call the original print to maintain console output
-        original_print(*args, **kwargs, flush=True)
+        # Handle potential conflict with flush parameter
+        if 'flush' in kwargs:
+            # If flush is already specified, don't add it again
+            original_print(*args, **kwargs)
+        else:
+            # Add flush=True if not already specified
+            original_print(*args, **kwargs, flush=True)
 
     builtins.print = logged_print

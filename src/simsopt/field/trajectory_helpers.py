@@ -935,9 +935,9 @@ def compute_peta(field_or_saw, points, vpar, mass, charge, helicity_M, helicity_
         vpar = np.array([vpar])
     if isinstance(vpar, list):
         vpar = np.array(vpar)
-    assert (
-        vpar.shape[0] == points.shape[0]
-    ), "vpar must have the same number of points as points"
+    assert vpar.shape[0] == points.shape[0], (
+        "vpar must have the same number of points as points"
+    )
 
     if isinstance(field_or_saw, ShearAlfvenWave):
         field = field_or_saw.B0
@@ -997,9 +997,9 @@ def compute_Eprime(saw, points, vpar, mu, mass, charge, helicity_M, helicity_N):
         vpar = np.array([vpar])
     if isinstance(vpar, list):
         vpar = np.array(vpar)
-    assert (
-        vpar.shape[0] == points.shape[0]
-    ), "vpar must have the same number of points as points"
+    assert vpar.shape[0] == points.shape[0], (
+        "vpar must have the same number of points as points"
+    )
     if vpar.shape[0] != points.shape[0]:
         raise ValueError("vpar must have the same number of points as points")
     if isinstance(saw, ShearAlfvenHarmonic) is False:

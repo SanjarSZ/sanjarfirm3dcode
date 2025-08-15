@@ -482,7 +482,7 @@ class TestingFiniteBeta(unittest.TestCase):
                         xn=xn,
                         nu=nu,
                         lmnc_half=lmnc_half,
-                        iota=iota
+                        iota=iota,
                     )
                     opt = minimize(theta_diff_bound, 0)
                     thetas_vmec[isurf] = opt.x

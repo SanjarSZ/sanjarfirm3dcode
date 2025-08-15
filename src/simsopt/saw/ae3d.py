@@ -201,10 +201,7 @@ class AE3DEigenvector:
             "eigenvalue": self.eigenvalue,
             "s_coords": self.s_coords,
             "harmonics": np.array(
-                [
-                    (h.m, h.n, h.amplitudes)
-                    for h in self.harmonics[:num_harmonics]
-                ],
+                [(h.m, h.n, h.amplitudes) for h in self.harmonics[:num_harmonics]],
                 dtype=object,
             ),
         }

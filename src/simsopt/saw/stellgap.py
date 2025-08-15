@@ -331,7 +331,7 @@ def plot_continuum_modes(
                     hoverlabel={
                         "font_size": 16,
                         "bgcolor": "white",
-                        "bordercolor": color
+                        "bordercolor": color,
                     },
                 )
             )

@@ -338,7 +338,7 @@ class PassingPoincare:
         if "axis" in self.solver_options and self.solver_options["axis"] != 0:
             raise ValueError(
                 'ODE solver must integrate with solver_options["axis"]=0 to '
-                'compute passing frequencies.'
+                "compute passing frequencies."
             )
 
         self.field.set_points(np.array([[1], [0], [0]]).T)
@@ -727,7 +727,7 @@ class TrappedPoincare:
                 warn(
                     f"Root solve for chi_mirror failed! s = {s2d[i]}, "
                     f"eta/(2*pi) = {etas2d[i] / (2 * np.pi)}",
-                    stacklevel=2
+                    stacklevel=2,
                 )
 
         if self.comm is not None:
@@ -763,8 +763,10 @@ class TrappedPoincare:
                     tr, time = self.trapped_map(tr)
                     tr, time = self.trapped_map(tr)
                     if np.abs(tr[1] - chis_traj[-1]) > 2 * np.pi:
-                        warn("Barely trapped particle detected in trapped_map.",
-                             stacklevel=2)
+                        warn(
+                            "Barely trapped particle detected in trapped_map.",
+                            stacklevel=2,
+                        )
                         broken = True
                         break
                     s_traj.append(tr[0])
@@ -857,7 +859,7 @@ class TrappedPoincare:
         if self.solver_options["axis"] != 0:
             raise ValueError(
                 'ODE solver must integrate with solver_options["axis"]=0 to '
-                'compute trapped frequencies.'
+                "compute trapped frequencies."
             )
 
         omega_eta = []
@@ -933,9 +935,9 @@ def compute_peta(field_or_saw, points, vpar, mass, charge, helicity_M, helicity_
         vpar = np.array([vpar])
     if isinstance(vpar, list):
         vpar = np.array(vpar)
-    assert (
-        vpar.shape[0] == points.shape[0]
-    ), "vpar must have the same number of points as points"
+    assert vpar.shape[0] == points.shape[0], (
+        "vpar must have the same number of points as points"
+    )
 
     if isinstance(field_or_saw, ShearAlfvenWave):
         field = field_or_saw.B0
@@ -995,9 +997,9 @@ def compute_Eprime(saw, points, vpar, mu, mass, charge, helicity_M, helicity_N):
         vpar = np.array([vpar])
     if isinstance(vpar, list):
         vpar = np.array(vpar)
-    assert (
-        vpar.shape[0] == points.shape[0]
-    ), "vpar must have the same number of points as points"
+    assert vpar.shape[0] == points.shape[0], (
+        "vpar must have the same number of points as points"
+    )
     if vpar.shape[0] != points.shape[0]:
         raise ValueError("vpar must have the same number of points as points")
     if isinstance(saw, ShearAlfvenHarmonic) is False:

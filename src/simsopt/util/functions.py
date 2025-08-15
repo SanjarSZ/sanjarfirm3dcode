@@ -43,23 +43,24 @@ def setup_logging(filename):
     # Configure logging to write to both file and console
     logging.basicConfig(
         level=logging.INFO,
-        format='%(message)s',
+        format="%(message)s",
         handlers=[
-            logging.FileHandler(filename, mode='a'),
-            logging.StreamHandler(sys.stdout)
+            logging.FileHandler(filename, mode="a"),
+            logging.StreamHandler(sys.stdout),
         ],
-        force=True  # Override any existing logging configuration
+        force=True,  # Override any existing logging configuration
     )
 
     # Redirect the built-in print function to use logging
     original_print = builtins.print
+
     def logged_print(*args, **kwargs):
         # Convert all arguments to strings and join them
-        message = ' '.join(map(str, args))
+        message = " ".join(map(str, args))
         logging.info(message)
         # Also call the original print to maintain console output
         # Handle potential conflict with flush parameter
-        if 'flush' in kwargs:
+        if "flush" in kwargs:
             # If flush is already specified, don't add it again
             original_print(*args, **kwargs)
         else:

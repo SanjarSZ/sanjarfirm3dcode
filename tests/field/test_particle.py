@@ -906,16 +906,12 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                         atol=0,
                     )
                     if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
-                        lower_bound = (
-                            zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
-                        )
+                        lower_bound = zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
                         upper_bound = (zetas[idx] + 1) + (
                             omega_zetas[idx] + 0.1
                         ) * gc_tys[i][1:-1, 0]
                     else:
-                        upper_bound = (
-                            zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
-                        )
+                        upper_bound = zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
                         lower_bound = (zetas[idx] - 1) + (
                             omega_zetas[idx] - 0.1
                         ) * gc_tys[i][1:-1, 0]

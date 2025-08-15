@@ -225,9 +225,7 @@ def align_and_pad(array, alignment=ALIGNMENT, dtype=None):
     return buf
 
 
-def allocate_aligned_and_padded_array(
-    shape, alignment=ALIGNMENT, dtype=None
-):
+def allocate_aligned_and_padded_array(shape, alignment=ALIGNMENT, dtype=None):
     if dtype is None:
         dtype = np.dtype(np.float64)
     assert len(shape) <= 2

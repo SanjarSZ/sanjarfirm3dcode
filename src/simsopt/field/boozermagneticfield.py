@@ -455,10 +455,10 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
         """
         points = self.get_points_ref()
         s = points[:, 0]
-        assert np.all(
-            s > 0
-        ), ("Metric is singular on magnetic axis s=0, can not compute. "
-            "Choose different point.")
+        assert np.all(s > 0), (
+            "Metric is singular on magnetic axis s=0, can not compute. "
+            "Choose different point."
+        )
         zetas = points[:, 2]
         R = self.R()[:, 0]
         dRdtheta = self.dRdtheta()[:, 0]
@@ -547,7 +547,8 @@ class BoozerMagneticField(sopp.BoozerMagneticField):
                 f"   [ {metric_at_error[2, 0]:.6e}  {metric_at_error[2, 1]:.6e}  "
                 f"{metric_at_error[2, 2]:.6e} ]]\n"
                 "exceeds 0.1% tolerance.",
-                RuntimeWarning, stacklevel=2,
+                RuntimeWarning,
+                stacklevel=2,
             )
 
         return CovariantBoozerMetric(
@@ -995,13 +996,15 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                     warnings.warn(
                         f"Prescribed field_type is inconsistent with enforce_vacuum. "
                         f"Proceeding with field_type={field_type}.",
-                        RuntimeWarning, stacklevel=2,
+                        RuntimeWarning,
+                        stacklevel=2,
                     )
                 if no_K != (field_type == "nok"):
                     warnings.warn(
                         f"Prescribed field_type is inconsistent with no_K. "
                         f"Proceeding with field_type={field_type}.",
-                        RuntimeWarning, stacklevel=2,
+                        RuntimeWarning,
+                        stacklevel=2,
                     )
             self.field_type = field_type
         else:
@@ -2415,7 +2418,8 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
                 warnings.warn(
                     f"initialize list does not match field_type={field_type}. "
                     f"Proceeding with initialize={initialize}",
-                    RuntimeWarning, stacklevel=2,
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
         if nfp is None:
             nfp = field.nfp
@@ -2449,7 +2453,8 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
                 rf"Sure about thetarange=[{thetarange[0]},{thetarange[1]}]? "
                 rf"When exploiting stellarator symmetry, the interpolant is "
                 rf"only evaluated for theta in [0,pi].",
-                RuntimeWarning, stacklevel=2,
+                RuntimeWarning,
+                stacklevel=2,
             )
         if nfp > 1 and (
             np.any(np.asarray(zetarange[0:2]) < 0)
@@ -2459,7 +2464,8 @@ class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField)
                 rf"Sure about zetarange=[{zetarange[0]},{zetarange[1]}]? "
                 rf"When exploiting rotational symmetry, the interpolant is "
                 rf"only evaluated for zeta in [0,2\pi/nfp].",
-                RuntimeWarning, stacklevel=2,
+                RuntimeWarning,
+                stacklevel=2,
             )
 
         sopp.InterpolatedBoozerField.__init__(

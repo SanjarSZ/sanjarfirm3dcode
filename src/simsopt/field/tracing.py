@@ -225,7 +225,8 @@ def trace_particles_boozer_perturbed(
             warn(
                 f"Prescribed mode is inconsistent with field_type. "
                 f"Proceeding with mode={mode}.",
-                RuntimeWarning, stacklevel=2,
+                RuntimeWarning,
+                stacklevel=2,
             )
     else:
         mode = "gc_" + perturbed_field.B0.field_type
@@ -457,12 +458,14 @@ def trace_particles_boozer(
             warn(
                 "Symplectic solver does not use absolute or relative tolerance. "
                 "Use dt and roottol to control timestep.",
-                RuntimeWarning, stacklevel=2,
+                RuntimeWarning,
+                stacklevel=2,
             )
         if axis is not None and axis != 0:
             warn(
                 "Symplectic solver must be run with axis = 0.",
-                RuntimeWarning, stacklevel=2,
+                RuntimeWarning,
+                stacklevel=2,
             )
             axis = 0
     else:
@@ -470,7 +473,8 @@ def trace_particles_boozer(
             warn(
                 "RK45 solver does not use dt, roottol, or predictor_step. "
                 "Use abstol and reltol to control the timestep.",
-                RuntimeWarning, stacklevel=2,
+                RuntimeWarning,
+                stacklevel=2,
             )
     # Set default values for parameters
     if axis is None:
@@ -503,7 +507,8 @@ def trace_particles_boozer(
             warn(
                 f"Prescribed mode is inconsistent with field_type. "
                 f"Proceeding with mode={mode}.",
-                RuntimeWarning, stacklevel=2,
+                RuntimeWarning,
+                stacklevel=2,
             )
     else:
         mode = "gc_" + field.field_type

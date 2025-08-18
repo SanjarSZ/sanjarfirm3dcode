@@ -170,9 +170,7 @@ class TestingFiniteBeta(unittest.TestCase):
                 filename_reordered = filename_sym_reordered
 
             # First, initialize correctly-sized grid (booz_xform)
-            bri = BoozerRadialInterpolant(
-                filename, order, comm=comm
-            )
+            bri = BoozerRadialInterpolant(filename, order, comm=comm)
 
             thetas = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
             zetas = np.linspace(0, 2 * np.pi / bri.nfp, nzeta, endpoint=False)
@@ -224,9 +222,7 @@ class TestingFiniteBeta(unittest.TestCase):
                 filename = filename_mhd
                 filename_wout = filename_mhd_wout
 
-            bri = BoozerRadialInterpolant(
-                filename, order, comm=comm
-            )
+            bri = BoozerRadialInterpolant(filename, order, comm=comm)
             isurf = round(0.75 * len(bri.s_half_ext))
 
             """
@@ -246,9 +242,7 @@ class TestingFiniteBeta(unittest.TestCase):
             B = bri.modB()[:, 0]
             sqrtg = (G + iota * I) / (B * B)
 
-            detg = np.abs(
-                np.sqrt(np.abs(bri.get_covariant_metric().det())) / bri.psi0
-            )
+            detg = np.abs(np.sqrt(np.abs(bri.get_covariant_metric().det())) / bri.psi0)
 
             assert np.allclose(
                 detg / np.mean(np.abs(sqrtg)),
@@ -353,16 +347,12 @@ class TestingFiniteBeta(unittest.TestCase):
             iotas = f.variables["iotas"][()][1::]
             G_spline = InterpolatedUnivariateSpline(bri.s_half_ext[1:-1], bvco)
             iota_spline = InterpolatedUnivariateSpline(bri.s_half_ext[1:-1], iotas)
-            modB00_spline = InterpolatedUnivariateSpline(
-                bri.s_half_ext[1:-1], modB00
-            )
+            modB00_spline = InterpolatedUnivariateSpline(bri.s_half_ext[1:-1], modB00)
 
             if comm is not None:
                 if comm.rank == 0:
                     rmnc_half = bri.bx.rmnc_b
-                    rmnc_full = 0.5 * (
-                        bri.bx.rmnc_b[:, 0:-1] + bri.bx.rmnc_b[:, 1::]
-                    )
+                    rmnc_full = 0.5 * (bri.bx.rmnc_b[:, 0:-1] + bri.bx.rmnc_b[:, 1::])
                 else:
                     rmnc_half = None
                     rmnc_full = None
@@ -374,9 +364,7 @@ class TestingFiniteBeta(unittest.TestCase):
             # major radius at theta = 0, zeta = 0
             R00_half = np.sum(rmnc_half, axis=0)
             R00_full = np.sum(rmnc_full, axis=0)
-            R00_spline = InterpolatedUnivariateSpline(
-                bri.s_half_ext[1:-1], R00_half
-            )
+            R00_spline = InterpolatedUnivariateSpline(bri.s_half_ext[1:-1], R00_half)
 
             assert np.allclose(bri.G()[:, 0], G_full, rtol=1e-4)
             assert np.allclose(bri.iota()[:, 0], iota_full, rtol=1e-2)

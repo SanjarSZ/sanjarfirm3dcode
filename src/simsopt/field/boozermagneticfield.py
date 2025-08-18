@@ -1178,8 +1178,6 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         bmnc[:, 1:-1] = self.bx.bmnc_b
         bmnc[:, 0] = 1.5 * bmnc[:, 1] - 0.5 * bmnc[:, 2]
         bmnc[:, -1] = 1.5 * bmnc[:, -2] - 0.5 * bmnc[:, -3]
-        mn_factor = np.ones_like(bmnc)
-        d_mn_factor = np.zeros_like(bmnc)
 
         numns = np.zeros((nm_b, ns_b2))
         rmnc = np.zeros((nm_b, ns_b2))
@@ -1272,14 +1270,10 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             )
 
         self.numns_splines = make_interp_spline(
-            s_half_mn, (mn_factor * numns).T, k=self.order, axis=0
+            s_half_mn, numns.T, k=self.order, axis=0
         )
-        self.rmnc_splines = make_interp_spline(
-            s_half_mn, (mn_factor * rmnc).T, k=self.order, axis=0
-        )
-        self.zmns_splines = make_interp_spline(
-            s_half_mn, (mn_factor * zmns).T, k=self.order, axis=0
-        )
+        self.rmnc_splines = make_interp_spline(s_half_mn, rmnc.T, k=self.order, axis=0)
+        self.zmns_splines = make_interp_spline(s_half_mn, zmns.T, k=self.order, axis=0)
 
         if self.enforce_qs:
             bmnc_filtered = bmnc.copy()
@@ -1287,7 +1281,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                 self.helicity_M * self.xn_b != self.helicity_N * self.xm_b
             ] = 0
             self.bmnc_splines = make_interp_spline(
-                s_half_mn, (mn_factor * bmnc_filtered).T, k=self.order, axis=0
+                s_half_mn, bmnc_filtered.T, k=self.order, axis=0
             )
             dbmncds_filtered = dbmncds.copy()
             dbmncds_filtered[
@@ -1298,7 +1292,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             )
         else:
             self.bmnc_splines = make_interp_spline(
-                s_half_mn, (mn_factor * bmnc).T, k=self.order, axis=0
+                s_half_mn, bmnc.T, k=self.order, axis=0
             )
             self.dbmncds_splines = make_interp_spline(
                 s_full[1:-1], dbmncds.T, k=self.order, axis=0
@@ -1315,13 +1309,13 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         if self.asym:
             self.numnc_splines = make_interp_spline(
-                s_half_mn, (mn_factor * numnc).T, k=self.order, axis=0
+                s_half_mn, numnc.T, k=self.order, axis=0
             )
             self.rmns_splines = make_interp_spline(
-                s_half_mn, (mn_factor * rmns).T, k=self.order, axis=0
+                s_half_mn, rmns.T, k=self.order, axis=0
             )
             self.zmnc_splines = make_interp_spline(
-                s_half_mn, (mn_factor * zmnc).T, k=self.order, axis=0
+                s_half_mn, zmnc.T, k=self.order, axis=0
             )
             if self.enforce_qs:
                 bmns_filtered = bmns.copy()
@@ -1329,7 +1323,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                     self.helicity_M * self.xn_b != self.helicity_N * self.xm_b
                 ] = 0
                 self.bmns_splines = make_interp_spline(
-                    s_half_mn, (mn_factor * bmns_filtered).T, k=self.order, axis=0
+                    s_half_mn, bmns_filtered.T, k=self.order, axis=0
                 )
                 dbmnsds_filtered = dbmnsds.copy()
                 dbmnsds_filtered[
@@ -1340,7 +1334,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                 )
             else:
                 self.bmns_splines = make_interp_spline(
-                    s_half_mn, (mn_factor * bmns).T, k=self.order, axis=0
+                    s_half_mn, bmns.T, k=self.order, axis=0
                 )
                 self.dbmnsds_splines = make_interp_spline(
                     s_full[1:-1], dbmnsds.T, k=self.order, axis=0
@@ -1402,7 +1396,6 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             zmnc_half = allocate_aligned_and_padded_array(array_shape)
             numnc_half = allocate_aligned_and_padded_array(array_shape)
             kmnc = allocate_aligned_and_padded_array(array_shape)
-
 
         # Fill pre-allocated arrays to maintain alignment
         # Only fill the actual data portion, not the padding
@@ -1571,10 +1564,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                self.kmns_splines(s)[:, im]
-                * self.xm_b[im]
-            )
+            return self.kmns_splines(s)[:, im] * self.xm_b[im]
 
         inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1584,10 +1574,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    -self.kmnc_splines(s)[:, im]
-                    * self.xm_b[im]
-                )
+                return -self.kmnc_splines(s)[:, im] * self.xm_b[im]
 
             inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1600,10 +1587,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                -self.kmns_splines(s)[:, im]
-                * self.xn_b[im]
-            )
+            return -self.kmns_splines(s)[:, im] * self.xn_b[im]
 
         inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1613,10 +1597,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    self.kmnc_splines(s)[:, im]
-                    * self.xn_b[im]
-                )
+                return self.kmnc_splines(s)[:, im] * self.xn_b[im]
 
             inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1627,8 +1608,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return self.numns_splines(s)[:, im]     
-            
+            return self.numns_splines(s)[:, im]
 
         inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1649,10 +1629,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                self.numns_splines(s)[:, im]
-                * self.xm_b[im]
-            )
+            return self.numns_splines(s)[:, im] * self.xm_b[im]
 
         inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1662,10 +1639,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    -self.numnc_splines(s)[:, im]
-                    * self.xm_b[im]
-                )
+                return -self.numnc_splines(s)[:, im] * self.xm_b[im]
 
             inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1676,10 +1650,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                -self.numns_splines(s)[:, im]
-                * self.xn_b[im]
-            )
+            return -self.numns_splines(s)[:, im] * self.xn_b[im]
 
         inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1689,10 +1660,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    self.numnc_splines(s)[:, im]
-                    * self.xn_b[im]
-                )
+                return self.numnc_splines(s)[:, im] * self.xn_b[im]
 
             inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1703,9 +1671,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                self.dnumnsds_splines(s)[:, im]
-            ) 
+            return self.dnumnsds_splines(s)[:, im]
 
         inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1715,9 +1681,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                    return (
-                    self.dnumncds_splines(s)[:, im]
-                ) 
+                return self.dnumncds_splines(s)[:, im]
 
             inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1728,10 +1692,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                -self.rmnc_splines(s)[:, im]
-                * self.xm_b[im]
-            )
+            return -self.rmnc_splines(s)[:, im] * self.xm_b[im]
 
         inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1741,10 +1702,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    self.rmns_splines(s)[:, im]
-                    * self.xm_b[im]
-                )
+                return self.rmns_splines(s)[:, im] * self.xm_b[im]
 
             inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1755,10 +1713,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                self.rmnc_splines(s)[:, im]
-                * self.xn_b[im]
-            )
+            return self.rmnc_splines(s)[:, im] * self.xn_b[im]
 
         inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1768,10 +1723,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    -self.rmns_splines(s)[:, im]
-                    * self.xn_b[im]
-                )
+                return -self.rmns_splines(s)[:, im] * self.xn_b[im]
 
             inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1782,9 +1734,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                self.drmncds_splines(s)[:, im]
-            )
+            return self.drmncds_splines(s)[:, im]
 
         inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1794,9 +1744,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    self.drmnsds_splines(s)[:, im]
-                )
+                return self.drmnsds_splines(s)[:, im]
 
             inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1828,10 +1776,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                self.zmns_splines(s)[:, im]
-                * self.xm_b[im]
-            )
+            return self.zmns_splines(s)[:, im] * self.xm_b[im]
 
         inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1841,10 +1786,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    -self.zmnc_splines(s)[:, im]
-                    * self.xm_b[im]
-                )
+                return -self.zmnc_splines(s)[:, im] * self.xm_b[im]
 
             inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1855,10 +1797,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                -self.zmns_splines(s)[:, im]
-                * self.xn_b[im]
-            )
+            return -self.zmns_splines(s)[:, im] * self.xn_b[im]
 
         inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1868,10 +1807,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    self.zmnc_splines(s)[:, im]
-                    * self.xn_b[im]
-                )
+                return self.zmnc_splines(s)[:, im] * self.xn_b[im]
 
             inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1882,9 +1818,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                self.dzmnsds_splines(s)[:, im]
-            )
+            return self.dzmnsds_splines(s)[:, im]
 
         inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -1894,9 +1828,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    self.dzmncds_splines(s)[:, im]
-                )
+                return self.dzmncds_splines(s)[:, im]
 
             inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -1991,10 +1923,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                -self.xm_b[im]
-                * self.bmnc_splines(s)[:, im]
-            )
+            return -self.xm_b[im] * self.bmnc_splines(s)[:, im]
 
         inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -2004,10 +1933,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    self.xm_b[im]
-                    * self.bmns_splines(s)[:, im]
-                )
+                return self.xm_b[im] * self.bmns_splines(s)[:, im]
 
             inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -2018,10 +1944,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                self.xn_b[im]
-                * self.bmnc_splines(s)[:, im]
-            )
+            return self.xn_b[im] * self.bmnc_splines(s)[:, im]
 
         inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -2031,10 +1954,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    -self.xn_b[im]
-                    * self.bmns_splines(s)[:, im]
-                )
+                return -self.xn_b[im] * self.bmns_splines(s)[:, im]
 
             inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -2045,9 +1965,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         @self.iterate_and_invert
         def _harmonics(im, s):
-            return (
-                self.dbmncds_splines(s)[:, im]
-            )
+            return self.dbmncds_splines(s)[:, im]
 
         inverse_fourier = sopp.inverse_fourier_transform_even
 
@@ -2057,9 +1975,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
             @self.iterate_and_invert
             def _harmonics(im, s):
-                return (
-                    self.dbmnsds_splines(s)[:, im]
-                )
+                return self.dbmnsds_splines(s)[:, im]
 
             inverse_fourier = sopp.inverse_fourier_transform_odd
 
@@ -2070,7 +1986,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         points = self.get_points_ref()
         if len(points) == 1:
             return self._compute_single_point(output, harmonics, inverse_fourier)
-        
+
         if self.comm is not None:
             size = self.comm.size
             rank = self.comm.rank
@@ -2103,14 +2019,14 @@ class BoozerRadialInterpolant(BoozerMagneticField):
 
         if len(s) > 1:
             # Pre-compute padded arrays only when needed
-            if not hasattr(self, '_padded_cache') or len(self._padded_cache) != len(s):
+            if not hasattr(self, "_padded_cache") or len(self._padded_cache) != len(s):
                 self._padded_cache = {
-                    'thetas': align_and_pad(thetas),
-                    'zetas': align_and_pad(zetas)
+                    "thetas": align_and_pad(thetas),
+                    "zetas": align_and_pad(zetas),
                 }
-            
-            padded_thetas = self._padded_cache['thetas']
-            padded_zetas = self._padded_cache['zetas']
+
+            padded_thetas = self._padded_cache["thetas"]
+            padded_zetas = self._padded_cache["zetas"]
 
             # Optimize buffer allocation with better key strategy
             buffer_key = ("padded", output.shape, len(s))
@@ -2119,7 +2035,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                     output.shape
                 )
             padded_buffer = self._compute_buffers[buffer_key]
-            
+
             # Use memset-like operation for faster clearing
             if padded_buffer.size > 0:
                 padded_buffer.fill(0)
@@ -2188,7 +2104,7 @@ class BoozerRadialInterpolant(BoozerMagneticField):
                     output[im] = func(im + offset, us)[inv]
 
         return _f
-    
+
     def _compute_single_point(self, output, harmonics, inverse_fourier):
         """
         Fast path for single point evaluation - avoids unnecessary allocations
@@ -2197,24 +2113,24 @@ class BoozerRadialInterpolant(BoozerMagneticField):
         s = points[0, 0]
         theta = points[0, 1]
         zeta = points[0, 2]
-        
+
         # Create minimal arrays for single point computation
         us = np.array([s])
         inv = np.array([0])
-        
+
         # Allocate minimal buffers
         chunk_mn = np.zeros((len(self.xm_b), 1))
-        
+
         # Compute harmonics for the single point
         harmonics(us, chunk_mn, inv, 0, len(self.xm_b), 0)
-        
+
         # Create minimal padded arrays
         padded_thetas = np.array([theta])
         padded_zetas = np.array([zeta])
-        
+
         # Allocate minimal output buffer
         padded_buffer = np.zeros((1, 1))
-        
+
         # Use the inverse_fourier function properly
         inverse_fourier(
             padded_buffer,
@@ -2226,14 +2142,10 @@ class BoozerRadialInterpolant(BoozerMagneticField):
             self.ntor,
             self.nfp,
         )
-        
+
         # Copy result to output
         output[0] = padded_buffer[0, 0]
         return output
-    
-
-    
-
 
 
 class InterpolatedBoozerField(sopp.InterpolatedBoozerField, BoozerMagneticField):

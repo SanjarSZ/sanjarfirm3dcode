@@ -6,3 +6,4 @@ nptyping >= 1.3.0
 ruamel.yaml
 plotly
 jupyter
+booz-xform >= 0.0.9

@@ -53,7 +53,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build libboost-all-dev libopenmpi-dev libnetcdf-dev libhdf5-dev libnetcdf-c++4-dev
+        sudo apt-get install -y cmake ninja-build libboost-all-dev libopenmpi-dev libnetcdf-dev libhdf5-dev libnetcdf-c++4-dev libgsl-dev pkg-config
 
     - name: Install dependencies
       run: |
@@ -64,6 +64,7 @@ jobs:
       env:
         NETCDF_DIR: /usr
         HDF5_DIR: /usr
+        GSL_DIR: /usr
 
     - name: Run tests
       run: |
@@ -91,7 +92,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build libboost-all-dev openmpi-bin libopenmpi-dev libnetcdf-dev libhdf5-dev libnetcdf-c++4-dev
+        sudo apt-get install -y cmake ninja-build libboost-all-dev openmpi-bin libopenmpi-dev libnetcdf-dev libhdf5-dev libnetcdf-c++4-dev libgsl-dev pkg-config
 
     - name: Install dependencies
       run: |
@@ -102,6 +103,7 @@ jobs:
       env:
         NETCDF_DIR: /usr
         HDF5_DIR: /usr
+        GSL_DIR: /usr
 
     - name: Run MPI tests
       run: |
@@ -121,7 +123,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build libboost-all-dev libnetcdf-dev libhdf5-dev libnetcdf-c++4-dev
+        sudo apt-get install -y cmake ninja-build libboost-all-dev libnetcdf-dev libhdf5-dev libnetcdf-c++4-dev libgsl-dev pkg-config
 
     - name: Install dependencies
       run: |
@@ -132,6 +134,7 @@ jobs:
       env:
         NETCDF_DIR: /usr
         HDF5_DIR: /usr
+        GSL_DIR: /usr
 
     - name: Build documentation
       run: |

@@ -153,7 +153,6 @@ class TestingFiniteBeta(unittest.TestCase):
         filename_asym_reduced = filename_mhd_lasym_reduced
         filename_asym_reordered = filename_mhd_lasym_reordered
         order = 3
-        ns_delete = 1
         ntheta = 21
         nzeta = 20
 
@@ -170,56 +169,49 @@ class TestingFiniteBeta(unittest.TestCase):
                 filename_reduced = filename_sym_reduced
                 filename_reordered = filename_sym_reordered
 
-            for rescale in [True, False]:
-                # First, initialize correctly-sized grid (booz_xform)
+            # First, initialize correctly-sized grid (booz_xform)
+            bri = BoozerRadialInterpolant(
+                filename, order, comm=comm
+            )
+
+            thetas = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
+            zetas = np.linspace(0, 2 * np.pi / bri.nfp, nzeta, endpoint=False)
+
+            thetas, zetas = np.meshgrid(thetas, zetas)
+            thetas_flat = thetas.flatten()
+            zetas_flat = zetas.flatten()
+
+            s_0 = np.copy(bri.s_half_ext)
+            G_0 = bri.G_spline(0.5)
+
+            # Next, initialize with wout file and check for consistency
+            bri = BoozerRadialInterpolant(
+                filename_wout,
+                order,
+                comm=comm,
+            )
+
+            s_1 = np.copy(bri.s_half_ext)
+            G_1 = bri.G_spline(0.5)
+
+            assert np.allclose(s_0, s_1)
+            assert G_0 == G_1
+
+            # Next, initialize wrong size of radial grid
+            with self.assertRaises(ValueError):
                 bri = BoozerRadialInterpolant(
-                    filename, order, rescale=rescale, ns_delete=ns_delete, comm=comm
-                )
-
-                thetas = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
-                zetas = np.linspace(0, 2 * np.pi / bri.nfp, nzeta, endpoint=False)
-
-                thetas, zetas = np.meshgrid(thetas, zetas)
-                thetas_flat = thetas.flatten()
-                zetas_flat = zetas.flatten()
-
-                s_0 = np.copy(bri.s_half_ext)
-                G_0 = bri.G_spline(0.5)
-
-                # Next, initialize with wout file and check for consistency
-                bri = BoozerRadialInterpolant(
-                    filename_wout,
+                    filename_reduced,
                     order,
-                    rescale=rescale,
-                    ns_delete=ns_delete,
                     comm=comm,
                 )
 
-                s_1 = np.copy(bri.s_half_ext)
-                G_1 = bri.G_spline(0.5)
-
-                assert np.allclose(s_0, s_1)
-                assert G_0 == G_1
-
-                # Next, initialize wrong size of radial grid
-                with self.assertRaises(ValueError):
-                    bri = BoozerRadialInterpolant(
-                        filename_reduced,
-                        order,
-                        rescale=False,
-                        ns_delete=ns_delete,
-                        comm=comm,
-                    )
-
-                # Next, initialize grid with incorrect order or s points
-                with self.assertRaises(ValueError):
-                    bri = BoozerRadialInterpolant(
-                        filename_reordered,
-                        order,
-                        rescale=False,
-                        ns_delete=ns_delete,
-                        comm=comm,
-                    )
+            # Next, initialize grid with incorrect order or s points
+            with self.assertRaises(ValueError):
+                bri = BoozerRadialInterpolant(
+                    filename_reordered,
+                    order,
+                    comm=comm,
+                )
 
         # These tests require higher resolution equilibrium, since they check
         # for consistency of the Jacobian and satisfying the magnetic
@@ -232,89 +224,87 @@ class TestingFiniteBeta(unittest.TestCase):
                 filename = filename_mhd
                 filename_wout = filename_mhd_wout
 
-            for rescale in [False, True]:
-                bri = BoozerRadialInterpolant(
-                    filename, order, rescale=rescale, ns_delete=ns_delete, comm=comm
-                )
-                isurf = round(0.75 * len(bri.s_half_ext))
+            bri = BoozerRadialInterpolant(
+                filename, order, comm=comm
+            )
+            isurf = round(0.75 * len(bri.s_half_ext))
 
-                """
-                These evaluation points test that the Jacobian sqrtg = (G + iota I)/B^2
-                matches sqrt(det(g_ij)).
-                """
-                # Perform interpolation from full grid
-                points = np.zeros((len(thetas_flat), 3))
-                points[:, 0] = bri.s_half_ext[isurf]
-                points[:, 1] = thetas_flat
-                points[:, 2] = zetas_flat
-                bri.set_points(points)
+            """
+            These evaluation points test that the Jacobian sqrtg = (G + iota I)/B^2
+            matches sqrt(det(g_ij)).
+            """
+            # Perform interpolation from full grid
+            points = np.zeros((len(thetas_flat), 3))
+            points[:, 0] = bri.s_half_ext[isurf]
+            points[:, 1] = thetas_flat
+            points[:, 2] = zetas_flat
+            bri.set_points(points)
 
-                G = bri.G()[:, 0]
-                I = bri.I()[:, 0]
-                iota = bri.iota()[:, 0]
-                B = bri.modB()[:, 0]
-                sqrtg = (G + iota * I) / (B * B)
+            G = bri.G()[:, 0]
+            I = bri.I()[:, 0]
+            iota = bri.iota()[:, 0]
+            B = bri.modB()[:, 0]
+            sqrtg = (G + iota * I) / (B * B)
 
-                detg = np.abs(
-                    np.sqrt(np.abs(bri.get_covariant_metric().det())) / bri.psi0
-                )
+            detg = np.abs(
+                np.sqrt(np.abs(bri.get_covariant_metric().det())) / bri.psi0
+            )
 
-                assert np.allclose(
-                    detg / np.mean(np.abs(sqrtg)),
-                    np.abs(sqrtg) / np.mean(np.abs(sqrtg)),
-                    atol=1e-2,
-                )
+            assert np.allclose(
+                detg / np.mean(np.abs(sqrtg)),
+                np.abs(sqrtg) / np.mean(np.abs(sqrtg)),
+                atol=1e-2,
+            )
 
-                """
-                These evluation points test that K() satisfies the magnetic
-                differential equation: iota dK/dtheta + dK/dzeta = sqrt(g)
-                mu0*p'(psi) + G'(psi) + iota*I'(psi)
-                """
-                isurf = round(0.75 * len(bri.s_half_ext))
-                points = np.zeros((len(thetas_flat), 3))
-                s_full = np.linspace(0, 1, bri.bx.ns_b + 1)
-                points[:, 0] = s_full[isurf]
-                points[:, 1] = thetas_flat
-                points[:, 2] = zetas_flat
+            """
+            These evluation points test that K() satisfies the magnetic
+            differential equation: iota dK/dtheta + dK/dzeta = sqrt(g)
+            mu0*p'(psi) + G'(psi) + iota*I'(psi)
+            """
+            isurf = round(0.75 * len(bri.s_half_ext))
+            points = np.zeros((len(thetas_flat), 3))
+            s_full = np.linspace(0, 1, bri.bx.ns_b + 1)
+            points[:, 0] = s_full[isurf]
+            points[:, 1] = thetas_flat
+            points[:, 2] = zetas_flat
 
-                bri.set_points(points)
+            bri.set_points(points)
 
-                K = bri.K()[:, 0]
-                dKdtheta = bri.dKdtheta()[:, 0]
-                dKdzeta = bri.dKdzeta()[:, 0]
-                K_derivs = bri.K_derivs()
+            K = bri.K()[:, 0]
+            dKdtheta = bri.dKdtheta()[:, 0]
+            dKdzeta = bri.dKdzeta()[:, 0]
+            K_derivs = bri.K_derivs()
 
-                assert np.allclose(K_derivs[:, 0], dKdtheta)
-                assert np.allclose(K_derivs[:, 1], dKdzeta)
+            assert np.allclose(K_derivs[:, 0], dKdtheta)
+            assert np.allclose(K_derivs[:, 1], dKdzeta)
 
-                I = bri.I()[:, 0]
-                G = bri.G()[:, 0]
-                iota = bri.iota()[:, 0]
-                modB = bri.modB()[:, 0]
-                sqrtg = (G + iota * I) / (modB * modB)
-                dGdpsi = bri.dGds()[:, 0] / bri.psi0
-                dIdpsi = bri.dIds()[:, 0] / bri.psi0
+            I = bri.I()[:, 0]
+            G = bri.G()[:, 0]
+            iota = bri.iota()[:, 0]
+            modB = bri.modB()[:, 0]
+            sqrtg = (G + iota * I) / (modB * modB)
+            dGdpsi = bri.dGds()[:, 0] / bri.psi0
+            dIdpsi = bri.dIds()[:, 0] / bri.psi0
 
-                f = netcdf_file(filename_wout, mmap=False)
-                pres = f.variables["pres"][()]
-                ds = bri.s_half_ext[2] - bri.s_half_ext[1]
-                dpdpsi = (pres[isurf + 1] - pres[isurf - 1]) / (2 * ds * bri.psi0)
-                mu0 = 4 * np.pi * 1e-7
-                rhs = mu0 * dpdpsi * sqrtg + dGdpsi + iota * dIdpsi
+            f = netcdf_file(filename_wout, mmap=False)
+            pres = f.variables["pres"][()]
+            ds = bri.s_half_ext[2] - bri.s_half_ext[1]
+            dpdpsi = (pres[isurf + 1] - pres[isurf - 1]) / (2 * ds * bri.psi0)
+            mu0 = 4 * np.pi * 1e-7
+            rhs = mu0 * dpdpsi * sqrtg + dGdpsi + iota * dIdpsi
 
-                K = K.reshape(np.shape(thetas))
-                dKdtheta = dKdtheta.reshape(np.shape(thetas))
-                dKdzeta = dKdzeta.reshape(np.shape(zetas))
-                lhs = iota.reshape(np.shape(thetas)) * dKdtheta + dKdzeta
+            K = K.reshape(np.shape(thetas))
+            dKdtheta = dKdtheta.reshape(np.shape(thetas))
+            dKdzeta = dKdzeta.reshape(np.shape(zetas))
+            lhs = iota.reshape(np.shape(thetas)) * dKdtheta + dKdzeta
 
-                assert np.allclose(rhs, lhs.flatten(), atol=1e-2)
+            assert np.allclose(rhs, lhs.flatten(), atol=1e-2)
 
     def test_boozerradialinterpolant_vacuum(self):
         """
         The next loop tests a vacuum equilibria
         """
         order = 3
-        ns_delete = 2
         for asym in [True, False]:
             if asym:
                 filename = filename_mhd_lasym
@@ -322,292 +312,289 @@ class TestingFiniteBeta(unittest.TestCase):
             else:
                 filename = filename_vac
                 filename_wout = filename_vac_wout
-            for rescale in [True, False]:
-                bri = BoozerRadialInterpolant(
-                    filename,
-                    order,
-                    mpol=20,
-                    ntor=18,
-                    rescale=rescale,
-                    ns_delete=ns_delete,
-                    no_K=True,
-                    comm=comm,
-                )
+            bri = BoozerRadialInterpolant(
+                filename,
+                order,
+                mpol=20,
+                ntor=18,
+                no_K=True,
+                comm=comm,
+            )
 
-                """
-                These evaluation points test G(), iota(), modB(), R(), and
-                associated derivatives by comparing with linear interpolation
-                onto vmec full grid.
-                """
-                # Perform interpolation from full grid
-                points = np.zeros((len(bri.s_half_ext) - 3, 3))
-                s_full = np.linspace(0, 1, bri.bx.ns_b + 1)
-                points[:, 0] = s_full[1:-1]
-                bri.set_points(points)
+            """
+            These evaluation points test G(), iota(), modB(), R(), and
+            associated derivatives by comparing with linear interpolation
+            onto vmec full grid.
+            """
+            # Perform interpolation from full grid
+            points = np.zeros((len(bri.s_half_ext) - 3, 3))
+            s_full = np.linspace(0, 1, bri.bx.ns_b + 1)
+            points[:, 0] = s_full[1:-1]
+            bri.set_points(points)
 
-                # Check with linear interpolation from half grid
-                f = netcdf_file(filename_wout, mmap=False)
-                bvco = f.variables["bvco"][()]
-                iotas = f.variables["iotas"][()]
-                G_full = (bvco[1:-1] + bvco[2::]) / 2.0
-                iota_full = (iotas[1:-1] + iotas[2::]) / 2.0
-                # magnitude of B at theta = 0, zeta = 0
-                if comm is not None:
-                    modB00 = np.sum(bri.bx.bmnc_b, axis=0) if comm.rank == 0 else None
-                    modB00 = comm.bcast(modB00, root=0)
-                else:
-                    modB00 = np.sum(bri.bx.bmnc_b, axis=0)
-                modB_full = (modB00[0:-1] + modB00[1::]) / 2
+            # Check with linear interpolation from half grid
+            f = netcdf_file(filename_wout, mmap=False)
+            bvco = f.variables["bvco"][()]
+            iotas = f.variables["iotas"][()]
+            G_full = (bvco[1:-1] + bvco[2::]) / 2.0
+            iota_full = (iotas[1:-1] + iotas[2::]) / 2.0
+            # magnitude of B at theta = 0, zeta = 0
+            if comm is not None:
+                modB00 = np.sum(bri.bx.bmnc_b, axis=0) if comm.rank == 0 else None
+                modB00 = comm.bcast(modB00, root=0)
+            else:
+                modB00 = np.sum(bri.bx.bmnc_b, axis=0)
+            modB_full = (modB00[0:-1] + modB00[1::]) / 2
 
-                # Compare splines of derivatives with spline derivatives
-                f = netcdf_file(filename_wout, mmap=False)
+            # Compare splines of derivatives with spline derivatives
+            f = netcdf_file(filename_wout, mmap=False)
 
-                bvco = f.variables["bvco"][()][1::]
-                iotas = f.variables["iotas"][()][1::]
-                G_spline = InterpolatedUnivariateSpline(bri.s_half_ext[1:-1], bvco)
-                iota_spline = InterpolatedUnivariateSpline(bri.s_half_ext[1:-1], iotas)
-                modB00_spline = InterpolatedUnivariateSpline(
-                    bri.s_half_ext[1:-1], modB00
-                )
+            bvco = f.variables["bvco"][()][1::]
+            iotas = f.variables["iotas"][()][1::]
+            G_spline = InterpolatedUnivariateSpline(bri.s_half_ext[1:-1], bvco)
+            iota_spline = InterpolatedUnivariateSpline(bri.s_half_ext[1:-1], iotas)
+            modB00_spline = InterpolatedUnivariateSpline(
+                bri.s_half_ext[1:-1], modB00
+            )
 
-                if comm is not None:
-                    if comm.rank == 0:
-                        rmnc_half = bri.bx.rmnc_b
-                        rmnc_full = 0.5 * (
-                            bri.bx.rmnc_b[:, 0:-1] + bri.bx.rmnc_b[:, 1::]
-                        )
-                    else:
-                        rmnc_half = None
-                        rmnc_full = None
-                    rmnc_half = comm.bcast(rmnc_half, root=0)
-                    rmnc_full = comm.bcast(rmnc_full, root=0)
-                else:
+            if comm is not None:
+                if comm.rank == 0:
                     rmnc_half = bri.bx.rmnc_b
-                    rmnc_full = 0.5 * (bri.bx.rmnc_b[:, 0:-1] + bri.bx.rmnc_b[:, 1::])
-                # major radius at theta = 0, zeta = 0
-                R00_half = np.sum(rmnc_half, axis=0)
-                R00_full = np.sum(rmnc_full, axis=0)
-                R00_spline = InterpolatedUnivariateSpline(
-                    bri.s_half_ext[1:-1], R00_half
-                )
-
-                assert np.allclose(bri.G()[:, 0], G_full, rtol=1e-4)
-                assert np.allclose(bri.iota()[:, 0], iota_full, rtol=1e-2)
-                assert np.allclose(bri.modB()[:, 0], modB_full, rtol=1e-2)
-                assert np.allclose(bri.R()[:, 0], R00_full, rtol=1e-2)
-
-                # Only compare away from axis since inacurracies are introduced
-                # through spline due to r ~ sqrt(s) behavior
-                mean_dGds = np.mean(np.abs(bri.dGds()[5:, 0])) if bri.asym else 1
-
-                s_full = np.linspace(0, 1, bri.bx.ns_b + 1)
-                assert np.allclose(
-                    bri.dGds()[5::, 0] / mean_dGds,
-                    G_spline.derivative()(s_full[6:-1]) / mean_dGds,
-                    atol=1e-2,
-                )
-                mean_diotads = np.mean(np.abs(bri.diotads()[5::, 0]))
-                assert np.allclose(
-                    bri.diotads()[5::, 0] / mean_diotads,
-                    iota_spline.derivative()(s_full[6:-1]) / mean_diotads,
-                    atol=1e-2,
-                )
-                assert np.allclose(
-                    bri.dmodBds()[5::, 0],
-                    modB00_spline.derivative()(s_full[6:-1]),
-                    rtol=1e-2,
-                )
-                mean_dRds = np.mean(np.abs(bri.dRds()))
-                assert np.allclose(
-                    bri.dRds()[5::, 0] / mean_dRds,
-                    R00_spline.derivative()(s_full[6:-1]) / mean_dRds,
-                    atol=1e-2,
-                )
-
-                """
-                The next evaluation points test Z() and nu()
-                """
-                points = np.zeros((len(bri.s_half_ext[1:-1]), 3))
-                points[:, 0] = bri.s_half_ext[1:-1]
-                points[:, 1] = 0.0
-                points[:, 2] = np.pi / 3
-                bri.set_points(points)
-
-                nu = bri.nu()
-                iota = bri.iota()
-
-                # zmns/zmnc on full grid
-                # lmnc/lmns on half grid
-                f = netcdf_file(filename_wout, mmap=False)
-
-                zmns = f.variables["zmns"][()].T
-                lmns_half = (f.variables["lmns"][()].T)[:, 1::]
-                zmns_half = 0.5 * (zmns[:, 0:-1] + zmns[:, 1::])
-                if bri.asym:
-                    lmnc_half = (f.variables["lmnc"][()].T)[:, 1::]
-                    zmnc = f.variables["zmnc"][()].T
-                    zmnc_half = 0.5 * (zmnc[:, 0:-1] + zmnc[:, 1::])
+                    rmnc_full = 0.5 * (
+                        bri.bx.rmnc_b[:, 0:-1] + bri.bx.rmnc_b[:, 1::]
+                    )
                 else:
-                    lmnc_half = np.zeros_like(lmns_half)
-                    zmnc_half = np.zeros_like(zmns_half)
+                    rmnc_half = None
+                    rmnc_full = None
+                rmnc_half = comm.bcast(rmnc_half, root=0)
+                rmnc_full = comm.bcast(rmnc_full, root=0)
+            else:
+                rmnc_half = bri.bx.rmnc_b
+                rmnc_full = 0.5 * (bri.bx.rmnc_b[:, 0:-1] + bri.bx.rmnc_b[:, 1::])
+            # major radius at theta = 0, zeta = 0
+            R00_half = np.sum(rmnc_half, axis=0)
+            R00_full = np.sum(rmnc_full, axis=0)
+            R00_spline = InterpolatedUnivariateSpline(
+                bri.s_half_ext[1:-1], R00_half
+            )
 
-                # Determine the vmec theta/phi corresponding to theta_b = 0,
-                # zeta_b = pi/3
-                # Here zeta_b = phi + nu
-                # theta + lambda - iota * phi = theta_b - iota * zeta_b
-                # theta + lambda - iota * (pi/3 - nu) = - iota * pi/3
-                # theta + lambda + iota * nu = 0
+            assert np.allclose(bri.G()[:, 0], G_full, rtol=1e-4)
+            assert np.allclose(bri.iota()[:, 0], iota_full, rtol=1e-2)
+            assert np.allclose(bri.modB()[:, 0], modB_full, rtol=1e-2)
+            assert np.allclose(bri.R()[:, 0], R00_full, rtol=1e-2)
 
-                xm = f.variables["xm"][()]
-                xn = f.variables["xn"][()]
+            # Only compare away from axis since inacurracies are introduced
+            # through spline due to r ~ sqrt(s) behavior
+            mean_dGds = np.mean(np.abs(bri.dGds()[5:, 0])) if bri.asym else 1
 
-                def theta_diff(theta, isurf, lmns_half, xm, xn, nu, lmnc_half, iota):
-                    lam = np.sum(
-                        lmns_half[:, isurf]
-                        * np.sin(xm * theta - xn * (np.pi / 3 - nu[isurf, 0]))
-                        + lmnc_half[:, isurf]
-                        * np.cos(xm * theta - xn * (np.pi / 3 - nu[isurf, 0])),
-                        axis=0,
-                    )
-                    return ((theta + lam) + iota[isurf, 0] * (nu[isurf, 0])) ** 2
+            s_full = np.linspace(0, 1, bri.bx.ns_b + 1)
+            assert np.allclose(
+                bri.dGds()[5::, 0] / mean_dGds,
+                G_spline.derivative()(s_full[6:-1]) / mean_dGds,
+                atol=1e-2,
+            )
+            mean_diotads = np.mean(np.abs(bri.diotads()[5::, 0]))
+            assert np.allclose(
+                bri.diotads()[5::, 0] / mean_diotads,
+                iota_spline.derivative()(s_full[6:-1]) / mean_diotads,
+                atol=1e-2,
+            )
+            assert np.allclose(
+                bri.dmodBds()[5::, 0],
+                modB00_spline.derivative()(s_full[6:-1]),
+                rtol=1e-2,
+            )
+            mean_dRds = np.mean(np.abs(bri.dRds()))
+            assert np.allclose(
+                bri.dRds()[5::, 0] / mean_dRds,
+                R00_spline.derivative()(s_full[6:-1]) / mean_dRds,
+                atol=1e-2,
+            )
 
-                s_half_grid = bri.s_half_ext[1:-1]
-                thetas_vmec = np.zeros((len(s_half_grid),))
-                for isurf in range(len(s_half_grid)):
-                    theta_diff_bound = functools.partial(
-                        theta_diff,
-                        isurf=isurf,
-                        lmns_half=lmns_half,
-                        xm=xm,
-                        xn=xn,
-                        nu=nu,
-                        lmnc_half=lmnc_half,
-                        iota=iota,
-                    )
-                    opt = minimize(theta_diff_bound, 0)
-                    thetas_vmec[isurf] = opt.x
+            """
+            The next evaluation points test Z() and nu()
+            """
+            points = np.zeros((len(bri.s_half_ext[1:-1]), 3))
+            points[:, 0] = bri.s_half_ext[1:-1]
+            points[:, 1] = 0.0
+            points[:, 2] = np.pi / 3
+            bri.set_points(points)
 
-                # Compute Z at theta_b = 0, zeta_b = pi/2  and compare with vmec result
-                Z0pi = np.sum(
-                    zmns_half
-                    * np.sin(
-                        xm[:, None] * thetas_vmec[None, :]
-                        - xn[:, None] * (np.pi / 3 - nu[None, :, 0])
-                    )
-                    + zmnc_half
-                    * np.cos(
-                        xm[:, None] * thetas_vmec[None, :]
-                        - xn[:, None] * (np.pi / 3 - nu[None, :, 0])
-                    ),
+            nu = bri.nu()
+            iota = bri.iota()
+
+            # zmns/zmnc on full grid
+            # lmnc/lmns on half grid
+            f = netcdf_file(filename_wout, mmap=False)
+
+            zmns = f.variables["zmns"][()].T
+            lmns_half = (f.variables["lmns"][()].T)[:, 1::]
+            zmns_half = 0.5 * (zmns[:, 0:-1] + zmns[:, 1::])
+            if bri.asym:
+                lmnc_half = (f.variables["lmnc"][()].T)[:, 1::]
+                zmnc = f.variables["zmnc"][()].T
+                zmnc_half = 0.5 * (zmnc[:, 0:-1] + zmnc[:, 1::])
+            else:
+                lmnc_half = np.zeros_like(lmns_half)
+                zmnc_half = np.zeros_like(zmns_half)
+
+            # Determine the vmec theta/phi corresponding to theta_b = 0,
+            # zeta_b = pi/3
+            # Here zeta_b = phi + nu
+            # theta + lambda - iota * phi = theta_b - iota * zeta_b
+            # theta + lambda - iota * (pi/3 - nu) = - iota * pi/3
+            # theta + lambda + iota * nu = 0
+
+            xm = f.variables["xm"][()]
+            xn = f.variables["xn"][()]
+
+            def theta_diff(theta, isurf, lmns_half, xm, xn, nu, lmnc_half, iota):
+                lam = np.sum(
+                    lmns_half[:, isurf]
+                    * np.sin(xm * theta - xn * (np.pi / 3 - nu[isurf, 0]))
+                    + lmnc_half[:, isurf]
+                    * np.cos(xm * theta - xn * (np.pi / 3 - nu[isurf, 0])),
                     axis=0,
                 )
-                Z0pi_spline = InterpolatedUnivariateSpline(s_half_grid, Z0pi)
+                return ((theta + lam) + iota[isurf, 0] * (nu[isurf, 0])) ** 2
 
-                mean_dZds = np.mean(np.abs(bri.dZds()[5::, 0]))
+            s_half_grid = bri.s_half_ext[1:-1]
+            thetas_vmec = np.zeros((len(s_half_grid),))
+            for isurf in range(len(s_half_grid)):
+                theta_diff_bound = functools.partial(
+                    theta_diff,
+                    isurf=isurf,
+                    lmns_half=lmns_half,
+                    xm=xm,
+                    xn=xn,
+                    nu=nu,
+                    lmnc_half=lmnc_half,
+                    iota=iota,
+                )
+                opt = minimize(theta_diff_bound, 0)
+                thetas_vmec[isurf] = opt.x
 
-                assert np.allclose(bri.Z()[:, 0], Z0pi, atol=1e-2)
+            # Compute Z at theta_b = 0, zeta_b = pi/2  and compare with vmec result
+            Z0pi = np.sum(
+                zmns_half
+                * np.sin(
+                    xm[:, None] * thetas_vmec[None, :]
+                    - xn[:, None] * (np.pi / 3 - nu[None, :, 0])
+                )
+                + zmnc_half
+                * np.cos(
+                    xm[:, None] * thetas_vmec[None, :]
+                    - xn[:, None] * (np.pi / 3 - nu[None, :, 0])
+                ),
+                axis=0,
+            )
+            Z0pi_spline = InterpolatedUnivariateSpline(s_half_grid, Z0pi)
 
-                if not asym:
-                    assert np.allclose(
-                        bri.dZds()[5::, 0] / mean_dZds,
-                        Z0pi_spline.derivative()(s_half_grid[5::]) / mean_dZds,
-                        atol=1e-2,
-                    )
-                # For asymmetric case, the dZds = 0
-                else:
-                    assert np.allclose(bri.dZds()[5::, 0], 0, atol=1e-2)
-                    assert np.allclose(
-                        Z0pi_spline.derivative()(s_half_grid[5::]), 0, atol=1e-2
-                    )
+            mean_dZds = np.mean(np.abs(bri.dZds()[5::, 0]))
 
-                """
-                The next evaluation points test the derivatives of modB, R, Z, and nu
-                """
-                points = np.zeros((len(s_half_grid), 3))
-                points[:, 0] = s_half_grid
-                bri.set_points(points)
+            assert np.allclose(bri.Z()[:, 0], Z0pi, atol=1e-2)
 
-                # Check that angular derivatives integrate to zero
-                ntheta = 101
-                nzeta = 100
-                thetas = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
-                zetas = np.linspace(0, 2 * np.pi, nzeta, endpoint=False)
-                [zetas, thetas] = np.meshgrid(zetas, thetas)
-                points = np.zeros((len(thetas.flatten()), 3))
-                points[:, 0] = 0.5 * np.ones_like(thetas.flatten())
-                points[:, 1] = thetas.flatten()
-                points[:, 2] = zetas.flatten()
-                bri.set_points(points)
-                # Check that get_points returns correct points
-                points_get = bri.get_points()
-                thetas_get = points_get[:, 1]
-                assert np.allclose(thetas_get, thetas.flatten())
+            if not asym:
                 assert np.allclose(
-                    np.sum(bri.dmodBdtheta().reshape(np.shape(thetas)), axis=0),
-                    0,
-                    rtol=1e-12,
+                    bri.dZds()[5::, 0] / mean_dZds,
+                    Z0pi_spline.derivative()(s_half_grid[5::]) / mean_dZds,
+                    atol=1e-2,
                 )
+            # For asymmetric case, the dZds = 0
+            else:
+                assert np.allclose(bri.dZds()[5::, 0], 0, atol=1e-2)
                 assert np.allclose(
-                    np.sum(bri.dmodBdzeta().reshape(np.shape(thetas)), axis=1),
-                    0,
-                    rtol=1e-12,
-                )
-                assert np.allclose(
-                    np.sum(bri.dRdtheta().reshape(np.shape(thetas)), axis=0),
-                    0,
-                    rtol=1e-12,
-                )
-                assert np.allclose(
-                    np.sum(bri.dRdzeta().reshape(np.shape(thetas)), axis=1),
-                    0,
-                    rtol=1e-12,
-                )
-                assert np.allclose(
-                    np.sum(bri.dZdtheta().reshape(np.shape(thetas)), axis=0),
-                    0,
-                    rtol=1e-12,
-                )
-                assert np.allclose(
-                    np.sum(bri.dZdzeta().reshape(np.shape(thetas)), axis=1),
-                    0,
-                    rtol=1e-12,
-                )
-                assert np.allclose(
-                    np.sum(bri.dnudtheta().reshape(np.shape(thetas)), axis=0),
-                    0,
-                    rtol=1e-12,
-                )
-                assert np.allclose(
-                    np.sum(bri.dnudzeta().reshape(np.shape(thetas)), axis=1),
-                    0,
-                    rtol=1e-12,
-                )
-                assert np.allclose(
-                    np.sum(bri.dKdtheta().reshape(np.shape(thetas)), axis=0),
-                    0,
-                    rtol=1e-12,
-                )
-                assert np.allclose(
-                    np.sum(bri.dKdzeta().reshape(np.shape(thetas)), axis=1),
-                    0,
-                    rtol=1e-12,
+                    Z0pi_spline.derivative()(s_half_grid[5::]), 0, atol=1e-2
                 )
 
-                # Check that zeta derivatives are small since we are close to QA
-                assert np.allclose(bri.dmodBdzeta(), 0, atol=1e-2)
+            """
+            The next evaluation points test the derivatives of modB, R, Z, and nu
+            """
+            points = np.zeros((len(s_half_grid), 3))
+            points[:, 0] = s_half_grid
+            bri.set_points(points)
 
-                assert np.allclose(bri.R_derivs()[:, 0], bri.dRds()[:, 0])
-                assert np.allclose(bri.R_derivs()[:, 1], bri.dRdtheta()[:, 0])
-                assert np.allclose(bri.R_derivs()[:, 2], bri.dRdzeta()[:, 0])
-                assert np.allclose(bri.Z_derivs()[:, 0], bri.dZds()[:, 0])
-                assert np.allclose(bri.Z_derivs()[:, 1], bri.dZdtheta()[:, 0])
-                assert np.allclose(bri.Z_derivs()[:, 2], bri.dZdzeta()[:, 0])
-                assert np.allclose(bri.nu_derivs()[:, 0], bri.dnuds()[:, 0])
-                assert np.allclose(bri.nu_derivs()[:, 1], bri.dnudtheta()[:, 0])
-                assert np.allclose(bri.nu_derivs()[:, 2], bri.dnudzeta()[:, 0])
-                assert np.allclose(bri.modB_derivs()[:, 0], bri.dmodBds()[:, 0])
-                assert np.allclose(bri.modB_derivs()[:, 1], bri.dmodBdtheta()[:, 0])
-                assert np.allclose(bri.modB_derivs()[:, 2], bri.dmodBdzeta()[:, 0])
+            # Check that angular derivatives integrate to zero
+            ntheta = 101
+            nzeta = 100
+            thetas = np.linspace(0, 2 * np.pi, ntheta, endpoint=False)
+            zetas = np.linspace(0, 2 * np.pi, nzeta, endpoint=False)
+            [zetas, thetas] = np.meshgrid(zetas, thetas)
+            points = np.zeros((len(thetas.flatten()), 3))
+            points[:, 0] = 0.5 * np.ones_like(thetas.flatten())
+            points[:, 1] = thetas.flatten()
+            points[:, 2] = zetas.flatten()
+            bri.set_points(points)
+            # Check that get_points returns correct points
+            points_get = bri.get_points()
+            thetas_get = points_get[:, 1]
+            assert np.allclose(thetas_get, thetas.flatten())
+            assert np.allclose(
+                np.sum(bri.dmodBdtheta().reshape(np.shape(thetas)), axis=0),
+                0,
+                rtol=1e-12,
+            )
+            assert np.allclose(
+                np.sum(bri.dmodBdzeta().reshape(np.shape(thetas)), axis=1),
+                0,
+                rtol=1e-12,
+            )
+            assert np.allclose(
+                np.sum(bri.dRdtheta().reshape(np.shape(thetas)), axis=0),
+                0,
+                rtol=1e-12,
+            )
+            assert np.allclose(
+                np.sum(bri.dRdzeta().reshape(np.shape(thetas)), axis=1),
+                0,
+                rtol=1e-12,
+            )
+            assert np.allclose(
+                np.sum(bri.dZdtheta().reshape(np.shape(thetas)), axis=0),
+                0,
+                rtol=1e-12,
+            )
+            assert np.allclose(
+                np.sum(bri.dZdzeta().reshape(np.shape(thetas)), axis=1),
+                0,
+                rtol=1e-12,
+            )
+            assert np.allclose(
+                np.sum(bri.dnudtheta().reshape(np.shape(thetas)), axis=0),
+                0,
+                rtol=1e-12,
+            )
+            assert np.allclose(
+                np.sum(bri.dnudzeta().reshape(np.shape(thetas)), axis=1),
+                0,
+                rtol=1e-12,
+            )
+            assert np.allclose(
+                np.sum(bri.dKdtheta().reshape(np.shape(thetas)), axis=0),
+                0,
+                rtol=1e-12,
+            )
+            assert np.allclose(
+                np.sum(bri.dKdzeta().reshape(np.shape(thetas)), axis=1),
+                0,
+                rtol=1e-12,
+            )
+
+            # Check that zeta derivatives are small since we are close to QA
+            assert np.allclose(bri.dmodBdzeta(), 0, atol=1e-2)
+
+            assert np.allclose(bri.R_derivs()[:, 0], bri.dRds()[:, 0])
+            assert np.allclose(bri.R_derivs()[:, 1], bri.dRdtheta()[:, 0])
+            assert np.allclose(bri.R_derivs()[:, 2], bri.dRdzeta()[:, 0])
+            assert np.allclose(bri.Z_derivs()[:, 0], bri.dZds()[:, 0])
+            assert np.allclose(bri.Z_derivs()[:, 1], bri.dZdtheta()[:, 0])
+            assert np.allclose(bri.Z_derivs()[:, 2], bri.dZdzeta()[:, 0])
+            assert np.allclose(bri.nu_derivs()[:, 0], bri.dnuds()[:, 0])
+            assert np.allclose(bri.nu_derivs()[:, 1], bri.dnudtheta()[:, 0])
+            assert np.allclose(bri.nu_derivs()[:, 2], bri.dnudzeta()[:, 0])
+            assert np.allclose(bri.modB_derivs()[:, 0], bri.dmodBds()[:, 0])
+            assert np.allclose(bri.modB_derivs()[:, 1], bri.dmodBdtheta()[:, 0])
+            assert np.allclose(bri.modB_derivs()[:, 2], bri.dmodBdzeta()[:, 0])
 
     def test_interpolatedboozerfield_sym(self):
         """
@@ -617,7 +604,7 @@ class TestingFiniteBeta(unittest.TestCase):
         """
 
         order = 3
-        bri = BoozerRadialInterpolant(filename_vac, order, rescale=True, comm=comm)
+        bri = BoozerRadialInterpolant(filename_vac, order, comm=comm)
 
         n = 8
         smin = 0.4
@@ -769,7 +756,7 @@ class TestingFiniteBeta(unittest.TestCase):
         """
 
         order = 3
-        bri = BoozerRadialInterpolant(filename_vac, order, rescale=True, comm=comm)
+        bri = BoozerRadialInterpolant(filename_vac, order, comm=comm)
 
         n = 16
         smin = 0.4

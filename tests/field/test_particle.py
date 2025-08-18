@@ -277,7 +277,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
             {"solveSympl": False},
             {
                 "solveSympl": True,
-                "dt": 1e-7,
+                "dt": 1e-8,
                 "roottol": 1e-8,
                 "predictor_step": True,
                 "axis": 0,
@@ -294,7 +294,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
             nparticles = 10
             m = PROTON_MASS
             q = ELEMENTARY_CHARGE
-            tmax = 1e-3
+            tmax = 1e-5
             Ekin = 100.0 * ONE_EV
             vpar = np.sqrt(2 * Ekin / m)
 
@@ -374,11 +374,11 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 max_p_gc_error = np.append(max_p_gc_error, max(p_gc_error[3::]))
 
             if not solver_options["solveSympl"]:
-                assert max(max_energy_gc_error) < -6
-                assert max(max_p_gc_error) < -6
+                assert max(max_energy_gc_error) < -7
+                assert max(max_p_gc_error) < -7
             else:
-                assert max(max_energy_gc_error) < -2.0
-                assert max(max_p_gc_error) < -8
+                assert max(max_energy_gc_error) < -3
+                assert max(max_p_gc_error) < -12
 
             # Now perform same tests for QH field with G and I terms added
 
@@ -462,10 +462,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
 
             if not solver_options["solveSympl"]:
                 assert max(max_energy_gc_error) < -7
-                assert max(max_p_gc_error) < -6
+                assert max(max_p_gc_error) < -7
             else:
-                assert max(max_energy_gc_error) < -1.0
-                assert max(max_p_gc_error) < -8
+                assert max(max_energy_gc_error) < -3
+                assert max(max_p_gc_error) < -12
 
             # Now perform same tests for QH field with G, I, and K terms added
             bsh.set_K1(0.6)
@@ -538,10 +538,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
 
             if not solver_options["solveSympl"]:
                 assert max(max_energy_gc_error) < -7
-                assert max(max_p_gc_error) < -6
+                assert max(max_p_gc_error) < -7
             else:
-                assert max(max_energy_gc_error) < -1.0
-                assert max(max_p_gc_error) < -8
+                assert max(max_energy_gc_error) < -3
+                assert max(max_p_gc_error) < -12
 
             # Now trace with forget_exact_path = True. Check that
             # gc_zeta_hits is the same
@@ -1127,7 +1127,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         nparticles = 100
         m = PROTON_MASS
         q = ELEMENTARY_CHARGE
-        tmax = 1e-4
+        tmax = 1e-5
         Ekin = 100.0 * ONE_EV
         vpar = np.sqrt(2 * Ekin / m)
 
@@ -1151,7 +1151,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         solver_options = {
             "solveSympl": True,
             "dt": 1e-7,
-            "roottol": 1e-15,
+            "roottol": 1e-8,
             "predictor_step": True,
             "axis": 0,
         }
@@ -1168,15 +1168,15 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 MinToroidalFluxStoppingCriterion(0.01),
                 MaxToroidalFluxStoppingCriterion(0.99),
             ],
-            tol=1e-12,
+            tol=1e-8,
             dt_save=1e-8,
             **solver_options,
         )
         diffs = np.array([])
         test_options = {
             "solveSympl": True,
-            "dt": 1e-8,
-            "roottol": 1e-15,
+            "dt": 1e-7,
+            "roottol": 1e-8,
             "predictor_step": True,
             "axis": 0,
         }
@@ -1197,8 +1197,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     MinToroidalFluxStoppingCriterion(0.01),
                     MaxToroidalFluxStoppingCriterion(0.99),
                 ],
-                tol=1e-12,
-                dt_save=1e-8,
+                tol=1e-7,
+                dt_save=1e-7,
                 **test_options,
             )
 

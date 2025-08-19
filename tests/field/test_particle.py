@@ -866,7 +866,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                         rtol=1e-12,
                         atol=0,
                     )
-                    # Particle moving in negative zeta direction 
+                    # Particle moving in negative zeta direction
                     if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
                         lower_bound = zetas[idx]
                         upper_bound = lower_bound + 1

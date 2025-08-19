@@ -440,13 +440,12 @@ class GuidingCenterBoozerRHS : public BaseRHS {
 };
 
 tuple<vector<vector<double>>, vector<vector<double>>>
-solve(int state_size, function<void(const vector<double>&, vector<double>&, double)> rhs_func, 
-      vector<double> stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol, 
+solve(BaseRHS& rhs, vector<double> stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol, 
       vector<double> thetas, vector<double> zetas,
       vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, 
       double dtau_save, vector<double> vpars,
-      bool thetas_stop=false, bool zetas_stop=false, bool vpars_stop=false, bool forget_exact_path=false,
-      int axis=0, double vnorm=1, double tnorm=1) {
+      bool thetas_stop, bool zetas_stop, bool vpars_stop, bool forget_exact_path,
+      int axis, double vnorm, double tnorm) {
 
     if (zetas.size() > 0 && omega_zetas.size() == 0) {
         omega_zetas.insert(omega_zetas.end(), zetas.size(), 0.);
@@ -459,20 +458,23 @@ solve(int state_size, function<void(const vector<double>&, vector<double>&, doub
         throw std::invalid_argument("thetas and omega_thetas need to have matching length.");
     }
 
+    // Get state size from the RHS object
+    int state_size = rhs.get_state_size();
+    
     vector<vector<double>> res = {};
     vector<vector<double>> res_hits = {};
     vector<double> y(state_size), temp(state_size);
     
-    // Create a simple RHS wrapper for the ODE solver
+    // Create a wrapper for boost::odeint since it can't work with abstract BaseRHS directly
     struct RHSSystem {
-        function<void(const vector<double>&, vector<double>&, double)> func;
-        RHSSystem(function<void(const vector<double>&, vector<double>&, double)> f) : func(f) {}
+        BaseRHS& rhs;
+        RHSSystem(BaseRHS& r) : rhs(r) {}
         void operator()(const vector<double>& x, vector<double>& dxdt, double t) {
-            func(x, dxdt, t);
+            rhs(x, dxdt, t);
         }
     };
     
-    RHSSystem rhs_system(rhs_func);
+    RHSSystem rhs_system(rhs);
     
     typedef runge_kutta_dopri5<vector<double>> stepper_type;
     typedef typename boost::numeric::odeint::result_of::make_dense_output<stepper_type>::type dense_stepper_type;
@@ -539,26 +541,7 @@ solve(int state_size, function<void(const vector<double>&, vector<double>&, doub
     return std::make_tuple(res, res_hits);
 }
 
-// Overloaded solve() function that accepts a BaseRHS object
-tuple<vector<vector<double>>, vector<vector<double>>>
-solve(BaseRHS& rhs, vector<double> stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol,
-      vector<double> thetas, vector<double> zetas,
-      vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria,
-      double dtau_save, vector<double> vpars,
-      bool thetas_stop, bool zetas_stop, bool vpars_stop, bool forget_exact_path,
-      int axis, double vnorm, double tnorm) {
 
-    // Create function wrapper for the RHS object
-    function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
-        [&rhs](const vector<double>& y, vector<double>& dydt, double t) {
-            rhs(y, dydt, t);
-        };
-    
-    // Call the original solve() function with the function wrapper
-    return solve(rhs.get_state_size(), rhs_func, stzvt, tau_max, dtau, dtau_max, abstol, reltol, 
-                 thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars,
-                 thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
-}
 
 /**
 See trace_particles_boozer() defined in tracing.py for details on the parameters.
@@ -622,21 +605,13 @@ particle_guiding_center_boozer_perturbed_tracing(
       auto rhs_class = GuidingCenterVacuumBoozerPerturbedRHS(
           perturbed_field, m, q, mu, axis, vnorm, tnorm
       );
-      function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
-          [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
-              rhs_class(y, dydt, t);
-          };
-      return solve(5, rhs_func, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
+      return solve(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
             stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
   } else {
       auto rhs_class = GuidingCenterNoKBoozerPerturbedRHS(
           perturbed_field, m, q, mu, axis, vnorm, tnorm
       );
-      function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
-          [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
-              rhs_class(y, dydt, t);
-          };
-      return solve(5, rhs_func, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
+      return solve(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
             stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
   }
 }
@@ -717,25 +692,13 @@ particle_guiding_center_boozer_tracing(
     } else {
         if (vacuum) {
           auto rhs_class = GuidingCenterVacuumBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
-          function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
-              [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
-                  rhs_class(y, dydt, t);
-              };
-          return solve(4, rhs_func, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
+          return solve(rhs_class, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
         } else if (noK) {
           auto rhs_class = GuidingCenterNoKBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
-          function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
-              [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
-                  rhs_class(y, dydt, t);
-              };
-          return solve(4, rhs_func, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
+          return solve(rhs_class, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
         } else {
           auto rhs_class = GuidingCenterBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
-          function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
-              [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
-                  rhs_class(y, dydt, t);
-              };
-          return solve(4, rhs_func, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
+          return solve(rhs_class, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
         }
     }
 }

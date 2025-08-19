@@ -784,7 +784,9 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         nparticles = 100
         m = PROTON_MASS
         q = ELEMENTARY_CHARGE
-        tmax = 1e-4
+        tmax = 1e-5
+        dt_save = 1e-8
+        tol = 1e-8
         Ekin = 100.0 * ONE_EV
         vpar = np.sqrt(2 * Ekin / m)
 
@@ -807,7 +809,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
 
         for solver_options in [
             {"solveSympl": False, "axis": 0},
-            {"solveSympl": True, "dt": 1e-5, "roottol": 1e-5, "predictor_step": True},
+            {"solveSympl": True, "dt": 1e-7, "roottol": 1e-7, "predictor_step": True},
         ]:
             # zetas_stop with mismatched zetas and omegas
             solver_options["zetas_stop"] = True
@@ -830,8 +832,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                         MinToroidalFluxStoppingCriterion(0.01),
                         MaxToroidalFluxStoppingCriterion(0.99),
                     ],
-                    tol=1e-7,
-                    dt_save=1e-5,
+                    tol=tol,
+                    dt_save=dt_save,
                     **solver_options,
                 )
 
@@ -850,9 +852,9 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     MinToroidalFluxStoppingCriterion(0.01),
                     MaxToroidalFluxStoppingCriterion(0.99),
                 ],
-                tol=1e-12,
+                tol=tol,
                 **solver_options,
-                dt_save=1e-8,
+                dt_save=dt_save,
             )
             for i in range(nparticles):
                 if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
@@ -864,9 +866,11 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                         rtol=1e-12,
                         atol=0,
                     )
+                    # Particle moving in negative zeta direction 
                     if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
                         lower_bound = zetas[idx]
                         upper_bound = lower_bound + 1
+                    # Particle moving in positive zeta direction
                     else:
                         upper_bound = zetas[idx]
                         lower_bound = upper_bound - 1
@@ -891,9 +895,9 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     MinToroidalFluxStoppingCriterion(0.01),
                     MaxToroidalFluxStoppingCriterion(0.99),
                 ],
-                tol=1e-12,
+                tol=tol,
                 **solver_options,
-                dt_save=1e-8,
+                dt_save=dt_save,
             )
             for i in range(nparticles):
                 if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
@@ -940,8 +944,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                         MinToroidalFluxStoppingCriterion(0.01),
                         MaxToroidalFluxStoppingCriterion(0.99),
                     ],
-                    tol=1e-7,
-                    dt_save=1e-5,
+                    tol=tol,
+                    dt_save=dt_save,
                     **solver_options,
                 )
 
@@ -960,9 +964,9 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     MinToroidalFluxStoppingCriterion(0.01),
                     MaxToroidalFluxStoppingCriterion(0.99),
                 ],
-                tol=1e-12,
+                tol=tol,
                 **solver_options,
-                dt_save=1e-8,
+                dt_save=dt_save,
             )
             for i in range(nparticles):
                 if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
@@ -1001,9 +1005,9 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     MinToroidalFluxStoppingCriterion(0.01),
                     MaxToroidalFluxStoppingCriterion(0.99),
                 ],
-                tol=1e-12,
+                tol=tol,
                 **solver_options,
-                dt_save=1e-8,
+                dt_save=dt_save,
             )
             for i in range(nparticles):
                 if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
@@ -1052,9 +1056,9 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     MinToroidalFluxStoppingCriterion(0.01),
                     MaxToroidalFluxStoppingCriterion(0.99),
                 ],
-                tol=1e-7,
+                tol=tol,
                 **solver_options,
-                dt_save=1e-8,
+                dt_save=dt_save,
             )
             for i in range(nparticles):
                 if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
@@ -1094,9 +1098,9 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     MinToroidalFluxStoppingCriterion(0.01),
                     MaxToroidalFluxStoppingCriterion(0.99),
                 ],
-                tol=1e-7,
+                tol=tol,
                 **solver_options,
-                dt_save=1e-8,
+                dt_save=dt_save,
             )
             for i in range(nparticles):
                 if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:

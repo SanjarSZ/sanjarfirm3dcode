@@ -108,9 +108,93 @@ double SymplField::get_dvpardt() {
     return dvpar[0] * dsdt + dvpar[1] * dthdt + dvpar[2] * dzdt + dvpar[3] * dpzdt;
 }
 
-int f_euler_quasi_func(const gsl_vector* x, void* p, gsl_vector* f)
+double cubic_hermite_interp(double t_last, double t_current, double y_last, double y_current, double dy_last, double dy_current, double t)
 {
-    struct f_quasi_params * params = (struct f_quasi_params *)p;
+    double dt = t_current - t_last;
+    return (3*dt*pow(t-t_last,2) - 2*pow(t-t_last,3))/pow(dt,3) * y_current
+            + (pow(dt,3)-3*dt*pow(t-t_last,2)+2*pow(t-t_last,3))/pow(dt,3) * y_last
+            + pow(t-t_last,2)*(t-t_current)/pow(dt,2) * dy_current
+            + (t-t_last)*pow(t-t_current,2)/pow(dt,2) * dy_last;
+}
+
+// Vector-based version of sympl_dense for the new solve function
+class sympl_dense_vector {
+public:
+    // for interpolation
+    array<double, 2> bracket_s = {};
+    array<double, 2> bracket_dsdt = {};
+    array<double, 2> bracket_theta = {};
+    array<double, 2> bracket_dthdt = {};
+    array<double, 2> bracket_zeta = {};
+    array<double, 2> bracket_dzedt = {};
+    array<double, 2> bracket_vpar = {};
+    array<double, 2> bracket_dvpardt = {};
+
+    // bounds of interval for interpolation between time steps
+    double tlast = 0.0;
+    double tcurrent = 0.0;
+
+    void update(double t, double dt, vector<double> y, SymplField f) {
+        tlast = t;
+        tcurrent = t + dt;
+        
+        // Store the state and derivatives at the endpoints
+        bracket_s[0] = y[0];
+        bracket_theta[0] = y[1];
+        bracket_zeta[0] = y[2];
+        bracket_vpar[0] = y[3];
+        
+        // Calculate derivatives at t
+        f.eval_field(y[0], y[1], y[2]);
+        f.get_derivatives(f.get_pzeta(y[3]));
+        bracket_dsdt[0] = -f.dH[1] + f.dptheta[3]*f.dH[2] - f.dptheta[2]*f.dH[3];
+        bracket_dthdt[0] = f.dH[0]/f.dptheta[0];
+        bracket_dzedt[0] = (f.vpar - f.dH[0]/f.dptheta[0]*f.htheta)/f.hzeta;
+        bracket_dvpardt[0] = -f.dH[2] + f.dH[0]*f.dptheta[2]/f.dptheta[0];
+        
+        // Calculate state at t+dt (this is approximate)
+        double dt_small = dt * 0.1;
+        vector<double> y_next = y;
+        y_next[0] += dt_small * bracket_dsdt[0];
+        y_next[1] += dt_small * bracket_dthdt[0];
+        y_next[2] += dt_small * bracket_dzedt[0];
+        y_next[3] += dt_small * bracket_dvpardt[0];
+        
+        bracket_s[1] = y_next[0];
+        bracket_theta[1] = y_next[1];
+        bracket_zeta[1] = y_next[2];
+        bracket_vpar[1] = y_next[3];
+        
+        // Calculate derivatives at t+dt (approximate)
+        f.eval_field(y_next[0], y_next[1], y_next[2]);
+        f.get_derivatives(f.get_pzeta(y_next[3]));
+        bracket_dsdt[1] = -f.dH[1] + f.dptheta[3]*f.dH[2] - f.dptheta[2]*f.dH[3];
+        bracket_dthdt[1] = f.dH[0]/f.dptheta[0];
+        bracket_dzedt[1] = (f.vpar - f.dH[0]/f.dptheta[0]*f.htheta)/f.hzeta;
+        bracket_dvpardt[1] = -f.dH[2] + f.dH[0]*f.dptheta[2]/f.dptheta[0];
+    }
+    
+    void calc_state(double eval_t, vector<double> &temp) {
+        assert (tlast <= eval_t && eval_t <= tcurrent);
+        temp.resize(4);
+        temp[0] = cubic_hermite_interp(tlast, tcurrent, bracket_s[0], bracket_s[1], bracket_dsdt[0], bracket_dsdt[1], eval_t);
+        temp[1] = cubic_hermite_interp(tlast, tcurrent, bracket_theta[0], bracket_theta[1], bracket_dthdt[0], bracket_dthdt[1], eval_t);
+        temp[2] = cubic_hermite_interp(tlast, tcurrent, bracket_zeta[0], bracket_zeta[1], bracket_dzedt[0], bracket_dzedt[1], eval_t);
+        temp[3] = cubic_hermite_interp(tlast, tcurrent, bracket_vpar[0], bracket_vpar[1], bracket_dvpardt[0], bracket_dvpardt[1], eval_t);
+    }
+};
+
+class f_quasi_params_vector{
+public:
+    double ptheta_old;
+    double dt;
+    vector<double> z;
+    SymplField f;
+};
+
+int f_euler_quasi_func_vector(const gsl_vector* x, void* p, gsl_vector* f)
+{
+    struct f_quasi_params_vector * params = (struct f_quasi_params_vector *)p;
     const double ptheta_old = (params->ptheta_old);
     const double dt = (params->dt);
     auto z = (params->z);
@@ -133,15 +217,7 @@ int f_euler_quasi_func(const gsl_vector* x, void* p, gsl_vector* f)
     return GSL_SUCCESS;
 }
 
-double cubic_hermite_interp(double t_last, double t_current, double y_last, double y_current, double dy_last, double dy_current, double t)
-{
-    double dt = t_current - t_last;
-    return (3*dt*pow(t-t_last,2) - 2*pow(t-t_last,3))/pow(dt,3) * y_current
-            + (pow(dt,3)-3*dt*pow(t-t_last,2)+2*pow(t-t_last,3))/pow(dt,3) * y_last
-            + pow(t-t_last,2)*(t-t_current)/pow(dt,2) * dy_current
-            + (t-t_last)*pow(t-t_current,2)/pow(dt,2) * dy_last;
-}
-
+// Perform hermite interpolation between timesteps for computing stopping criteria
 void sympl_dense::update(double t, double dt, array<double, 4>  y, SymplField f) {
     tlast = t;
     tcurrent = t+dt;
@@ -178,7 +254,7 @@ void sympl_dense::calc_state(double eval_t, State &temp) {
 
 // see https://github.com/itpplasma/SIMPLE/blob/master/SRC/
 //         orbit_symplectic_quasi.f90:timestep_euler1_quasi
-tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField::Size+2>>> solve_sympl(SymplField f, typename SymplField::State y, double tmax, double dt, double roottol, vector<double> thetas, vector<double> zetas, vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, vector<double> vpars, bool thetas_stop, bool zetas_stop, bool vpars_stop, bool forget_exact_path, bool predictor_step, double dt_save)
+tuple<vector<vector<double>>, vector<vector<double>>> solve_sympl_vector(SymplField f, vector<double> y, double tmax, double dt, double roottol, vector<double> thetas, vector<double> zetas, vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, vector<double> vpars, bool thetas_stop, bool zetas_stop, bool vpars_stop, bool forget_exact_path, bool predictor_step, double dt_save)
 {
     double abstol = 0;
     if (zetas.size() > 0 && omega_zetas.size() == 0) {
@@ -192,14 +268,13 @@ tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField
         throw std::invalid_argument("thetas and omega_thetas need to have matching length.");
     }
 
-    typedef typename SymplField::State State;
-    vector<array<double, SymplField::Size+1>> res = {};
-    vector<array<double, SymplField::Size+2>> res_hits = {};
+    vector<vector<double>> res = {};
+    vector<vector<double>> res_hits = {};
     double t = 0.0;
     bool stop = false;
 
-    State z = {}; // s, theta, zeta, pzeta
-    State temp = {};
+    vector<double> z(4); // s, theta, zeta, pzeta
+    vector<double> temp(4);
     // y = [s, theta, zeta, vpar]
 
     // Translate y to z
@@ -217,7 +292,7 @@ tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField
     double t_last = t;
 
     // for interpolation
-    sympl_dense dense;
+    sympl_dense_vector dense;
     dense.update(t, dt, y, f);
 
     // set up root solvers
@@ -225,8 +300,8 @@ tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField
     gsl_multiroot_fsolver *s_euler;
     s_euler = gsl_multiroot_fsolver_alloc(Newt, 2);
 
-    struct f_quasi_params params = {ptheta_old, dt, z, f};
-    gsl_multiroot_function F_euler_quasi = {&f_euler_quasi_func, 2, &params};
+    struct f_quasi_params_vector params = {ptheta_old, dt, z, f};
+    gsl_multiroot_function F_euler_quasi = {&f_euler_quasi_func_vector, 2, &params};
     gsl_vector* xvec_quasi = gsl_vector_alloc(2);
 
     int status;
@@ -237,7 +312,9 @@ tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField
     do {
         // Save initial point
         if (t==0){
-            res.push_back(join<1,SymplField::Size>({t}, y));
+            vector<double> save_point = {t};
+            save_point.insert(save_point.end(), y.begin(), y.end());
+            res.push_back(save_point);
         }
 
         params.ptheta_old = ptheta_old;
@@ -323,25 +400,27 @@ tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField
 
         double t_current = t;
 
-        stop = check_stopping_criteria<SymplField,sympl_dense>(f, iter, res_hits, dense, t_last, t_current, dt, abstol, thetas, zetas,
-            omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop);
+        stop = check_stopping_criteria(4, iter, res_hits, dense, t_last, t_current, dt, abstol, thetas, zetas,
+            omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop, 0, f.vnorm, f.tnorm);
 
         // Save path if forget_exact_path = False
         if (forget_exact_path == 0) {
-            double t_last;
+            double t_last_save;
             // If we have hit a stopping criterion, we still want to save the trajectory up to that point
             if (stop) {
-                t_last = res_hits.back()[0];
+                t_last_save = res_hits.back()[0];
             } else {
-                t_last = t_current;
+                t_last_save = t_current;
             }
             // This will give the first save point after t_last
-            double t_save_last = dt_save * std::ceil(t_last/dt_save);
+            double t_save_last = dt_save * std::ceil(t_last_save/dt_save);
 
-            for (double t_save = t_save_last; t_save <= t_last; t_save += dt_save) {
+            for (double t_save = t_save_last; t_save <= t_last_save; t_save += dt_save) {
                 if (t_save != 0) { // t = 0 is already saved.
                     dense.calc_state(t_save, temp);
-                    res.push_back(join<1,SymplField::Size>({t_save}, {temp}));
+                    vector<double> save_point = {t_save};
+                    save_point.insert(save_point.end(), temp.begin(), temp.end());
+                    res.push_back(save_point);
                 }
             }
         }
@@ -355,7 +434,9 @@ tuple<vector<array<double, SymplField::Size+1>>, vector<array<double, SymplField
         t = res_hits.back()[0];
     }
     dense.calc_state(t, y);
-    res.push_back(join<1,SymplField::Size>({t}, {y}));
+    vector<double> final_point = {t};
+    final_point.insert(final_point.end(), y.begin(), y.end());
+    res.push_back(final_point);
 
     gsl_multiroot_fsolver_free(s_euler);
     gsl_vector_free(xvec_quasi);

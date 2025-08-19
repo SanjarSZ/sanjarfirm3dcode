@@ -10,11 +10,29 @@ using std::array;
 using std::shared_ptr;
 using std::vector;
 using std::tuple;
+using std::function;
 
-tuple<vector<std::array<double, 6>>, vector<std::array<double, 7>>>
+// Base class for RHS functions
+class BaseRHS {
+public:
+    virtual ~BaseRHS() = default;
+    virtual void operator()(const vector<double>& y, vector<double>& dydt, double t) = 0;
+    virtual int get_state_size() const = 0;
+};
+
+// Overloaded solve() function that accepts a BaseRHS object
+tuple<vector<vector<double>>, vector<vector<double>>>
+solve(BaseRHS& rhs, vector<double> stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol, 
+      vector<double> thetas, vector<double> zetas,
+      vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, 
+      double dtau_save, vector<double> vpars,
+      bool thetas_stop=false, bool zetas_stop=false, bool vpars_stop=false, bool forget_exact_path=false,
+      int axis=0, double vnorm=1, double tnorm=1);
+
+tuple<vector<vector<double>>, vector<vector<double>>>
 particle_guiding_center_boozer_perturbed_tracing(
         shared_ptr<ShearAlfvenWave> perturbed_field,
-        std::array<double, 3> stz_init,
+        vector<double> stz_init,
         double m,
         double q,
         double vtotal,
@@ -39,10 +57,10 @@ particle_guiding_center_boozer_perturbed_tracing(
         vector<double> vpars={});
 
 
-tuple<vector<std::array<double, 5>>, vector<std::array<double, 6>>>
+tuple<vector<vector<double>>, vector<vector<double>>>
 particle_guiding_center_boozer_tracing(
         shared_ptr<BoozerMagneticField> field,
-        std::array<double, 3> stz_init,
+        vector<double> stz_init,
         double m,
         double q,
         double vtotal,

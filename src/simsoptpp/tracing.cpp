@@ -24,7 +24,9 @@ using boost::math::tools::toms748_solve;
 using namespace boost::numeric::odeint;
 using Array2 = BoozerMagneticField::Array2;
 
-class GuidingCenterVacuumBoozerRHS {
+
+
+class GuidingCenterVacuumBoozerRHS : public BaseRHS {
     /*
      * The state consists of :math:`[s, theta, zeta, v_par]` with
      *
@@ -44,17 +46,18 @@ class GuidingCenterVacuumBoozerRHS {
         int axis;
         double vnorm, tnorm;
         static constexpr int Size = 4;
-        using State = array<double, Size>;
-        State stzv, stzvdot;
 
         GuidingCenterVacuumBoozerRHS(shared_ptr<BoozerMagneticField> field, double m, double q, double mu, int axis, double vnorm=1, double tnorm=1)
             : field(field), m(m), q(q), mu(mu), axis(axis), vnorm(vnorm), tnorm(tnorm) {
             }
 
-        void operator()(const State &ys, array<double, 4> &dydt,
-                const double t) {
+        int get_state_size() const override {
+            return Size;
+        }
 
-            y_to_stzvt<GuidingCenterVacuumBoozerRHS>(ys, stzv, *this);
+        void operator()(const vector<double> &ys, vector<double> &dydt, const double t) override {
+            vector<double> stzv(Size), stzvdot(Size);
+            y_to_stzvt(ys, stzv, axis, vnorm, tnorm);
 
             stz(0, 0) = stzv[0];
             stz(0, 1) = stzv[1];
@@ -78,11 +81,11 @@ class GuidingCenterVacuumBoozerRHS {
             stzvdot[2] = v_par*modB/G;
             stzvdot[3] = -(iota*dmodBdtheta + dmodBdzeta)*mu*modB/G;
 
-            stzvtdot_to_ydot<GuidingCenterVacuumBoozerRHS>(stzvdot, stzv, dydt, *this);
+            stzvtdot_to_ydot(stzvdot, stzv, dydt, axis, vnorm, tnorm);
         }
 };
 
-class GuidingCenterVacuumBoozerPerturbedRHS {
+class GuidingCenterVacuumBoozerPerturbedRHS : public BaseRHS {
     /*
      * The state consists of :math:`[s, theta, zeta, v_par, t]` with
      *
@@ -111,8 +114,6 @@ class GuidingCenterVacuumBoozerPerturbedRHS {
         int axis;
         double vnorm, tnorm;
         static constexpr int Size = 5;
-        using State = array<double, Size>;
-        State stzvt, stzvtdot;
 
         GuidingCenterVacuumBoozerPerturbedRHS(
             shared_ptr<ShearAlfvenWave> perturbed_field,
@@ -131,10 +132,13 @@ class GuidingCenterVacuumBoozerPerturbedRHS {
             vnorm(vnorm),
             tnorm(tnorm) {}
 
-        void operator()(const State &ys, array<double, 5> &dydt,
-                const double t) {
+        int get_state_size() const override {
+            return Size;
+        }
 
-            y_to_stzvt<GuidingCenterVacuumBoozerPerturbedRHS>(ys, stzvt, *this);
+        void operator()(const vector<double> &ys, vector<double> &dydt, const double t) override {
+            vector<double> stzvt(Size), stzvtdot(Size);
+            y_to_stzvt(ys, stzvt, axis, vnorm, tnorm);
 
             stzt(0, 0) = stzvt[0];
             stzt(0, 1) = stzvt[1];
@@ -171,11 +175,11 @@ class GuidingCenterVacuumBoozerPerturbedRHS {
                     + v_par/modB * (dmodBdtheta*dPhidpsi - dmodBdpsi*dPhidtheta);
             stzvtdot[4] = 1;
 
-            stzvtdot_to_ydot<GuidingCenterVacuumBoozerPerturbedRHS>(stzvtdot, stzvt, dydt, *this);
+            stzvtdot_to_ydot(stzvtdot, stzvt, dydt, axis, vnorm, tnorm);
         }
 };
 
-class GuidingCenterNoKBoozerPerturbedRHS {
+class GuidingCenterNoKBoozerPerturbedRHS : public BaseRHS {
     /*
      * The state consists of :math:`[s, theta, zeta, v_par, t]` with
      *
@@ -214,8 +218,6 @@ class GuidingCenterNoKBoozerPerturbedRHS {
         int axis;
         double vnorm, tnorm;
         static constexpr int Size = 5;
-        using State = array<double, Size>;
-        State stzvt, stzvtdot;
 
         GuidingCenterNoKBoozerPerturbedRHS(
             shared_ptr<ShearAlfvenWave> perturbed_field,
@@ -234,10 +236,13 @@ class GuidingCenterNoKBoozerPerturbedRHS {
         vnorm(vnorm),
         tnorm(tnorm) {}
 
-        void operator()(const State &ys, array<double, 5> &dydt,
-                const double t) {
+        int get_state_size() const override {
+            return Size;
+        }
 
-            y_to_stzvt<GuidingCenterNoKBoozerPerturbedRHS>(ys, stzvt, *this);
+        void operator()(const vector<double> &ys, vector<double> &dydt, const double t) override {
+            vector<double> stzvt(Size), stzvtdot(Size);
+            y_to_stzvt(ys, stzvt, axis, vnorm, tnorm);
 
             stzt(0, 0) = stzvt[0];
             stzt(0, 1) = stzvt[1];
@@ -289,11 +294,11 @@ class GuidingCenterNoKBoozerPerturbedRHS {
                       + q*(alphadot*(dGdpsi*I-G*dIdpsi) + dGdpsi*dPhidtheta - dIdpsi*dPhidzeta)))/denom;
             stzvtdot[4] = 1;
 
-            stzvtdot_to_ydot<GuidingCenterNoKBoozerPerturbedRHS>(stzvtdot, stzvt, dydt, *this);
+            stzvtdot_to_ydot(stzvtdot, stzvt, dydt, axis, vnorm, tnorm);
         }
 };
 
-class GuidingCenterNoKBoozerRHS {
+class GuidingCenterNoKBoozerRHS : public BaseRHS {
     /*
      * The state consists of :math:`[s, t, z, v_par]` with
      *
@@ -315,16 +320,18 @@ class GuidingCenterNoKBoozerRHS {
         int axis;
         double vnorm, tnorm;
         static constexpr int Size = 4;
-        using State = array<double, Size>;
-        State stzv, stzvdot;
 
         GuidingCenterNoKBoozerRHS(shared_ptr<BoozerMagneticField> field, double m, double q, double mu, int axis, double vnorm=1, double tnorm=1)
             : field(field), m(m), q(q), mu(mu), axis(axis), vnorm(vnorm), tnorm(tnorm) {
             }
 
-        void operator()(const State &ys, array<double, 4> &dydt,
-                const double t) {
-            y_to_stzvt<GuidingCenterNoKBoozerRHS>(ys, stzv, *this);
+        int get_state_size() const override {
+            return Size;
+        }
+
+        void operator()(const vector<double> &ys, vector<double> &dydt, const double t) override {
+            vector<double> stzv(Size), stzvdot(Size);
+            y_to_stzvt(ys, stzv, axis, vnorm, tnorm);
 
             stz(0, 0) = stzv[0];
             stz(0, 1) = stzv[1];
@@ -354,12 +361,11 @@ class GuidingCenterNoKBoozerRHS {
             stzvdot[2] = ((q + m*v_par*dIdpsi/modB)*v_par*modB - dmodBdpsi*fak1*I)/(D*iota);
             stzvdot[3] = modB*mu*(dmodBdtheta*C - dmodBdzeta*F)/(F*G-C*I);
 
-            stzvtdot_to_ydot<GuidingCenterNoKBoozerRHS>(stzvdot, stzv, dydt, *this);
-
+            stzvtdot_to_ydot(stzvdot, stzv, dydt, axis, vnorm, tnorm);
         }
 };
 
-class GuidingCenterBoozerRHS {
+class GuidingCenterBoozerRHS : public BaseRHS {
     /*
      * The state consists of :math:`[s, t, z, v_par]` with
      *
@@ -380,19 +386,20 @@ class GuidingCenterBoozerRHS {
         double m, q, mu;
     public:
         static constexpr int Size = 4;
-        using State = array<double, Size>;
         int axis;
         double vnorm, tnorm;
-        State stzv, stzvdot;
 
         GuidingCenterBoozerRHS(shared_ptr<BoozerMagneticField> field, double m, double q, double mu, int axis, double vnorm=1, double tnorm=1)
             : field(field), m(m), q(q), mu(mu), axis(axis), vnorm(vnorm), tnorm(tnorm) {
             }
 
-        void operator()(const State &ys, array<double, 4> &dydt,
-                const double t) {
+        int get_state_size() const override {
+            return Size;
+        }
 
-            y_to_stzvt<GuidingCenterBoozerRHS>(ys, stzv, *this);
+        void operator()(const vector<double> &ys, vector<double> &dydt, const double t) override {
+            vector<double> stzv(Size), stzvdot(Size);
+            y_to_stzvt(ys, stzv, axis, vnorm, tnorm);
 
             stz(0, 0) = stzv[0];
             stz(0, 1) = stzv[1];
@@ -428,15 +435,18 @@ class GuidingCenterBoozerRHS {
             // dydt[3] = - (mu / v_par) * (dmodBdpsi * sdot * psi0 + dmodBdtheta * tdot + dmodBdzeta * dydt[2]);
             stzvdot[3] = modB*mu*(dmodBdtheta*C - dmodBdzeta*F)/(F*G-C*I);
 
-            stzvtdot_to_ydot<GuidingCenterBoozerRHS>(stzvdot, stzv, dydt, *this);
+            stzvtdot_to_ydot(stzvdot, stzv, dydt, axis, vnorm, tnorm);
         }
 };
 
-template<class RHS>
-tuple<vector<array<double, RHS::Size+1>>, vector<array<double, RHS::Size+2>>>
-solve(RHS rhs, typename RHS::State stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol, vector<double> thetas, vector<double> zetas,
-    vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, double dtau_save, vector<double> vpars,
-    bool thetas_stop=false, bool zetas_stop=false, bool vpars_stop=false, bool forget_exact_path=false) {
+tuple<vector<vector<double>>, vector<vector<double>>>
+solve(int state_size, function<void(const vector<double>&, vector<double>&, double)> rhs_func, 
+      vector<double> stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol, 
+      vector<double> thetas, vector<double> zetas,
+      vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, 
+      double dtau_save, vector<double> vpars,
+      bool thetas_stop=false, bool zetas_stop=false, bool vpars_stop=false, bool forget_exact_path=false,
+      int axis=0, double vnorm=1, double tnorm=1) {
 
     if (zetas.size() > 0 && omega_zetas.size() == 0) {
         omega_zetas.insert(omega_zetas.end(), zetas.size(), 0.);
@@ -449,12 +459,24 @@ solve(RHS rhs, typename RHS::State stzvt, double tau_max, double dtau, double dt
         throw std::invalid_argument("thetas and omega_thetas need to have matching length.");
     }
 
-    vector<array<double, RHS::Size+1>> res = {};
-    vector<array<double, RHS::Size+2>> res_hits = {};
-    typedef typename RHS::State State;
-    State y, temp;
-    typedef typename boost::numeric::odeint::result_of::make_dense_output<runge_kutta_dopri5<State>>::type dense_stepper_type;
-    dense_stepper_type dense = make_dense_output(abstol, reltol, dtau_max, runge_kutta_dopri5<State>());
+    vector<vector<double>> res = {};
+    vector<vector<double>> res_hits = {};
+    vector<double> y(state_size), temp(state_size);
+    
+    // Create a simple RHS wrapper for the ODE solver
+    struct RHSSystem {
+        function<void(const vector<double>&, vector<double>&, double)> func;
+        RHSSystem(function<void(const vector<double>&, vector<double>&, double)> f) : func(f) {}
+        void operator()(const vector<double>& x, vector<double>& dxdt, double t) {
+            func(x, dxdt, t);
+        }
+    };
+    
+    RHSSystem rhs_system(rhs_func);
+    
+    typedef runge_kutta_dopri5<vector<double>> stepper_type;
+    typedef typename boost::numeric::odeint::result_of::make_dense_output<stepper_type>::type dense_stepper_type;
+    dense_stepper_type dense = make_dense_output(abstol, reltol, dtau_max, stepper_type());
     double tau = 0;
     int iter = 0;
     bool stop = false;
@@ -463,13 +485,15 @@ solve(RHS rhs, typename RHS::State stzvt, double tau_max, double dtau, double dt
     tau_last = tau;
 
     // Save initial state
-    res.push_back(join<1, RHS::Size>({0}, stzvt));
+    vector<double> initial_state = {0};
+    initial_state.insert(initial_state.end(), stzvt.begin(), stzvt.end());
+    res.push_back(initial_state);
 
-    stzvt_to_y<RHS>(stzvt, y, rhs);
+    stzvt_to_y(stzvt, y, axis, vnorm, tnorm);
     dense.initialize(y, tau, dtau);
 
     do {
-        tuple<double, double> step = dense.do_step(rhs);
+        tuple<double, double> step = dense.do_step(rhs_system);
         iter++;
         tau = dense.current_time();
         y = dense.current_state();
@@ -478,43 +502,71 @@ solve(RHS rhs, typename RHS::State stzvt, double tau_max, double dtau, double dt
         dtau = tau_current - tau_last; // Timestep taken
 
         // Check if we have hit a stopping criterion between tau_last and tau_current
-        stop = check_stopping_criteria<RHS,dense_stepper_type>(rhs, iter, res_hits, dense, tau_last,
-            tau_current, dtau, abstol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop);
+        stop = check_stopping_criteria(state_size, iter, res_hits, dense, tau_last,
+            tau_current, dtau, abstol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop, axis, vnorm, tnorm);
 
         // Save path if forget_exact_path = False
         if (forget_exact_path == 0) {
             // If we have hit a stopping criterion, we still want to save the trajectory up to that point
             if (stop) {
-                tau_current = res_hits.back()[0] / rhs.tnorm;
+                tau_current = res_hits.back()[0] / tnorm;
             }
             // This will give the first save point after tau_last
             double tau_save_last = std::ceil(tau_last/dtau_save) * dtau_save;
             for (double tau_save = tau_save_last; tau_save <= tau_current; tau_save += dtau_save) {
                 if (tau_save != 0) {  // tau = 0 is already saved.
                     dense.calc_state(tau_save, temp);
-                    double t_save = tau_save * rhs.tnorm;
-                    y_to_stzvt<RHS>(temp, stzvt, rhs);
-                    res.push_back(join<1, RHS::Size>({t_save}, stzvt));
+                    double t_save = tau_save * tnorm;
+                    y_to_stzvt(temp, stzvt, axis, vnorm, tnorm);
+                    vector<double> save_state = {t_save};
+                    save_state.insert(save_state.end(), stzvt.begin(), stzvt.end());
+                    res.push_back(save_state);
                 }
             }
         }
     } while(tau < tau_max && !stop);
     // Save t = tmax
     if (stop) {
-        tau_max = res_hits.back()[0] / rhs.tnorm;
+        tau_max = res_hits.back()[0] / tnorm;
     }
-    double t_max = tau_max * rhs.tnorm;
+    double t_max = tau_max * tnorm;
     dense.calc_state(tau_max, y);
-    y_to_stzvt<RHS>(y, stzvt, rhs);
-    res.push_back(join<1, RHS::Size>({t_max}, stzvt));
+    y_to_stzvt(y, stzvt, axis, vnorm, tnorm);
+    vector<double> final_state = {t_max};
+    final_state.insert(final_state.end(), stzvt.begin(), stzvt.end());
+    res.push_back(final_state);
 
     return std::make_tuple(res, res_hits);
 }
 
-tuple<vector<array<double, 6>>, vector<array<double, 7>>>
+// Overloaded solve() function that accepts a BaseRHS object
+tuple<vector<vector<double>>, vector<vector<double>>>
+solve(BaseRHS& rhs, vector<double> stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol,
+      vector<double> thetas, vector<double> zetas,
+      vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria,
+      double dtau_save, vector<double> vpars,
+      bool thetas_stop, bool zetas_stop, bool vpars_stop, bool forget_exact_path,
+      int axis, double vnorm, double tnorm) {
+
+    // Create function wrapper for the RHS object
+    function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
+        [&rhs](const vector<double>& y, vector<double>& dydt, double t) {
+            rhs(y, dydt, t);
+        };
+    
+    // Call the original solve() function with the function wrapper
+    return solve(rhs.get_state_size(), rhs_func, stzvt, tau_max, dtau, dtau_max, abstol, reltol, 
+                 thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars,
+                 thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
+}
+
+/**
+See trace_particles_boozer() defined in tracing.py for details on the parameters.
+**/
+tuple<vector<vector<double>>, vector<vector<double>>>
 particle_guiding_center_boozer_perturbed_tracing(
         shared_ptr<ShearAlfvenWave> perturbed_field,
-        array<double, 3> stz_init,
+        vector<double> stz_init,
         double m,
         double q,
         double vtotal,
@@ -542,7 +594,7 @@ particle_guiding_center_boozer_perturbed_tracing(
     perturbed_field->set_points(stzt);
     auto field = perturbed_field->get_B0();
     double modB = field->modB()(0);
-    array<double, 5> stzvt;
+    vector<double> stzvt(5);
     double G0 = std::abs(field->G()(0));
     double r0 = G0/modB;
     double vnorm = vtotal; // Normalizing velocity = vtotal
@@ -570,24 +622,32 @@ particle_guiding_center_boozer_perturbed_tracing(
       auto rhs_class = GuidingCenterVacuumBoozerPerturbedRHS(
           perturbed_field, m, q, mu, axis, vnorm, tnorm
       );
-      return solve<GuidingCenterVacuumBoozerPerturbedRHS>(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
-            stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path);
+      function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
+          [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
+              rhs_class(y, dydt, t);
+          };
+      return solve(5, rhs_func, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
+            stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
   } else {
       auto rhs_class = GuidingCenterNoKBoozerPerturbedRHS(
           perturbed_field, m, q, mu, axis, vnorm, tnorm
       );
-      return solve<GuidingCenterNoKBoozerPerturbedRHS>(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
-            stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path);
+      function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
+          [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
+              rhs_class(y, dydt, t);
+          };
+      return solve(5, rhs_func, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
+            stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
   }
 }
 
 /**
 See trace_particles_boozer() defined in tracing.py for details on the parameters.
 **/
-tuple<vector<array<double, 5>>, vector<array<double, 6>>>
+tuple<vector<vector<double>>, vector<vector<double>>>
 particle_guiding_center_boozer_tracing(
         shared_ptr<BoozerMagneticField> field,
-        array<double, 3> stz_init,
+        vector<double> stz_init,
         double m,
         double q,
         double vtotal,
@@ -620,7 +680,7 @@ particle_guiding_center_boozer_tracing(
     double modB = field->modB()(0);
     double vperp2 = vtotal*vtotal - vtang*vtang;
     double mu = vperp2/(2*modB);
-    array<double, 4> stzv;
+    vector<double> stzv(4);
     double vnorm, tnorm, dtau_max, dtau;
 
     if (!solveSympl){
@@ -650,20 +710,46 @@ particle_guiding_center_boozer_tracing(
     if (solveSympl) {
 #ifdef USE_GSL
         auto f = SymplField(field, m, q, mu, vnorm, tnorm);
-        return solve_sympl(f, stzv, tau_max, dtau, roottol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, predictor_step, dtau_save);
+        return solve_sympl_vector(f, stzv, tau_max, dtau, roottol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, predictor_step, dtau_save);
 #else
         throw std::invalid_argument("Symplectic solver not available. Please recompile with GSL support.");
 #endif
     } else {
         if (vacuum) {
           auto rhs_class = GuidingCenterVacuumBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
-          return solve<GuidingCenterVacuumBoozerRHS>(rhs_class, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path);
+          function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
+              [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
+                  rhs_class(y, dydt, t);
+              };
+          return solve(4, rhs_func, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
         } else if (noK) {
           auto rhs_class = GuidingCenterNoKBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
-          return solve<GuidingCenterNoKBoozerRHS>(rhs_class, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path);
+          function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
+              [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
+                  rhs_class(y, dydt, t);
+              };
+          return solve(4, rhs_func, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
         } else {
           auto rhs_class = GuidingCenterBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
-          return solve<GuidingCenterBoozerRHS>(rhs_class, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path);
+          function<void(const vector<double>&, vector<double>&, double)> rhs_func = 
+              [rhs_class](const vector<double>& y, vector<double>& dydt, double t) mutable {
+                  rhs_class(y, dydt, t);
+              };
+          return solve(4, rhs_func, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
         }
     }
+}
+
+// Wrapper function to convert vector to array for symplectic solver
+tuple<vector<vector<double>>, vector<vector<double>>>
+solve_sympl_wrapper(SymplField f, vector<double> stzv, double tmax, double dt, double roottol, 
+                   vector<double> thetas, vector<double> zetas, vector<double> omega_thetas, vector<double> omega_zetas, 
+                   vector<shared_ptr<StoppingCriterion>> stopping_criteria, vector<double> vpars, 
+                   bool thetas_stop, bool zetas_stop, bool vpars_stop, bool forget_exact_path, 
+                   bool predictor_step, double dt_save) {
+    
+    // Call the vector-based symplectic solver directly
+    return solve_sympl_vector(f, stzv, tmax, dt, roottol, thetas, zetas, omega_thetas, omega_zetas, 
+                             stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop, 
+                             forget_exact_path, predictor_step, dt_save);
 }

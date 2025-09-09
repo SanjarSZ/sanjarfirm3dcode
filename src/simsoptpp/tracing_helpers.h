@@ -212,7 +212,7 @@ inline void stzvtdot_to_ydot(const vector<double>& stzvtdot, const vector<double
 
 // Vector-based version of check_stopping_criteria
 template<class DENSE>
-bool check_stopping_criteria(int state_size, int iter, vector<vector<double>> &res_hits, DENSE dense, double tau_last, double tau_current, double dtau,
+bool check_stopping_criteria(int state_size, int iter, vector<vector<double>> &res_hits, DENSE& dense, double tau_last, double tau_current, double dtau,
     double abstol, vector<double> thetas, vector<double> zetas, vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria,
     vector<double> vpars, bool thetas_stop, bool zetas_stop, bool vpars_stop, int axis, double vnorm, double tnorm)
 {

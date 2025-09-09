@@ -2,6 +2,7 @@
 #include "boozermagneticfield.h"
 #include "shearalfvenwave.h"
 #include "tracing.h"
+#include "ode_solvers.h"
 #ifdef USE_GSL
     #include "symplectic.h"
 #endif
@@ -23,8 +24,6 @@ using std::array;
 using boost::math::tools::toms748_solve;
 using namespace boost::numeric::odeint;
 using Array2 = BoozerMagneticField::Array2;
-
-
 
 class GuidingCenterVacuumBoozerRHS : public BaseRHS {
     /*
@@ -440,13 +439,30 @@ class GuidingCenterBoozerRHS : public BaseRHS {
 };
 
 tuple<vector<vector<double>>, vector<vector<double>>>
-solve(BaseRHS& rhs, vector<double> stzvt, double tau_max, double dtau, double dtau_max, double abstol, double reltol, 
-      vector<double> thetas, vector<double> zetas,
-      vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, 
-      double dtau_save, vector<double> vpars,
-      bool thetas_stop, bool zetas_stop, bool vpars_stop, bool forget_exact_path,
-      int axis, double vnorm, double tnorm) {
-
+solve(
+    BaseRHS& rhs,
+    vector<double> stzvt,
+    double tau_max,
+    double dtau,
+    double dtau_max,
+    double abstol,
+    double reltol, 
+    vector<double> thetas,
+    vector<double> zetas,
+    vector<double> omega_thetas,
+    vector<double> omega_zetas,
+    vector<shared_ptr<StoppingCriterion>> stopping_criteria, 
+    double dtau_save,
+    vector<double> vpars,
+    bool thetas_stop,
+    bool zetas_stop,
+    bool vpars_stop,
+    bool forget_exact_path,
+    int axis,
+    double vnorm,
+    double tnorm) {
+    string solver_type = "boost"; // Solver selection parameter, will become an argument.
+    solver_type = "dormand_prince";
     if (zetas.size() > 0 && omega_zetas.size() == 0) {
         omega_zetas.insert(omega_zetas.end(), zetas.size(), 0.);
     } else if (zetas.size() !=  omega_zetas.size()) {
@@ -465,20 +481,14 @@ solve(BaseRHS& rhs, vector<double> stzvt, double tau_max, double dtau, double dt
     vector<vector<double>> res_hits = {};
     vector<double> y(state_size), temp(state_size);
     
-    // Create a wrapper for boost::odeint since it can't work with abstract BaseRHS directly
-    struct RHSSystem {
-        BaseRHS& rhs;
-        RHSSystem(BaseRHS& r) : rhs(r) {}
-        void operator()(const vector<double>& x, vector<double>& dxdt, double t) {
-            rhs(x, dxdt, t);
-        }
-    };
+    // Create the appropriate solver
+    std::unique_ptr<ODESolver> solver;
+    if (solver_type == "dormand_prince") {
+        solver = create_dormand_prince_solver(abstol, reltol, dtau_max);
+    } else {  // default to boost
+        solver = create_dopri_boost_solver(abstol, reltol, dtau_max);
+    }
     
-    RHSSystem rhs_system(rhs);
-    
-    typedef runge_kutta_dopri5<vector<double>> stepper_type;
-    typedef typename boost::numeric::odeint::result_of::make_dense_output<stepper_type>::type dense_stepper_type;
-    dense_stepper_type dense = make_dense_output(abstol, reltol, dtau_max, stepper_type());
     double tau = 0;
     int iter = 0;
     bool stop = false;
@@ -492,20 +502,40 @@ solve(BaseRHS& rhs, vector<double> stzvt, double tau_max, double dtau, double dt
     res.push_back(initial_state);
 
     stzvt_to_y(stzvt, y, axis, vnorm, tnorm);
-    dense.initialize(y, tau, dtau);
+    solver->initialize(y, tau, dtau, rhs);
 
     do {
-        tuple<double, double> step = dense.do_step(rhs_system);
+        tuple<double, double> step = solver->do_step(rhs);
         iter++;
-        tau = dense.current_time();
-        y = dense.current_state();
+        tau = solver->current_time();
+        y = solver->current_state();
         tau_last = std::get<0>(step);
         tau_current = std::get<1>(step);
         dtau = tau_current - tau_last; // Timestep taken
 
         // Check if we have hit a stopping criterion between tau_last and tau_current
-        stop = check_stopping_criteria(state_size, iter, res_hits, dense, tau_last,
-            tau_current, dtau, abstol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop, axis, vnorm, tnorm);
+        stop = check_stopping_criteria(
+            state_size,
+            iter,
+            res_hits,
+            *solver,
+            tau_last,
+            tau_current,
+            dtau,
+            abstol,
+            thetas,
+            zetas,
+            omega_thetas,
+            omega_zetas,
+            stopping_criteria,
+            vpars,
+            thetas_stop,
+            zetas_stop,
+            vpars_stop,
+            axis,
+            vnorm,
+            tnorm
+        );
 
         // Save path if forget_exact_path = False
         if (forget_exact_path == 0) {
@@ -517,7 +547,7 @@ solve(BaseRHS& rhs, vector<double> stzvt, double tau_max, double dtau, double dt
             double tau_save_last = std::ceil(tau_last/dtau_save) * dtau_save;
             for (double tau_save = tau_save_last; tau_save <= tau_current; tau_save += dtau_save) {
                 if (tau_save != 0) {  // tau = 0 is already saved.
-                    dense.calc_state(tau_save, temp);
+                    solver->calc_state(tau_save, temp);
                     double t_save = tau_save * tnorm;
                     y_to_stzvt(temp, stzvt, axis, vnorm, tnorm);
                     vector<double> save_state = {t_save};
@@ -532,7 +562,7 @@ solve(BaseRHS& rhs, vector<double> stzvt, double tau_max, double dtau, double dt
         tau_max = res_hits.back()[0] / tnorm;
     }
     double t_max = tau_max * tnorm;
-    dense.calc_state(tau_max, y);
+    solver->calc_state(tau_max, y);
     y_to_stzvt(y, stzvt, axis, vnorm, tnorm);
     vector<double> final_state = {t_max};
     final_state.insert(final_state.end(), stzvt.begin(), stzvt.end());
@@ -605,14 +635,56 @@ particle_guiding_center_boozer_perturbed_tracing(
       auto rhs_class = GuidingCenterVacuumBoozerPerturbedRHS(
           perturbed_field, m, q, mu, axis, vnorm, tnorm
       );
-      return solve(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
-            stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
+      return solve(
+        rhs_class,
+        stzvt,
+        tau_max,
+        dtau,
+        dtau_max,
+        abstol,
+        reltol,
+        thetas,
+        zetas,
+        omega_thetas,
+        omega_zetas, 
+        stopping_criteria,
+        dtau_save,
+        vpars,
+        thetas_stop,
+        zetas_stop,
+        vpars_stop,
+        forget_exact_path,
+        axis,
+        vnorm,
+        tnorm
+      );
   } else {
       auto rhs_class = GuidingCenterNoKBoozerPerturbedRHS(
           perturbed_field, m, q, mu, axis, vnorm, tnorm
       );
-      return solve(rhs_class, stzvt, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas,
-            stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
+      return solve(
+        rhs_class,
+        stzvt,
+        tau_max,
+        dtau,
+        dtau_max,
+        abstol,
+        reltol,
+        thetas,
+        zetas,
+        omega_thetas,
+        omega_zetas, 
+        stopping_criteria,
+        dtau_save,
+        vpars,
+        thetas_stop,
+        zetas_stop,
+        vpars_stop,
+        forget_exact_path,
+        axis,
+        vnorm,
+        tnorm
+      );
   }
 }
 

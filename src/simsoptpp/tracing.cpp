@@ -461,7 +461,7 @@ solve(
     double vnorm,
     double tnorm) {
     string solver_type = "boost"; // Solver selection parameter, will become an argument.
-    solver_type = "dormand_prince";
+    //solver_type = "dormand_prince";
     if (phases.size() != n_zetas.size() || phases.size() != m_thetas.size() || phases.size() != omegas.size()) {
         throw std::invalid_argument("phases, n_zetas, m_thetas, and omegas need to have matching length.");
     }

@@ -250,15 +250,17 @@ class PassingPoincare:
             mass=self.mass,
             charge=self.charge,
             Ekin=self.Ekin,
-            zetas=[0],
-            vpars=[0],
-            omega_zetas=[0],
+            vpars=[0.0],
+            phases=[0.0],
+            n_zetas=[1.0],
+            m_thetas=[0.0],
+            omegas=[0.0],
             stopping_criteria=[
                 MaxToroidalFluxStoppingCriterion(1.0),
             ],
             forget_exact_path=False,
             vpars_stop=True,
-            zetas_stop=True,
+            phases_stop=True,
             **self.solver_options,
         )
         if len(res_hits[0]) == 0:

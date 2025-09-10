@@ -447,15 +447,14 @@ solve(
     double dtau_max,
     double abstol,
     double reltol, 
-    vector<double> thetas,
-    vector<double> zetas,
-    vector<double> omega_thetas,
-    vector<double> omega_zetas,
+    vector<double> phases,
+    vector<double> n_zetas,
+    vector<double> m_thetas,
+    vector<double> omegas,
     vector<shared_ptr<StoppingCriterion>> stopping_criteria, 
     double dtau_save,
     vector<double> vpars,
-    bool thetas_stop,
-    bool zetas_stop,
+    bool phases_stop,
     bool vpars_stop,
     bool forget_exact_path,
     int axis,
@@ -463,15 +462,8 @@ solve(
     double tnorm) {
     string solver_type = "boost"; // Solver selection parameter, will become an argument.
     solver_type = "dormand_prince";
-    if (zetas.size() > 0 && omega_zetas.size() == 0) {
-        omega_zetas.insert(omega_zetas.end(), zetas.size(), 0.);
-    } else if (zetas.size() !=  omega_zetas.size()) {
-        throw std::invalid_argument("zetas and omega_zetas need to have matching length.");
-    }
-    if (thetas.size() > 0 && omega_thetas.size() == 0) {
-        omega_thetas.insert(omega_thetas.end(), thetas.size(), 0.);
-    } else if (thetas.size() != omega_thetas.size() and thetas.size() != 0) {
-        throw std::invalid_argument("thetas and omega_thetas need to have matching length.");
+    if (phases.size() != n_zetas.size() || phases.size() != m_thetas.size() || phases.size() != omegas.size()) {
+        throw std::invalid_argument("phases, n_zetas, m_thetas, and omegas need to have matching length.");
     }
 
     // Get state size from the RHS object
@@ -523,14 +515,13 @@ solve(
             tau_current,
             dtau,
             abstol,
-            thetas,
-            zetas,
-            omega_thetas,
-            omega_zetas,
+            phases,
+            n_zetas,
+            m_thetas,
+            omegas,
             stopping_criteria,
             vpars,
-            thetas_stop,
-            zetas_stop,
+            phases_stop,
             vpars_stop,
             axis,
             vnorm,
@@ -590,14 +581,13 @@ particle_guiding_center_boozer_perturbed_tracing(
         double reltol,
         bool vacuum,
         bool noK,
-        vector<double> thetas,
-        vector<double> zetas,
-        vector<double> omega_thetas,
-        vector<double> omega_zetas,
+        vector<double> phases,
+        vector<double> n_zetas,
+        vector<double> m_thetas,
+        vector<double> omegas,
         vector<shared_ptr<StoppingCriterion>> stopping_criteria,
         double dt_save,
-        bool thetas_stop,
-        bool zetas_stop,
+        bool phases_stop,
         bool vpars_stop,
         bool forget_exact_path,
         int axis,
@@ -643,20 +633,19 @@ particle_guiding_center_boozer_perturbed_tracing(
         dtau_max,
         abstol,
         reltol,
-        thetas,
-        zetas,
-        omega_thetas,
-        omega_zetas, 
+        phases,
+        n_zetas,
+        m_thetas,
+        omegas,
         stopping_criteria,
         dtau_save,
         vpars,
-        thetas_stop,
-        zetas_stop,
+        phases_stop,
         vpars_stop,
         forget_exact_path,
-        axis,
-        vnorm,
-        tnorm
+        axis,  // was not here
+        vnorm, // was not here
+        tnorm  // was not here
       );
   } else {
       auto rhs_class = GuidingCenterNoKBoozerPerturbedRHS(
@@ -670,20 +659,19 @@ particle_guiding_center_boozer_perturbed_tracing(
         dtau_max,
         abstol,
         reltol,
-        thetas,
-        zetas,
-        omega_thetas,
-        omega_zetas, 
+        phases,
+        n_zetas,
+        m_thetas,
+        omegas,
         stopping_criteria,
         dtau_save,
         vpars,
-        thetas_stop,
-        zetas_stop,
+        phases_stop,
         vpars_stop,
         forget_exact_path,
-        axis,
-        vnorm,
-        tnorm
+        axis,  // was not here
+        vnorm, // was not here
+        tnorm  // was not here
       );
   }
 }
@@ -702,16 +690,15 @@ particle_guiding_center_boozer_tracing(
         double tmax,
         bool vacuum,
         bool noK,
-        vector<double> thetas,
-        vector<double> zetas,
-        vector<double> omega_thetas,
-        vector<double> omega_zetas,
+        vector<double> phases,
+        vector<double> n_zetas,
+        vector<double> m_thetas,
+        vector<double> omegas,
         vector<double> vpars,
         vector<shared_ptr<StoppingCriterion>> stopping_criteria,
         double dt_save,
         bool forget_exact_path,
-        bool thetas_stop,
-        bool zetas_stop,
+        bool phases_stop,
         bool vpars_stop,
         int axis,
         double abstol,
@@ -757,34 +744,141 @@ particle_guiding_center_boozer_tracing(
     if (solveSympl) {
 #ifdef USE_GSL
         auto f = SymplField(field, m, q, mu, vnorm, tnorm);
-        return solve_sympl_vector(f, stzv, tau_max, dtau, roottol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, predictor_step, dtau_save);
+        return solve_sympl_vector(
+            f,
+            stzv,
+            tau_max,
+            dtau,
+            roottol,
+            phases,
+            n_zetas,
+            m_thetas,
+            omegas,
+            stopping_criteria,
+            vpars,
+            phases_stop,
+            vpars_stop,
+            forget_exact_path,
+            predictor_step,
+            dtau_save
+        );
 #else
         throw std::invalid_argument("Symplectic solver not available. Please recompile with GSL support.");
 #endif
     } else {
         if (vacuum) {
           auto rhs_class = GuidingCenterVacuumBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
-          return solve(rhs_class, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
+          return solve(
+              rhs_class,
+              stzv,
+              tau_max,
+              dtau,
+              dtau_max,
+              abstol,
+              reltol,
+              phases,
+              n_zetas,
+              m_thetas,
+              omegas,
+              stopping_criteria,
+              dtau_save,
+              vpars,
+              phases_stop,
+              vpars_stop,
+              forget_exact_path,
+              axis,
+              vnorm,
+              tnorm
+          );
         } else if (noK) {
           auto rhs_class = GuidingCenterNoKBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
-          return solve(rhs_class, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
+          return solve(
+              rhs_class,
+              stzv,
+              tau_max,
+              dtau,
+              dtau_max,
+              abstol,
+              reltol,
+              phases,
+              n_zetas,
+              m_thetas,
+              omegas,
+              stopping_criteria,
+              dtau_save,
+              vpars,
+              phases_stop,
+              vpars_stop,
+              forget_exact_path,
+              axis,
+              vnorm,
+              tnorm
+          );
         } else {
           auto rhs_class = GuidingCenterBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
-          return solve(rhs_class, stzv, tau_max, dtau, dtau_max, abstol, reltol, thetas, zetas, omega_thetas, omega_zetas, stopping_criteria, dtau_save, vpars, thetas_stop, zetas_stop, vpars_stop, forget_exact_path, axis, vnorm, tnorm);
+          return solve(
+              rhs_class,
+              stzv,
+              tau_max,
+              dtau,
+              dtau_max,
+              abstol,
+              reltol,
+              phases,
+              n_zetas,
+              m_thetas,
+              omegas,
+              stopping_criteria,
+              dtau_save,
+              vpars,
+              phases_stop,
+              vpars_stop,
+              forget_exact_path,
+              axis,
+              vnorm,
+              tnorm
+          );
         }
     }
 }
 
 // Wrapper function to convert vector to array for symplectic solver
 tuple<vector<vector<double>>, vector<vector<double>>>
-solve_sympl_wrapper(SymplField f, vector<double> stzv, double tmax, double dt, double roottol, 
-                   vector<double> thetas, vector<double> zetas, vector<double> omega_thetas, vector<double> omega_zetas, 
-                   vector<shared_ptr<StoppingCriterion>> stopping_criteria, vector<double> vpars, 
-                   bool thetas_stop, bool zetas_stop, bool vpars_stop, bool forget_exact_path, 
-                   bool predictor_step, double dt_save) {
-    
+solve_sympl_wrapper(
+    SymplField f,
+    vector<double> stzv,
+    double tmax,
+    double dt,
+    double roottol,
+    vector<double> phases,
+    vector<double> n_zetas,
+    vector<double> m_thetas,
+    vector<double> omegas,
+    vector<shared_ptr<StoppingCriterion>> stopping_criteria,
+    vector<double> vpars, 
+    bool phases_stop=false,
+    bool vpars_stop=false,
+    bool forget_exact_path=false, 
+    bool predictor_step=true,
+    double dt_save=1e-6
+) {  
     // Call the vector-based symplectic solver directly
-    return solve_sympl_vector(f, stzv, tmax, dt, roottol, thetas, zetas, omega_thetas, omega_zetas, 
-                             stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop, 
-                             forget_exact_path, predictor_step, dt_save);
+    return solve_sympl_vector(
+        f,
+        stzv,
+        tmax,
+        dt,
+        roottol,
+        phases,
+        n_zetas,
+        m_thetas,
+        omegas,
+        stopping_criteria,
+        vpars,
+        phases_stop,
+        vpars_stop, 
+        forget_exact_path,
+        predictor_step,
+        dt_save
+    );
 }

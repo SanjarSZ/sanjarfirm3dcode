@@ -1042,6 +1042,8 @@ class PassingPerturbedPoincare:
         charge,
         helicity_M,
         helicity_N,
+        helicity_Mp=None,
+        helicity_Np=None,
         Eprime=None,
         mu=None,
         Ekin=None,
@@ -1098,6 +1100,11 @@ class PassingPerturbedPoincare:
             charge : Charge of the particle.
             helicity_M : Poloidal helicity of the magnetic field.
             helicity_N : Toroidal helicity of the magnetic field.
+            helicity_Mp : Poloidal helicity of the phase variable eta.
+            Defaults to None. If no value is given, Mp and Np are determined
+            by field helicity. 
+            helicity_Np : Toroidal helicity of the phase variable eta.
+            Defaults to None. If no value is given, Mp and Np are determined by field helicity.
             Eprime: Shifted energy, Eprime = n' * E - omega * p_eta.
             mu: Magnetic moment, mu = vperp^2/(2 B).
             Ekin: Total unperturbed kinetic energy of the particle, used to
@@ -1132,17 +1139,10 @@ class PassingPerturbedPoincare:
         self.B0 = saw.B0
         self.helicity_M = helicity_M
         self.helicity_N = helicity_N
+        self._set_helicity_Np_Mp(helicity_Np, helicity_Mp)
         self.mass = mass
         self.charge = charge
         self.sign_vpar = sign_vpar
-        # If modB contours close poloidally, then use theta as mapping coordinate
-        if self.helicity_M == 0:
-            self.helicity_Mp = 1
-            self.helicity_Np = 0
-        # Otherwise, use zeta as mapping coordinate
-        else:
-            self.helicity_Mp = 0
-            self.helicity_Np = -1
         if s_init is not None and chis_init is not None:
             self.s_init = s_init
             self.chis_init = chis_init
@@ -1165,8 +1165,6 @@ class PassingPerturbedPoincare:
         self.nprime = (self.Phim * self.helicity_N - self.Phin * self.helicity_M) / (
             self.helicity_Np * self.helicity_M - self.helicity_N * self.helicity_Mp
         )
-
-        self.omegan = self.omega / self.nprime  # Frequency for Poincare slice
 
         if Eprime is not None and mu is not None:
             self.Eprime = Eprime
@@ -1217,6 +1215,33 @@ class PassingPerturbedPoincare:
             self.vpars_all,
             self.t_all,
         ) = self.compute_passing_map()
+        
+    def _set_helicity_Np_Mp(self, helicity_Np, helicity_Mp):
+        """
+        Sets helicity of the phase variable eta based on user inputs.
+        """
+        if not ((helicity_Np is None) or (helicity_Mp is None)):
+            # User specified both helicities
+            self.helicity_Mp = helicity_Mp
+            self.helicity_Np = helicity_Np
+            return
+            
+        if ((helicity_Np is None) and (helicity_Mp is None)):
+            # User did not specify helicity, choose default
+            if self.helicity_M == 0:
+                # modB contours close poloidally, 
+                # so can use theta as mapping coordinate
+                self.helicity_Mp = 1
+                self.helicity_Np = 0
+            else:
+                # use zeta as mapping coordinate
+                self.helicity_Mp = 0
+                self.helicity_Np = -1
+            return
+        
+        raise ValueError(
+            f"User must either specify both helicity_Np and helicity_Mp or leave both of them None. Currently {helicity_Np=} while {helicity_Mp=}."
+        )
 
     def initialize_passing_map(self):
         """
@@ -1370,33 +1395,31 @@ class PassingPerturbedPoincare:
         points[:, 2] = zeta
 
         if self.helicity_M != 0:
-            zetas = [zeta]
-            thetas = []
-            omega_zetas = [self.omegan]
-            omega_thetas = []
-            zetas_stop = True
-            thetas_stop = False
+            phases = [zeta*self.nprime]
+            n_zetas = [self.nprime]
+            m_thetas = [0]
+            omegas = [self.omega]
+            phases_stop = True
         else:
-            zetas = []
-            thetas = [theta]
-            omega_zetas = []
-            omega_thetas = [self.omegan]
-            zetas_stop = False
-            thetas_stop = True
+            phases = [theta*self.nprime]
+            n_zetas = [0]
+            m_thetas = [self.nprime]
+            omegas = [self.omega]
+            phases_stop = True
 
         res_tys, res_hits = trace_particles_boozer_perturbed(
-            self.saw,
-            points,
-            [point[2]],
-            [self.mu],
+            perturbed_field=self.saw,
+            stz_inits=points,
+            parallel_speeds=[point[2]],
+            mus=[self.mu],
             tmax=self.tmax,
             mass=self.mass,
             charge=self.charge,
-            thetas=thetas,
-            zetas=zetas,
+            phases=phases,
+            n_zetas=n_zetas,
+            m_thetas=m_thetas,
+            omegas=omegas,
             vpars=[0],
-            omega_thetas=omega_thetas,
-            omega_zetas=omega_zetas,
             axis=0,
             stopping_criteria=[
                 MinToroidalFluxStoppingCriterion(0.01),
@@ -1404,8 +1427,7 @@ class PassingPerturbedPoincare:
             ],
             forget_exact_path=True,
             vpars_stop=True,
-            zetas_stop=zetas_stop,
-            thetas_stop=thetas_stop,
+            phases_stop=True,
             **self.solver_options,
         )
         if len(res_hits[0]) == 0:
@@ -1413,9 +1435,7 @@ class PassingPerturbedPoincare:
 
         res_hit = res_hits[0][0, :]  # Only check the first hit or stopping criterion
 
-        if (self.helicity_M != 0 and res_hit[1] == 0) or (
-            self.helicity_M == 0 and res_hit[1] == 1
-        ):  # Check that the zetas or thetas plane was hit
+        if res_hit[1] == 0:  # Check that the phases plane was hit (index 0 for first phase)
             point[0] = res_hit[2]
             point[1] = self.chi(res_hit[3], res_hit[4])
             point[2] = res_hit[5]

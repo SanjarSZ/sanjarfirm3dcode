@@ -212,9 +212,27 @@ inline void stzvtdot_to_ydot(const vector<double>& stzvtdot, const vector<double
 
 // Vector-based version of check_stopping_criteria
 template<class DENSE>
-bool check_stopping_criteria(int state_size, int iter, vector<vector<double>> &res_hits, DENSE& dense, double tau_last, double tau_current, double dtau,
-    double abstol, vector<double> thetas, vector<double> zetas, vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria,
-    vector<double> vpars, bool thetas_stop, bool zetas_stop, bool vpars_stop, int axis, double vnorm, double tnorm)
+bool check_stopping_criteria(
+    int state_size,
+    int iter,
+    vector<vector<double>> &res_hits,
+    DENSE& dense,
+    double tau_last,
+    double tau_current,
+    double dtau,
+    double abstol,
+    vector<double> phases,
+    vector<double> n_zetas,
+    vector<double> m_thetas,
+    vector<double> omegas,
+    vector<shared_ptr<StoppingCriterion>> stopping_criteria,
+    vector<double> vpars,
+    bool phases_stop,
+    bool vpars_stop,
+    int axis,
+    double vnorm,
+    double tnorm
+)
 {
     boost::math::tools::eps_tolerance<double> roottol(-int(std::log2(abstol)));
     uintmax_t rootmaxit = 200;
@@ -261,7 +279,7 @@ bool check_stopping_criteria(int state_size, int iter, vector<vector<double>> &r
             double t_root = tau_root * tnorm;
             dense.calc_state(tau_root, y);
             y_to_stzvt(y, stzvt, axis, vnorm, tnorm);
-            vector<double> hit_state = {t_root, double(i) + zetas.size()};
+            vector<double> hit_state = {t_root, double(i) + n_zetas.size()};
             hit_state.insert(hit_state.end(), stzvt.begin(), stzvt.end());
             res_hits.push_back(hit_state);
             if (vpars_stop) {
@@ -270,22 +288,31 @@ bool check_stopping_criteria(int state_size, int iter, vector<vector<double>> &r
             }
         }
     }
-    // Now check whether we have hit any of the (zeta - omega t) planes
-    for (int i = 0; i < zetas.size(); ++i) {
-        double zeta = zetas[i];
-        double omega = omega_zetas[i];
-        double phase_last = zeta_last - omega*t_last;
-        double phase_current = zeta_current - omega*t_current;
-        if((std::floor((phase_last - zeta)/(2*M_PI)) != std::floor((phase_current-zeta)/(2*M_PI))) && (phase_current != zeta) && (phase_last != zeta)) { // check whether zeta+k*2pi for some k was crossed
-            int fak = std::round(((phase_last+phase_current)/2-zeta)/(2*M_PI));
-            double phase_shift = fak*2*M_PI + zeta;
+    
+    assert(n_zetas.size() == m_thetas.size());
+    assert(n_zetas.size() == omegas.size());
+    assert(n_zetas.size() == phases.size());
+    
+    /// Now check whether we have hit any of the phase planes:
+    //  n*zeta + m*theta - omega*t = consts
+    for (int i = 0; i < n_zetas.size(); ++i) {
+        double phase = phases[i];
+        double nz = n_zetas[i];
+        double mt = m_thetas[i];
+        double omega = omegas[i];
+        double phase_last = nz * zeta_last + mt * theta_last - omega*t_last;
+        double phase_current = nz * zeta_current + mt * theta_current - omega*t_current;
+        
+        if((std::floor((phase_last-phase)/(2*M_PI)) != std::floor((phase_current-phase)/(2*M_PI))) && (phase_current != phase) && (phase_last != phase)) { // check whether phase+k*2pi for some k was crossed
+            int fak = std::round(((phase_last+phase_current)/2-phase)/(2*M_PI));
+            double phase_shift = fak*2*M_PI + phase;
             assert((phase_last <= phase_shift && phase_shift <= phase_current) || (phase_current <= phase_shift && phase_shift <= phase_last));
-
-            std::function<double(double)> rootfun = [&phase_shift, &zeta_last, &omega, &dense, &y, &stzvt, &axis, &vnorm, &tnorm](double tau){
+            
+            std::function<double(double)> rootfun = [&phase_shift, &nz, &mt, &omega, &dense, &y, &stzvt, &axis, &vnorm, &tnorm](double tau){
                 dense.calc_state(tau, y);
                 double t = tau * tnorm;
                 y_to_stzvt(y, stzvt, axis, vnorm, tnorm);
-                return stzvt[2] - omega*t - phase_shift;
+                return nz * stzvt[2] + mt * stzvt[1] - omega*t - phase_shift;
             };
             auto root = toms748_solve(rootfun, tau_last, tau_current, phase_last - phase_shift, phase_current - phase_shift, roottol, rootmaxit);
             double f0 = rootfun(root.first);
@@ -297,45 +324,13 @@ bool check_stopping_criteria(int state_size, int iter, vector<vector<double>> &r
             vector<double> hit_state = {t_root, double(i)};
             hit_state.insert(hit_state.end(), stzvt.begin(), stzvt.end());
             res_hits.push_back(hit_state);
-            if (zetas_stop && !stop) {
+            if (phases_stop && !stop) {
                 stop = true;
                 break;
             }
         }
     }
-    // Now check whether we have hit any of the (theta - omega t) planes
-    for (int i = 0; i < thetas.size(); ++i) {
-        double theta = thetas[i];
-        double omega = omega_thetas[i];
-        double phase_last = theta_last - omega*t_last;
-        double phase_current = theta_current - omega*t_current;
-        if((std::floor((phase_last - theta)/(2*M_PI)) != std::floor((phase_current-theta)/(2*M_PI))) && (phase_current != theta) && (phase_last != theta)) { // check whether theta+k*2pi for some k was crossed
-            int fak = std::round(((phase_last+phase_current)/2-theta)/(2*M_PI));
-            double phase_shift = fak*2*M_PI + theta;
-            assert((phase_last <= phase_shift && phase_shift <= phase_current) || (phase_current <= phase_shift && phase_shift <= phase_last));
-
-            std::function<double(double)> rootfun = [&phase_shift, &theta_last, &omega, &dense, &y, &stzvt, &axis, &vnorm, &tnorm](double tau){
-                dense.calc_state(tau, y);
-                double t = tau * tnorm;
-                y_to_stzvt(y, stzvt, axis, vnorm, tnorm);
-                return stzvt[1] - omega*t - phase_shift;
-            };
-            auto root = toms748_solve(rootfun, tau_last, tau_current, phase_last - phase_shift, phase_current - phase_shift, roottol, rootmaxit);
-            double f0 = rootfun(root.first);
-            double f1 = rootfun(root.second);
-            double tau_root = std::abs(f0) < std::abs(f1) ? root.first : root.second;
-            double t_root = tau_root * tnorm;
-            dense.calc_state(tau_root, y);
-            y_to_stzvt(y, stzvt, axis, vnorm, tnorm);
-            vector<double> hit_state = {t_root, double(i) + zetas.size() + vpars.size()};
-            hit_state.insert(hit_state.end(), stzvt.begin(), stzvt.end());
-            res_hits.push_back(hit_state);
-            if (thetas_stop && !stop) {
-                stop = true;
-                break;
-            }
-        }
-    }
+    
     // check whether we have satisfied any of the extra stopping criteria (e.g. left a surface)
     for (int i = 0; i < stopping_criteria.size(); ++i) {
         if(stopping_criteria[i] && (*stopping_criteria[i])(iter, dt, t_current, s_current, theta_current, zeta_current, vpar_current)){

@@ -254,18 +254,28 @@ void sympl_dense::calc_state(double eval_t, State &temp) {
 
 // see https://github.com/itpplasma/SIMPLE/blob/master/SRC/
 //         orbit_symplectic_quasi.f90:timestep_euler1_quasi
-tuple<vector<vector<double>>, vector<vector<double>>> solve_sympl_vector(SymplField f, vector<double> y, double tmax, double dt, double roottol, vector<double> thetas, vector<double> zetas, vector<double> omega_thetas, vector<double> omega_zetas, vector<shared_ptr<StoppingCriterion>> stopping_criteria, vector<double> vpars, bool thetas_stop, bool zetas_stop, bool vpars_stop, bool forget_exact_path, bool predictor_step, double dt_save)
+tuple<vector<vector<double>>, vector<vector<double>>> solve_sympl_vector(
+    SymplField f,
+    vector<double> y,
+    double tmax,
+    double dt,
+    double roottol,
+    vector<double> phases,
+    vector<double> n_zetas,
+    vector<double> m_thetas,
+    vector<double> omegas,
+    vector<shared_ptr<StoppingCriterion>> stopping_criteria,
+    vector<double> vpars,
+    bool phases_stop,
+    bool vpars_stop,
+    bool forget_exact_path,
+    bool predictor_step,
+    double dt_save
+)
 {
     double abstol = 0;
-    if (zetas.size() > 0 && omega_zetas.size() == 0) {
-        omega_zetas.insert(omega_zetas.end(), zetas.size(), 0.);
-    } else if (zetas.size() !=  omega_zetas.size()) {
-        throw std::invalid_argument("zetas and omega_zetas need to have matching length.");
-    }
-    if (thetas.size() > 0 && omega_thetas.size() == 0) {
-        omega_thetas.insert(omega_thetas.end(), thetas.size(), 0.);
-    } else if (thetas.size() !=  omega_thetas.size() and thetas.size() != 0) {
-        throw std::invalid_argument("thetas and omega_thetas need to have matching length.");
+    if (phases.size() != n_zetas.size() || phases.size() != m_thetas.size() || phases.size() != omegas.size()) {
+        throw std::invalid_argument("phases, n_zetas, m_thetas, and omegas need to have matching length.");
     }
 
     vector<vector<double>> res = {};
@@ -400,8 +410,27 @@ tuple<vector<vector<double>>, vector<vector<double>>> solve_sympl_vector(SymplFi
 
         double t_current = t;
 
-        stop = check_stopping_criteria(4, iter, res_hits, dense, t_last, t_current, dt, abstol, thetas, zetas,
-            omega_thetas, omega_zetas, stopping_criteria, vpars, thetas_stop, zetas_stop, vpars_stop, 0, f.vnorm, f.tnorm);
+        stop = check_stopping_criteria(
+            4,
+            iter,
+            res_hits,
+            dense,
+            t_last,
+            t_current,
+            dt,
+            abstol,
+            phases,
+            n_zetas,
+            m_thetas,
+            omegas,
+            stopping_criteria,
+            vpars,
+            phases_stop,
+            vpars_stop,
+            0,
+            f.vnorm,
+            f.tnorm
+        );
 
         // Save path if forget_exact_path = False
         if (forget_exact_path == 0) {

@@ -54,6 +54,8 @@ def trace_particles_boozer_perturbed(
     phases_stop=False,
     vpars_stop=False,
     axis=2,
+    ODE_solver="boost",
+    DP_hmin=0.0
 ):
     r"""
     Follow particles in a perturbed field of class :class:`ShearAlfvenWave`.
@@ -162,6 +164,7 @@ def trace_particles_boozer_perturbed(
             performed in coordinates (sqrt(s)*cos(theta), sqrt(s)*sin(theta),
             zeta). If 2, tracing is performed in coordinates
             (s*cos(theta),s*sin(theta),zeta). Option 2 is recommended.
+        ODE_solver: Which ODE solver to use, can be "boost" or "dormand prince". Defaults to "boost".
     Returns: 2 element tuple containing
         - ``res_tys``:
             A list of numpy arrays (one for each particle) describing the
@@ -253,6 +256,8 @@ def trace_particles_boozer_perturbed(
             vpars_stop=vpars_stop,
             forget_exact_path=forget_exact_path,
             axis=axis,
+            ODE_solver=ODE_solver,
+            DP_hmin=DP_hmin
         )
         if not forget_exact_path:
             res_tys.append(np.asarray(res_ty))
@@ -291,9 +296,10 @@ def trace_particles_boozer(
     vpars_stop=False,
     axis=None,
     dt=None,
-    solveSympl=False,
+    ODE_solver="boost",
     roottol=None,
     predictor_step=None,
+    DP_hmin=0.0
 ):
     r"""
     Follow particles in a :class:`BoozerMagneticField`.
@@ -354,9 +360,9 @@ def trace_particles_boozer(
         tol: default tolerance for ode solver when solver-specific tolerances
             are not set
         reltol: relative tolerance for adaptive ode solver (defaults to `tol`).
-            Only used if `solveSympl` is False.
+            Not used with "symplectic" ODE_solver.
         abstol: absolute tolerance for adaptive ode solver (defaults to `tol`).
-            Only used if `solveSympl` is False.
+            Not used with "symplectic" ODE_solver.
         comm: MPI communicator to parallelize over
         phases: list of angles in [0, 2pi] for which intersection with the plane
             corresponding to that phase should be computed. Should only be
@@ -386,18 +392,17 @@ def trace_particles_boozer(
         phases_stop: whether to stop if hit provided phase planes.
         vpars_stop: whether to stop if hit provided vpar planes
         axis: Defines handling of coordinate singularity. If 0, tracing is
-            performed in Boozer coordinates (s,theta,zeta). Only used if
-            `solveSympl` is False. If 1, tracing is performed in coordinates
+            performed in Boozer coordinates (s,theta,zeta). Not used with "symplectic" ODE_solver. If 1, tracing is performed in coordinates
             (sqrt(s)*cos(theta), sqrt(s)*sin(theta), zeta). If 2, tracing is
             performed in coordinates (s*cos(theta),s*sin(theta),zeta).
             Option 2 (default) is recommended.
-        dt: time step for the symplectic solver. Only used if `solveSympl` is True.
-        solveSympl: If True, uses symplectic solver. If False (default), uses
-            RK45 solver with adaptive time step.
+        dt: time step for the symplectic solver. Only used if `ODE_solver` is "symplectic".
+        ODE_solver: Choice of ODE_solver: "boost", "dormand_prince" or "symplectic"
         roottol: root solver tolerance for the symplectic solver. Only used if
-            `solveSympl` is True. If None, defaults to `tol`.
+            `ODE_solver` is "symplectic". If None, defaults to `tol`.
         predictor_step: provide better initial guess for the next time step
-            using predictor steps. Defaults to True if `solveSympl` is True.
+            using predictor steps. Defaults to True if `ODE_solver` is "symplectic".
+        DP_hmin: Minimal timestep to enforce during numerical integration with adaptive timestep. If the adaptice time step gets below DP_hmin, the stepper completes step with DP_hmin timestep. Default is 0.0. Only used if `ODE_solver` is "dormand_prince".
     Returns: 2 element tuple containing
         - ``res_tys``:
             A list of numpy arrays (one for each particle) describing the
@@ -434,7 +439,7 @@ def trace_particles_boozer(
     if vpars_stop and (not len(vpars)):
         raise ValueError("No vpars provided for the vpar stopping criterion")
 
-    if solveSympl:
+    if ODE_solver == "symplectic":
         if abstol is not None or reltol is not None:
             warn(
                 "Symplectic solver does not use absolute or relative tolerance. "
@@ -521,10 +526,11 @@ def trace_particles_boozer(
             axis=axis,
             abstol=abstol,
             reltol=reltol,
-            solveSympl=solveSympl,
+            ODE_solver=ODE_solver,
             predictor_step=predictor_step,
             roottol=roottol,
             dt=dt,
+            DP_hmin=DP_hmin
         )
         if not forget_exact_path:
             res_tys.append(np.asarray(res_ty))

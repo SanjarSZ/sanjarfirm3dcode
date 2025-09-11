@@ -459,26 +459,37 @@ solve(
     bool forget_exact_path,
     int axis,
     double vnorm,
-    double tnorm) {
-    string solver_type = "boost"; // Solver selection parameter, will become an argument.
-    //solver_type = "dormand_prince";
+    double tnorm,
+    string ode_solver,
+    double DP_hmin) {
     if (phases.size() != n_zetas.size() || phases.size() != m_thetas.size() || phases.size() != omegas.size()) {
         throw std::invalid_argument("phases, n_zetas, m_thetas, and omegas need to have matching length.");
     }
 
-    // Get state size from the RHS object
     int state_size = rhs.get_state_size();
     
     vector<vector<double>> res = {};
     vector<vector<double>> res_hits = {};
     vector<double> y(state_size), temp(state_size);
     
-    // Create the appropriate solver
     std::unique_ptr<ODESolver> solver;
-    if (solver_type == "dormand_prince") {
-        solver = create_dormand_prince_solver(abstol, reltol, dtau_max);
-    } else {  // default to boost
-        solver = create_dopri_boost_solver(abstol, reltol, dtau_max);
+    if (ode_solver == "dormand_prince") {
+        solver = create_dormand_prince_solver(
+            abstol,
+            reltol,
+            dtau_max,
+            DP_hmin
+        );
+    } else if (ode_solver == "boost") {
+        solver = create_dopri_boost_solver(
+            abstol,
+            reltol,
+            dtau_max
+        );
+    } else {
+        throw std::invalid_argument(
+            "ode_solver is \"boost\", \"dormand_prince\" of \"symplectic\""
+        );
     }
     
     double tau = 0;
@@ -503,7 +514,7 @@ solve(
         y = solver->current_state();
         tau_last = std::get<0>(step);
         tau_current = std::get<1>(step);
-        dtau = tau_current - tau_last; // Timestep taken
+        dtau = tau_current - tau_last;
 
         // Check if we have hit a stopping criterion between tau_last and tau_current
         stop = check_stopping_criteria(
@@ -591,8 +602,14 @@ particle_guiding_center_boozer_perturbed_tracing(
         bool vpars_stop,
         bool forget_exact_path,
         int axis,
-        vector<double> vpars)
+        vector<double> vpars,
+        string ode_solver,
+        double DP_hmin
+        )
 {
+    if (ode_solver != "boost" && ode_solver != "dormand_prince") {
+        throw std::invalid_argument("ode_solver must be either \"boost\" or \"dormand_prince\" for perturbed tracing");
+    }
     Array2 stzt({{stz_init[0], stz_init[1], stz_init[2], 0.0}});
     perturbed_field->set_points(stzt);
     auto field = perturbed_field->get_B0();
@@ -643,9 +660,11 @@ particle_guiding_center_boozer_perturbed_tracing(
         phases_stop,
         vpars_stop,
         forget_exact_path,
-        axis,  // was not here
-        vnorm, // was not here
-        tnorm  // was not here
+        axis,
+        vnorm,
+        tnorm,
+        ode_solver,
+        DP_hmin
       );
   } else {
       auto rhs_class = GuidingCenterNoKBoozerPerturbedRHS(
@@ -669,9 +688,11 @@ particle_guiding_center_boozer_perturbed_tracing(
         phases_stop,
         vpars_stop,
         forget_exact_path,
-        axis,  // was not here
-        vnorm, // was not here
-        tnorm  // was not here
+        axis,
+        vnorm,
+        tnorm,
+        ode_solver,
+        DP_hmin
       );
   }
 }
@@ -703,12 +724,16 @@ particle_guiding_center_boozer_tracing(
         int axis,
         double abstol,
         double reltol,
-        bool solveSympl,
+        string ode_solver,
         bool predictor_step,
         double roottol,
-        double dt
+        double dt,
+        double DP_hmin
         )
 {
+    if (ode_solver != "boost" && ode_solver != "dormand_prince" && ode_solver != "symplectic") {
+        throw std::invalid_argument("ode_solver must be either \"boost\", \"dormand_prince\", or \"symplectic\" for unperturbed tracing");
+    }
     Array2 stz({{stz_init[0], stz_init[1], stz_init[2]}});
     field->set_points(stz);
     double modB = field->modB()(0);
@@ -717,7 +742,7 @@ particle_guiding_center_boozer_tracing(
     vector<double> stzv(4);
     double vnorm, tnorm, dtau_max, dtau;
 
-    if (!solveSympl){
+    if (ode_solver != "symplectic"){
         double G0 = std::abs(field->G()(0));
         double r0 = G0/modB;
         vnorm = vtotal; // Normalizing velocity = vtotal
@@ -741,7 +766,7 @@ particle_guiding_center_boozer_tracing(
     stzv[2] = stz_init[2];
     stzv[3] = vtang;
 
-    if (solveSympl) {
+    if (ode_solver == "symplectic") {
 #ifdef USE_GSL
         auto f = SymplField(field, m, q, mu, vnorm, tnorm);
         return solve_sympl_vector(
@@ -788,7 +813,9 @@ particle_guiding_center_boozer_tracing(
               forget_exact_path,
               axis,
               vnorm,
-              tnorm
+              tnorm,
+              ode_solver,
+              DP_hmin
           );
         } else if (noK) {
           auto rhs_class = GuidingCenterNoKBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
@@ -812,7 +839,9 @@ particle_guiding_center_boozer_tracing(
               forget_exact_path,
               axis,
               vnorm,
-              tnorm
+              tnorm,
+              ode_solver,
+              DP_hmin
           );
         } else {
           auto rhs_class = GuidingCenterBoozerRHS(field, m, q, mu, axis, vnorm, tnorm);
@@ -836,7 +865,9 @@ particle_guiding_center_boozer_tracing(
               forget_exact_path,
               axis,
               vnorm,
-              tnorm
+              tnorm,
+              ode_solver,
+              DP_hmin
           );
         }
     }

@@ -29,7 +29,7 @@ public:
      * @param t0: Initial time
      * @param h0: Initial timestep suggestion
      * @param rhs: The RHS function object
-     * Note: the RHS may be needed fot the solver to precompute thigs, 
+     * Note: the RHS may be needed for the solver to precompute things, 
      * but now RHS is passed both here and at do_step.
      */
     virtual void initialize(
@@ -44,7 +44,6 @@ public:
      * 
      * @param rhs: The right-hand side function object
      * @return: A pair of (t_start, t_end) for the step taken
-     * CHANGE: maybe do not need to pass rhs, and use the one from initialization.
      */
     virtual std::pair<double, double> do_step(BaseRHS& rhs) = 0;
     

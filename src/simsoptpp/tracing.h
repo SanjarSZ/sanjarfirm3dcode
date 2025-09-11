@@ -42,7 +42,9 @@ solve(
     bool forget_exact_path=false,
     int axis=0,
     double vnorm=1,
-    double tnorm=1
+    double tnorm=1,
+    string ode_solver="boost",
+    double DP_hmin=0.0
 );
 
 tuple<vector<vector<double>>, vector<vector<double>>>
@@ -69,7 +71,10 @@ particle_guiding_center_boozer_perturbed_tracing(
         bool vpars_stop=false,
         bool forget_exact_path=false,
         int axis=0,
-        vector<double> vpars={});
+        vector<double> vpars={},
+        string ode_solver="boost",
+        double DP_hmin=0.0
+);
 
 
 tuple<vector<vector<double>>, vector<vector<double>>>
@@ -96,8 +101,9 @@ particle_guiding_center_boozer_tracing(
         int axis=0,
         double abstol=1e-9,
         double reltol=1e-9,
-        bool solveSympl=false,
+        string ode_solver="boost",
         bool predictor_step=true,
         double roottol=1e-9,
-        double dt=1e-7
+        double dt=1e-7,
+        double DP_hmin=0.0
 );

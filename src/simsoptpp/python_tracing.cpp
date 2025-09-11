@@ -46,10 +46,11 @@ void init_tracing(py::module_ &m){
         py::arg("axis")=0,
         py::arg("abstol")=1e-9,
         py::arg("reltol")=1e-9,
-        py::arg("solveSympl")=false,
+        py::arg("ODE_solver")="boost",
         py::arg("predictor_step")=true,
         py::arg("roottol")=1e-9,
-        py::arg("dt")=1e-7
+        py::arg("dt")=1e-7,
+        py::arg("DP_hmin")=0.0
         );
 
     m.def("particle_guiding_center_boozer_perturbed_tracing", &particle_guiding_center_boozer_perturbed_tracing,
@@ -75,6 +76,8 @@ void init_tracing(py::module_ &m){
         py::arg("vpars_stop")=false,
         py::arg("forget_exact_path")=false,
         py::arg("axis")=0,
-        py::arg("vpars")=vector<double>{}
+        py::arg("vpars")=vector<double>{},
+        py::arg("ODE_solver")="boost",
+        py::arg("DP_hmin")=0.0
     );
 }

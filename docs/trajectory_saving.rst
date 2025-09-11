@@ -34,7 +34,7 @@ If ``forget_exact_path=False``, the parameter ``dt_save`` determines the time in
 Hits Data (res_hits)
 --------------------
 
-The "hits" are defined through the input lists ``phases``, ``n_zetas``, ``m_thetas``, `omegas``, and ``vpars``.
+The "hits" are defined through the input lists ``phases``, ``n_zetas``, ``m_thetas``, ``omegas``, and ``vpars``.
 
 **Hit Planes:**
 

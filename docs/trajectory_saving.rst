@@ -34,15 +34,14 @@ If ``forget_exact_path=False``, the parameter ``dt_save`` determines the time in
 Hits Data (res_hits)
 --------------------
 
-The "hits" are defined through the input lists ``thetas``, ``zetas``, ``vpars``, ``omega_thetas``, and ``omega_zetas``.
+The "hits" are defined through the input lists ``phases``, ``n_zetas``, ``m_thetas``, ``omegas``, and ``vpars``.
 
 **Hit Planes:**
 
 - **vpars**: If specified, the trajectory will be recorded when the parallel velocity hits a given value. For example, the Poincaré map for trapped particles is defined by recording the points with :math:`v_{||} = 0`.
 
-- **zetas** and **omega_zetas**: If ``zetas`` is specified, the trajectory will be recorded when :math:`\zeta - \omega t` hits the values given in the ``zetas`` array, with the frequency :math:`\omega` given by the ``omega_zetas`` array. The ``zetas`` and ``omega_zetas`` lists must have the same length. If ``omega_zetas`` is not specified, it defaults to zeros. This feature is useful for defining the Poincaré map for passing particles (with or without a single-harmonic shear Alfvén wave).
+- **phases**, **n_zetas**, **m_zetas** and **omegas**: If ``phases`` is specified, the trajectory will be recorded when :math:`n_\zeta * \zeta + m_\theta * theta - \omega t` hits the values given in the ``phases`` array, with the frequency :math:`\omega` given by the ``omegas`` array. All lists must have the same length.
 
-- **thetas** and **omega_thetas**: If ``thetas`` is specified, the trajectory will be recorded when :math:`\theta - \omega t` hits the values given in the ``thetas`` array, with the frequency :math:`\omega` given by the ``omega_thetas`` array. The ``thetas`` and ``omega_thetas`` lists must have the same length. If ``omega_thetas`` is not specified, it defaults to zeros. This feature is useful for defining poloidal Poincaré maps.
 
 **Hit Data Structure:**
 
@@ -78,10 +77,10 @@ For custom analysis beyond the standard Poincaré maps, you can specify multiple
        stz_inits=points,
        parallel_speeds=vpars,
        tmax=1e-3,
-       zetas=zetas,
-       omega_zetas=omega_zetas,
-       thetas=thetas,
-       omega_thetas=omega_thetas,
+       phases=phases,
+       n_zetas=n_zetas,
+       m_thetas=m_thetas,
+       omegas=omegas,
        vpars=vpars
    )
 

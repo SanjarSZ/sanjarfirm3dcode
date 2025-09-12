@@ -42,19 +42,20 @@ def trace_particles_boozer_perturbed(
     abstol=None,
     reltol=None,
     comm=None,
-    thetas=None,
-    zetas=None,
-    omega_thetas=None,
-    omega_zetas=None,
+    phases=None,
+    n_zetas=None,
+    m_thetas=None,
+    omegas=None,
     vpars=None,
     stopping_criteria=None,
     dt_save=1e-6,
     mode=None,
     forget_exact_path=False,
-    thetas_stop=False,
-    zetas_stop=False,
+    phases_stop=False,
     vpars_stop=False,
     axis=2,
+    ODE_solver="boost",
+    DP_hmin=0.0,
 ):
     r"""
     Follow particles in a perturbed field of class :class:`ShearAlfvenWave`.
@@ -130,19 +131,16 @@ def trace_particles_boozer_perturbed(
         abstol: absolute tolerance for adaptive ode solver
         reltol: relative tolerance for adaptive ode solver
         comm: MPI communicator to parallelize over
-        thetas: list of angles in [0, 2pi] for which intersection with the plane
-            corresponding to that theta should be computed. Should only be
+        phases: list of angles in [0, 2pi] for which intersection with the plane
+            corresponding to that phase should be computed. Should only be
             used if axis = 0.
-        zetas: list of angles in [0, 2pi] for which intersection with the plane
-            corresponding to that zeta should be computed
-        omega_thetas: list of frequencies defining a stopping criterion such that
-              thetas - omega_thetas*t = 0. Must have the same length as thetas.
+        n_zetas: list of toroidal mode numbers for stopping criterion
+        m_thetas: list of poloidal mode numbers for stopping criterion
+        omegas: list of frequencies defining a stopping criterion such that
+              n_zetas*zetas + m_thetas*thetas - omega_thetas*t = phase. Must have the
+              same length as thetas.
               If provided, the solver will stop when the particle hits the
               plane defined by thetas and omega_thetas.
-        omega_zetas: list of frequencies defining a stopping criterion such that
-              zetas - omega_zetas*t = 0. Must have the same length as zetas.
-              If provided, the solver will stop when the particle hits the
-              plane defined by zetas and omega_zetas.
         vpars: list of parallel velocities defining a stopping criterion such
               that the solver will stop when the particle hits these values.
         stopping_criteria: list of stopping criteria, mostly used in
@@ -160,14 +158,15 @@ def trace_particles_boozer_perturbed(
         forget_exact_path: return only the first and last position of each
             particle for the ``res_tys``. To be used when only res_hits is
             of interest or one wants to reduce memory usage.
-        thetas_stop: whether to stop if hit provided theta planes.
-        zetas_stop: whether to stop if hit provided zeta planes
+        phases_stop: whether to stop if hit provided phase planes.
         vpars_stop: whether to stop if hit provided vpar planes
         axis: Defines handling of coordinate singularity. If 0, tracing is
             performed in Boozer coordinates (s,theta,zeta). If 1, tracing is
             performed in coordinates (sqrt(s)*cos(theta), sqrt(s)*sin(theta),
             zeta). If 2, tracing is performed in coordinates
             (s*cos(theta),s*sin(theta),zeta). Option 2 is recommended.
+        ODE_solver: Which ODE solver to use, can be "boost" or "dormand prince".
+            Defaults to "boost".
     Returns: 2 element tuple containing
         - ``res_tys``:
             A list of numpy arrays (one for each particle) describing the
@@ -180,11 +179,11 @@ def trace_particles_boozer_perturbed(
             one of the stopping criteria. Each row or the array contains
             `[time] + [idx] + state`, where `idx` tells us which of the hit
             planes or stopping criteria was hit.
-            If `idx>=0` and `idx<len(zetas)`, then the `zetas[idx]` plane was
-            hit. If `len(vpars)+len(zetas)>idx>=len(zetas)`, then the
-            `vpars[idx-len(zetas)]` plane was hit.
-            If `idx>=len(vpars)+len(zetas)`, then the
-            `thetas[idx-len(vpars)-len(zetas)]` plane was hit.
+            If `idx>=0` and `idx<len(phases)`, then the `phases[idx]` plane was
+            hit. If `len(vpars)+len(phases)>idx>=len(phases)`, then the
+            `vpars[idx-len(phases)]` plane was hit.
+            If `idx>=len(vpars)+len(phases)`, then the
+            `thetas[idx-len(vpars)-len(phases)]` plane was hit.
             If `idx<0`, then `stopping_criteria[int(-idx)-1]` was hit. The
             state vector is `[s, theta, zeta, v_par, t]`.
     """
@@ -192,14 +191,14 @@ def trace_particles_boozer_perturbed(
         stopping_criteria = []
     if vpars is None:
         vpars = []
-    if omega_zetas is None:
-        omega_zetas = []
-    if omega_thetas is None:
-        omega_thetas = []
-    if zetas is None:
-        zetas = []
-    if thetas is None:
-        thetas = []
+    if phases is None:
+        phases = []
+    if n_zetas is None:
+        n_zetas = []
+    if m_thetas is None:
+        m_thetas = []
+    if omegas is None:
+        omegas = []
     if reltol is None:
         reltol = tol
     if abstol is None:
@@ -248,18 +247,19 @@ def trace_particles_boozer_perturbed(
             reltol,
             vacuum=(mode == "gc_vac"),
             noK=(mode == "gc_nok"),
-            thetas=thetas,
-            zetas=zetas,
-            omega_thetas=omega_thetas,
-            omega_zetas=omega_zetas,
+            phases=phases,
+            n_zetas=n_zetas,
+            m_thetas=m_thetas,
+            omegas=omegas,
             vpars=vpars,
             stopping_criteria=stopping_criteria,
             dt_save=dt_save,
-            thetas_stop=thetas_stop,
-            zetas_stop=zetas_stop,
+            phases_stop=phases_stop,
             vpars_stop=vpars_stop,
             forget_exact_path=forget_exact_path,
             axis=axis,
+            ODE_solver=ODE_solver,
+            DP_hmin=DP_hmin,
         )
         if not forget_exact_path:
             res_tys.append(np.asarray(res_ty))
@@ -285,23 +285,23 @@ def trace_particles_boozer(
     abstol=None,
     reltol=None,
     comm=None,
-    thetas=None,
-    zetas=None,
-    omega_thetas=None,
-    omega_zetas=None,
+    phases=None,
+    n_zetas=None,
+    m_thetas=None,
+    omegas=None,
     vpars=None,
     stopping_criteria=None,
     dt_save=1e-6,
     mode=None,
     forget_exact_path=False,
-    thetas_stop=False,
-    zetas_stop=False,
+    phases_stop=False,
     vpars_stop=False,
     axis=None,
     dt=None,
-    solveSympl=False,
+    ODE_solver="boost",
     roottol=None,
     predictor_step=None,
+    DP_hmin=0.0,
 ):
     r"""
     Follow particles in a :class:`BoozerMagneticField`.
@@ -362,23 +362,20 @@ def trace_particles_boozer(
         tol: default tolerance for ode solver when solver-specific tolerances
             are not set
         reltol: relative tolerance for adaptive ode solver (defaults to `tol`).
-            Only used if `solveSympl` is False.
+            Not used with "symplectic" ODE_solver.
         abstol: absolute tolerance for adaptive ode solver (defaults to `tol`).
-            Only used if `solveSympl` is False.
+            Not used with "symplectic" ODE_solver.
         comm: MPI communicator to parallelize over
-        thetas: list of angles in [0, 2pi] for which intersection with the plane
-            corresponding to that theta should be computed. Should only be used
-            if axis = 0.
-        zetas: list of angles in [0, 2pi] for which intersection with the plane
-            corresponding to that zeta should be computed
-        omega_thetas: list of frequencies defining a stopping criterion such that
-              thetas - omega_thetas*t = 0. Must have the same length as thetas.
-              If provided, the solver will stop when the particle hits the plane
-              defined by thetas and omega_thetas.
-        omega_zetas: list of frequencies defining a stopping criterion such that
-              zetas - omega_zetas*t = 0. Must have the same length as zetas.
-              If provided, the solver will stop when the particle hits the plane
-              defined by zetas and omega_zetas.
+        phases: list of angles in [0, 2pi] for which intersection with the plane
+            corresponding to that phase should be computed. Should only be
+            used if axis = 0.
+        n_zetas: list of toroidal mode numbers for stopping criterion
+        m_thetas: list of poloidal mode numbers for stopping criterion
+        omegas: list of frequencies defining a stopping criterion such that
+              n_zetas*zetas + m_thetas*thetas - omega_thetas*t = phase. Must have the
+              same length as thetas.
+              If provided, the solver will stop when the particle hits the
+              plane defined by thetas and omega_thetas.
         vpars: list of parallel velocities defining a stopping criterion such
               that the solver will stop when the particle hits these values.
         stopping_criteria: list of stopping criteria, mostly used in
@@ -395,21 +392,25 @@ def trace_particles_boozer(
         forget_exact_path: return only the first and last position of each
                            particle for the ``res_tys``. To be used when only
                            res_hits is of interest or one wants to reduce memory usage.
-        zetas_stop: whether to stop if hit provided zeta planes
+        phases_stop: whether to stop if hit provided phase planes.
         vpars_stop: whether to stop if hit provided vpar planes
         axis: Defines handling of coordinate singularity. If 0, tracing is
-            performed in Boozer coordinates (s,theta,zeta). Only used if
-            `solveSympl` is False. If 1, tracing is performed in coordinates
+            performed in Boozer coordinates (s,theta,zeta). Not used with "symplectic"
+            ODE_solver. If 1, tracing is performed in coordinates
             (sqrt(s)*cos(theta), sqrt(s)*sin(theta), zeta). If 2, tracing is
             performed in coordinates (s*cos(theta),s*sin(theta),zeta).
             Option 2 (default) is recommended.
-        dt: time step for the symplectic solver. Only used if `solveSympl` is True.
-        solveSympl: If True, uses symplectic solver. If False (default), uses
-            RK45 solver with adaptive time step.
+        dt: time step for the symplectic solver. Only used if `ODE_solver` is
+            "symplectic".
+        ODE_solver: Choice of ODE_solver: "boost", "dormand_prince" or "symplectic"
         roottol: root solver tolerance for the symplectic solver. Only used if
-            `solveSympl` is True. If None, defaults to `tol`.
+            `ODE_solver` is "symplectic". If None, defaults to `tol`.
         predictor_step: provide better initial guess for the next time step
-            using predictor steps. Defaults to True if `solveSympl` is True.
+            using predictor steps. Defaults to True if `ODE_solver` is "symplectic".
+        DP_hmin: Minimal timestep to enforce during numerical integration with adaptive
+            timestep. If the adaptice time step gets below DP_hmin, the stepper
+            completes step with DP_hmin timestep. Default is 0.0. Only used if
+            `ODE_solver` is "dormand_prince".
     Returns: 2 element tuple containing
         - ``res_tys``:
             A list of numpy arrays (one for each particle) describing the
@@ -422,11 +423,11 @@ def trace_particles_boozer(
             one of the stopping criteria. Each row or the array contains
             `[time] + [idx] + state`, where `idx` tells us which of the hit
             planes or stopping criteria was hit.
-            If `idx>=0` and `idx<len(zetas)`, then the `zetas[idx]` plane was hit.
-            If `len(vpars)+len(zetas)>idx>=len(zetas)`, then the
-            `vpars[idx-len(zetas)]` plane was hit.
-            If `idx>=len(vpars)+len(zetas)`, then the
-            `thetas[idx-len(vpars)-len(zetas)]` plane was hit.
+            If `idx>=0` and `idx<len(phases)`, then the `zetas[idx]` plane was hit.
+            If `len(vpars)+len(phases)>idx>=len(phases)`, then the
+            `vpars[idx-len(phases)]` plane was hit.
+            If `idx>=len(vpars)+len(phases)`, then the
+            `thetas[idx-len(vpars)-len(phases)]` plane was hit.
             If `idx<0`, then `stopping_criteria[int(-idx)-1]` was hit.
             The state vector is `[s, theta, zeta, v_par]`.
     """
@@ -434,26 +435,19 @@ def trace_particles_boozer(
         stopping_criteria = []
     if vpars is None:
         vpars = []
-    if omega_zetas is None:
-        omega_zetas = []
-    if omega_thetas is None:
-        omega_thetas = []
-    if zetas is None:
-        zetas = []
-    if thetas is None:
-        thetas = []
-    if zetas_stop and (not len(zetas) and not len(omega_zetas)):
-        raise ValueError(
-            "No zetas and omega_zetas provided for the zeta stopping criterion"
-        )
-    if thetas_stop and (not len(thetas) and not len(omega_thetas)):
-        raise ValueError(
-            "No thetas and omega_thetas provided for the theta stopping criterion"
-        )
+    if phases is None:
+        phases = []
+    if n_zetas is None:
+        n_zetas = []
+    if m_thetas is None:
+        m_thetas = []
+    if omegas is None:
+        omegas = []
+
     if vpars_stop and (not len(vpars)):
         raise ValueError("No vpars provided for the vpar stopping criterion")
 
-    if solveSympl:
+    if ODE_solver == "symplectic":
         if abstol is not None or reltol is not None:
             warn(
                 "Symplectic solver does not use absolute or relative tolerance. "
@@ -527,24 +521,24 @@ def trace_particles_boozer(
             tmax,
             vacuum=(mode == "gc_vac"),
             noK=(mode == "gc_nok"),
-            thetas=thetas,
-            zetas=zetas,
-            omega_thetas=omega_thetas,
-            omega_zetas=omega_zetas,
+            phases=phases,
+            n_zetas=n_zetas,
+            m_thetas=m_thetas,
+            omegas=omegas,
             vpars=vpars,
             stopping_criteria=stopping_criteria,
             dt_save=dt_save,
             forget_exact_path=forget_exact_path,
-            thetas_stop=thetas_stop,
-            zetas_stop=zetas_stop,
+            phases_stop=phases_stop,
             vpars_stop=vpars_stop,
             axis=axis,
             abstol=abstol,
             reltol=reltol,
-            solveSympl=solveSympl,
+            ODE_solver=ODE_solver,
             predictor_step=predictor_step,
             roottol=roottol,
             dt=dt,
+            DP_hmin=DP_hmin,
         )
         if not forget_exact_path:
             res_tys.append(np.asarray(res_ty))

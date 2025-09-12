@@ -107,7 +107,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     mass=m,
                     charge=q,
                     Ekin=Ekin,
-                    zetas=[],
                     mode="gc_noK",
                     stopping_criteria=[MaxToroidalFluxStoppingCriterion(1.0)],
                     tol=1e-3,
@@ -123,7 +122,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     mass=m,
                     charge=q,
                     Ekin=Ekin,
-                    zetas=[],
                     mode="gc",
                     stopping_criteria=[MaxToroidalFluxStoppingCriterion(1.0)],
                     tol=1e-3,
@@ -175,7 +173,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     mass=m,
                     charge=q,
                     Ekin=Ekin,
-                    zetas=[],
                     mode="gc_vac",
                     stopping_criteria=[MaxToroidalFluxStoppingCriterion(1.0)],
                     tol=1e-3,
@@ -191,7 +188,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     mass=m,
                     charge=q,
                     Ekin=Ekin,
-                    zetas=[],
                     mode="gc",
                     stopping_criteria=[MaxToroidalFluxStoppingCriterion(1.0)],
                     tol=1e-3,
@@ -244,7 +240,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     mass=m,
                     charge=q,
                     Ekin=Ekin,
-                    zetas=[],
                     mode="gc_vac",
                     stopping_criteria=[MaxToroidalFluxStoppingCriterion(1.0)],
                     tol=1e-3,
@@ -260,7 +255,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     mass=m,
                     charge=q,
                     Ekin=Ekin,
-                    zetas=[],
                     mode="gc_noK",
                     stopping_criteria=[MaxToroidalFluxStoppingCriterion(1.0)],
                     tol=1e-3,
@@ -274,14 +268,15 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         configuration with and without current terms.
         """
         for solver_options in [
-            {"solveSympl": False},
+            {"ODE_solver": "boost"},
             {
-                "solveSympl": True,
+                "ODE_solver": "symplectic",
                 "dt": 1e-8,
                 "roottol": 1e-8,
                 "predictor_step": True,
                 "axis": 0,
             },
+            {"ODE_solver": "dormand_prince"},
         ]:
             # First, test energy and momentum conservation in a QA vacuum field
             etabar = 1 / 1.2
@@ -327,7 +322,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=[],
                 stopping_criteria=[
                     MaxToroidalFluxStoppingCriterion(1.0),
                     ToroidalTransitStoppingCriterion(10),
@@ -373,7 +367,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 )
                 max_p_gc_error = np.append(max_p_gc_error, max(p_gc_error[3::]))
 
-            if not solver_options["solveSympl"]:
+            if solver_options["ODE_solver"] != "symplectic":
                 assert max(max_energy_gc_error) < -7
                 assert max(max_p_gc_error) < -7
             else:
@@ -414,7 +408,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=[],
                 stopping_criteria=[
                     MaxToroidalFluxStoppingCriterion(1.0),
                     ToroidalTransitStoppingCriterion(10),
@@ -460,7 +453,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 )
                 max_p_gc_error = np.append(max_p_gc_error, max(p_gc_error[3::]))
 
-            if not solver_options["solveSympl"]:
+            if solver_options["ODE_solver"] != "symplectic":
                 assert max(max_energy_gc_error) < -7
                 assert max(max_p_gc_error) < -7
             else:
@@ -491,7 +484,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=[],
                 stopping_criteria=[
                     MaxToroidalFluxStoppingCriterion(1.0),
                     ToroidalTransitStoppingCriterion(10),
@@ -536,7 +528,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 )
                 max_p_gc_error = np.append(max_p_gc_error, max(p_gc_error[3::]))
 
-            if not solver_options["solveSympl"]:
+            if solver_options["ODE_solver"] != "symplectic":
                 assert max(max_energy_gc_error) < -7
                 assert max(max_p_gc_error) < -7
             else:
@@ -553,7 +545,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=[],
                 stopping_criteria=[
                     MaxToroidalFluxStoppingCriterion(1.0),
                     ToroidalTransitStoppingCriterion(10),
@@ -604,8 +595,14 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         stz_inits[:, 2] = stz_inits[:, 2] * (zetamax - zetamin) + zetamin
 
         for solver_options in [
-            {"solveSympl": True, "dt": 5e-7, "roottol": 1e-15, "predictor_step": True},
-            {"solveSympl": False},
+            {
+                "ODE_solver": "symplectic",
+                "dt": 5e-7,
+                "roottol": 1e-15,
+                "predictor_step": True,
+            },
+            {"ODE_solver": "dormand_prince"},
+            {"ODE_solver": "boost"},
         ]:
             gc_tys, gc_zeta_hits = trace_particles_boozer(
                 bsh,
@@ -615,7 +612,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=[],
                 mode="gc_vac",
                 stopping_criteria=[
                     MinToroidalFluxStoppingCriterion(0.01),
@@ -670,14 +666,15 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         assert np.all(stz_inits[:, 0] < smax)
 
         for solver_options in [
-            {"solveSympl": False},
+            {"ODE_solver": "boost"},
             {
-                "solveSympl": True,
+                "ODE_solver": "symplectic",
                 "dt": 1e-8,
                 "roottol": 1e-8,
                 "predictor_step": True,
                 "axis": 0,
             },
+            {"ODE_solver": "dormand_prince"},
         ]:
             # Test that particles remain within MinToroidalFlux and MaxToroidalFlux')
             gc_tys, gc_zeta_hits = trace_particles_boozer(
@@ -688,7 +685,6 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=[],
                 mode="gc_vac",
                 stopping_criteria=[
                     MinToroidalFluxStoppingCriterion(0.4),
@@ -710,8 +706,14 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         matches the rotational transform.
         """
         for solver_options in [
-            {"solveSympl": True, "dt": 1e-7, "roottol": 1e-7, "predictor_step": True},
-            {"solveSympl": False, "axis": 0},
+            {
+                "ODE_solver": "symplectic",
+                "dt": 1e-7,
+                "roottol": 1e-7,
+                "predictor_step": True,
+            },
+            {"ODE_solver": "boost", "axis": 0},
+            {"ODE_solver": "dormand_prince", "axis": 0},
         ]:
             etabar = 1.2
             B0 = 1.0
@@ -748,7 +750,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=[0],
+                phases=[0.0],
+                n_zetas=[1.0],
+                m_thetas=[0.0],
+                omegas=[0.0],
                 mode="gc_vac",
                 stopping_criteria=[
                     MinToroidalFluxStoppingCriterion(0.01),
@@ -808,14 +813,20 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         assert np.all(modB_inits > 0)  # Make sure all modBs are positive
 
         for solver_options in [
-            {"solveSympl": False, "axis": 0},
-            {"solveSympl": True, "dt": 1e-7, "roottol": 1e-7, "predictor_step": True},
+            {"ODE_solver": "boost", "axis": 0},
+            {
+                "ODE_solver": "symplectic",
+                "dt": 1e-7,
+                "roottol": 1e-7,
+                "predictor_step": True,
+            },
+            {"ODE_solver": "dormand_prince", "axis": 0},
         ]:
             # zetas_stop with mismatched zetas and omegas
-            solver_options["zetas_stop"] = True
-            zetas = [1, 2, 3, 4]
-            omega_zetas = [0]
-            zetas = np.array(zetas)
+            solver_options["phases_stop"] = True
+            phases = [1, 2, 3, 4]
+            omegas = [0]
+            phases = np.array(phases)
             with self.assertRaises(ValueError):
                 gc_tys, gc_zeta_hits = trace_particles_boozer(
                     bsh,
@@ -825,8 +836,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     mass=m,
                     charge=q,
                     Ekin=Ekin,
-                    zetas=zetas,
-                    omega_zetas=omega_zetas,
+                    phases=phases,
+                    n_zetas=[1.0 for _ in phases],
+                    m_thetas=[0.0 for _ in phases],
+                    omegas=omegas,
                     mode="gc_vac",
                     stopping_criteria=[
                         MinToroidalFluxStoppingCriterion(0.01),
@@ -837,7 +850,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     **solver_options,
                 )
 
-            # zetas_stop with no omegas
+            # zetas_stop with zero omegas
             gc_tys, gc_zeta_hits = trace_particles_boozer(
                 bsh,
                 stz_inits,
@@ -846,7 +859,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=zetas,
+                phases=phases,
+                n_zetas=[1.0 for _ in phases],
+                m_thetas=[0.0 for _ in phases],
+                omegas=[0.0 for _ in phases],
                 mode="gc_vac",
                 stopping_criteria=[
                     MinToroidalFluxStoppingCriterion(0.01),
@@ -862,24 +878,24 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     idx = int(gc_zeta_hits[i][-1][1])
                     assert np.isclose(
                         gc_zeta_hits[i][-1, 4] % (2 * np.pi),
-                        zetas[idx],
+                        phases[idx],
                         rtol=1e-12,
                         atol=0,
                     )
                     # Particle moving in negative zeta direction
                     if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
-                        lower_bound = zetas[idx]
+                        lower_bound = phases[idx]
                         upper_bound = lower_bound + 1
                     # Particle moving in positive zeta direction
                     else:
-                        upper_bound = zetas[idx]
+                        upper_bound = phases[idx]
                         lower_bound = upper_bound - 1
                     assert np.all(gc_tys[i][1:-1, 3] < upper_bound)
                     assert np.all(gc_tys[i][1:-1, 3] > lower_bound)
 
             # add omegas
-            omega_zetas = [0.1, 0.2, 0.3, 0.4]
-            omega_zetas = np.array(omega_zetas)
+            omegas = [0.1, 0.2, 0.3, 0.4]
+            omegas = np.array(omegas)
             gc_tys, gc_zeta_hits = trace_particles_boozer(
                 bsh,
                 stz_inits,
@@ -888,8 +904,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=zetas,
-                omega_zetas=omega_zetas,
+                phases=[0.0 for _ in omegas],
+                n_zetas=[1.0 for _ in omegas],
+                m_thetas=[0.0 for _ in omegas],
+                omegas=omegas,
                 mode="gc_vac",
                 stopping_criteria=[
                     MinToroidalFluxStoppingCriterion(0.01),
@@ -905,29 +923,28 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     idx = int(gc_zeta_hits[i][-1][1])
                     assert np.isclose(
                         gc_zeta_hits[i][-1, 4] % (2 * np.pi),
-                        zetas[idx] + omega_zetas[idx] * gc_zeta_hits[i][-1, 0],
+                        phases[idx] + omegas[idx] * gc_zeta_hits[i][-1, 0],
                         rtol=1e-12,
                         atol=0,
                     )
                     if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
-                        lower_bound = zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
-                        upper_bound = (zetas[idx] + 1) + (
-                            omega_zetas[idx] + 0.1
-                        ) * gc_tys[i][1:-1, 0]
+                        lower_bound = phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
+                        upper_bound = (phases[idx] + 1) + (omegas[idx] + 0.1) * gc_tys[
+                            i
+                        ][1:-1, 0]
                     else:
-                        upper_bound = zetas[idx] + omega_zetas[idx] * gc_tys[i][1:-1, 0]
-                        lower_bound = (zetas[idx] - 1) + (
-                            omega_zetas[idx] - 0.1
-                        ) * gc_tys[i][1:-1, 0]
+                        upper_bound = phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
+                        lower_bound = (phases[idx] - 1) + (omegas[idx] - 0.1) * gc_tys[
+                            i
+                        ][1:-1, 0]
                     assert np.all(gc_tys[i][1:-1, 3] < upper_bound)
                     assert np.all(gc_tys[i][1:-1, 3] > lower_bound)
 
             # thetas_stop with mismatched thetas and omegas
-            solver_options["thetas_stop"] = True
-            solver_options["zetas_stop"] = False
-            thetas = [1, 2, 3, 4]
-            omega_thetas = [0]
-            thetas = np.array(thetas)
+            solver_options["phases_stop"] = True
+            phases = [1, 2, 3, 4]
+            omegas = [0]
+            phases = np.array(phases)
             with self.assertRaises(ValueError):
                 gc_tys, gc_zeta_hits = trace_particles_boozer(
                     bsh,
@@ -937,8 +954,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     mass=m,
                     charge=q,
                     Ekin=Ekin,
-                    thetas=thetas,
-                    omega_thetas=omega_thetas,
+                    phases=phases,
+                    n_zetas=[0.0 for _ in phases],
+                    m_thetas=[1.0 for _ in phases],
+                    omegas=omegas,
                     mode="gc_vac",
                     stopping_criteria=[
                         MinToroidalFluxStoppingCriterion(0.01),
@@ -949,7 +968,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     **solver_options,
                 )
 
-            # thetas_stop with no omegas
+            # thetas_stop with zero omegas
             gc_tys, gc_zeta_hits = trace_particles_boozer(
                 bsh,
                 stz_inits,
@@ -958,7 +977,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                thetas=thetas,
+                phases=phases,
+                n_zetas=[0.0 for _ in phases],
+                m_thetas=[1.0 for _ in phases],
+                omegas=[0.0 for _ in phases],
                 mode="gc_vac",
                 stopping_criteria=[
                     MinToroidalFluxStoppingCriterion(0.01),
@@ -974,22 +996,22 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     idx = int(gc_zeta_hits[i][-1][1])
                     assert np.isclose(
                         gc_zeta_hits[i][-1, 3] % (2 * np.pi),
-                        thetas[idx],
+                        phases[idx],
                         rtol=1e-12,
                         atol=0,
                     )
                     if gc_tys[i][-2, 2] > gc_tys[i][-1, 2]:
-                        lower_bound = thetas[idx]
+                        lower_bound = phases[idx]
                         upper_bound = lower_bound + 1
                     else:
-                        upper_bound = thetas[idx]
+                        upper_bound = phases[idx]
                         lower_bound = upper_bound - 1
                     assert np.all(gc_tys[i][1:-1, 2] < upper_bound)
                     assert np.all(gc_tys[i][1:-1, 2] > lower_bound)
 
             # add omegas
-            omega_thetas = [0.1, 0.2, 0.3, 0.4]
-            omega_thetas = np.array(omega_thetas)
+            omegas = [0.1, 0.2, 0.3, 0.4]
+            omegas = np.array(omegas)
             gc_tys, gc_zeta_hits = trace_particles_boozer(
                 bsh,
                 stz_inits,
@@ -998,8 +1020,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                thetas=thetas,
-                omega_thetas=omega_thetas,
+                phases=phases,
+                n_zetas=[0.0 for _ in omegas],
+                m_thetas=[1.0 for _ in omegas],
+                omegas=omegas,
                 mode="gc_vac",
                 stopping_criteria=[
                     MinToroidalFluxStoppingCriterion(0.01),
@@ -1015,30 +1039,25 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     idx = int(gc_zeta_hits[i][-1][1])
                     assert np.isclose(
                         gc_zeta_hits[i][-1, 3] % (2 * np.pi),
-                        thetas[idx] + omega_thetas[idx] * gc_zeta_hits[i][-1, 0],
+                        phases[idx] + omegas[idx] * gc_zeta_hits[i][-1, 0],
                         rtol=1e-12,
                         atol=0,
                     )
                     if gc_tys[i][-2, 2] > gc_tys[i][-1, 2]:
-                        lower_bound = (
-                            thetas[idx] + omega_thetas[idx] * gc_tys[i][1:-1, 0]
-                        )
-                        upper_bound = (thetas[idx] + 1) + (
-                            omega_thetas[idx] + 0.1
-                        ) * gc_tys[i][1:-1, 0]
+                        lower_bound = phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
+                        upper_bound = (phases[idx] + 1) + (omegas[idx] + 0.1) * gc_tys[
+                            i
+                        ][1:-1, 0]
                     else:
-                        upper_bound = (
-                            thetas[idx] + omega_thetas[idx] * gc_tys[i][1:-1, 0]
-                        )
-                        lower_bound = (thetas[idx] - 1) + (
-                            omega_thetas[idx] - 0.1
-                        ) * gc_tys[i][1:-1, 0]
+                        upper_bound = phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
+                        lower_bound = (phases[idx] - 1) + (omegas[idx] - 0.1) * gc_tys[
+                            i
+                        ][1:-1, 0]
                     assert np.all(gc_tys[i][1:-1, 2] < upper_bound)
                     assert np.all(gc_tys[i][1:-1, 2] > lower_bound)
 
             # vpars_stop
-            solver_options["zetas_stop"] = False
-            solver_options["thetas_stop"] = False
+            solver_options["phases_stop"] = False
             solver_options["vpars_stop"] = True
             vpars = [vpar * 0.25, vpar * 0.5, vpar * 0.75]
             vpars = np.array(vpars)
@@ -1079,7 +1098,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                         assert np.all(gc_tys[i][:-1, 4] > lower_bound)
 
             # test vpars_stop and zetas_stop together
-            solver_options["zetas_stop"] = True
+            solver_options["phases_stop"] = True
             solver_options["vpars_stop"] = True
 
             gc_tys, gc_zeta_hits = trace_particles_boozer(
@@ -1090,8 +1109,10 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 mass=m,
                 charge=q,
                 Ekin=Ekin,
-                zetas=zetas,
-                omega_zetas=omega_zetas,
+                phases=phases,
+                n_zetas=[1.0 for i in phases],
+                m_thetas=[0.0 for i in phases],
+                omegas=omegas,
                 vpars=vpars,
                 mode="gc_vac",
                 stopping_criteria=[
@@ -1106,14 +1127,12 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 if len(gc_zeta_hits[i]) and gc_zeta_hits[i][-1][1] >= 0:
                     idx = int(gc_zeta_hits[i][-1][1])
                     if idx >= 0:
-                        if idx >= len(zetas):
+                        if idx >= len(phases):
                             res = gc_zeta_hits[i][-1, 5]
-                            stop = vpars[idx - len(zetas)]
+                            stop = vpars[idx - len(phases)]
                         else:
                             res = gc_zeta_hits[i][-1, 4] % (2 * np.pi)
-                            stop = (
-                                zetas[idx] + omega_zetas[idx] * gc_zeta_hits[i][-1, 0]
-                            )
+                            stop = phases[idx] + omegas[idx] * gc_zeta_hits[i][-1, 0]
                         assert np.isclose(res, stop, rtol=1e-7, atol=0)
 
     def test_sympl_dense_output(self):
@@ -1153,7 +1172,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         assert np.all(modB_inits > 0)  # Make sure all modBs are positive
 
         solver_options = {
-            "solveSympl": True,
+            "ODE_solver": "symplectic",
             "dt": 1e-7,
             "roottol": 1e-8,
             "predictor_step": True,
@@ -1178,7 +1197,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         )
         diffs = np.array([])
         test_options = {
-            "solveSympl": True,
+            "ODE_solver": "symplectic",
             "dt": 1e-7,
             "roottol": 1e-8,
             "predictor_step": True,
@@ -1215,10 +1234,110 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
             )
 
         s_diff, theta_diff, zeta_diff, vpar_diff = (diffs[i::4] for i in range(4))
+        print(f"1.{max(s_diff)=}")
+        print(f"1.{max(theta_diff)=}")
+        print(f"1.{max(zeta_diff)=}")
+        print(f"1.{max(vpar_diff)=}")
         assert max(s_diff) < -2
         assert max(theta_diff) < -2
         assert max(zeta_diff) < -2
         assert max(vpar_diff) < -1
+
+    def test_dormand_prince_solver(self):
+        """Test the dormand price integrator against Boost."""
+        # Same field from test_energy_momentum_conservation_boozer
+        etabar = 1.2 / 1.2
+        B0 = 1.0
+        G0 = 1.1
+        psi0 = 0.8
+        iota0 = 0.4
+        bsh = BoozerAnalytic(etabar, B0, 0, G0, psi0, iota0)
+
+        nparticles = 100
+        m = PROTON_MASS
+        q = ELEMENTARY_CHARGE
+        tmax = 1e-4
+        Ekin = 100.0 * ONE_EV
+        vpar = np.sqrt(2 * Ekin / m)
+
+        np.random.seed(1)
+        stz_inits = np.random.uniform(size=(nparticles, 3))
+        vpar_inits = vpar * np.random.uniform(size=(nparticles, 1))
+        smin = 0.2
+        smax = 0.6
+        thetamin = 0
+        thetamax = np.pi
+        zetamin = 0
+        zetamax = np.pi
+        stz_inits[:, 0] = stz_inits[:, 0] * (smax - smin) + smin
+        stz_inits[:, 1] = stz_inits[:, 1] * (thetamax - thetamin) + thetamin
+        stz_inits[:, 2] = stz_inits[:, 2] * (zetamax - zetamin) + zetamin
+
+        bsh.set_points(stz_inits)
+        modB_inits = bsh.modB()
+        assert np.all(modB_inits > 0)  # Make sure all modBs are positive
+
+        solver_options = {
+            "ODE_solver": "boost",
+            "axis": 0,
+        }
+        gc_tys, gc_zeta_hits = trace_particles_boozer(
+            bsh,
+            stz_inits,
+            vpar_inits,
+            tmax=tmax,
+            mass=m,
+            charge=q,
+            Ekin=Ekin,
+            mode="gc_vac",
+            stopping_criteria=[
+                MinToroidalFluxStoppingCriterion(0.01),
+                MaxToroidalFluxStoppingCriterion(0.99),
+            ],
+            tol=1e-8,
+            dt_save=1e-8,
+            **solver_options,
+        )
+        diffs = np.array([])
+        test_options = {
+            "ODE_solver": "dormand_prince",
+            "axis": 0,
+        }
+        gc_tys_2, gc_phi_hits_2 = trace_particles_boozer(
+            bsh,
+            stz_inits,
+            vpar_inits,
+            tmax=tmax,
+            mass=m,
+            charge=q,
+            Ekin=Ekin,
+            mode="gc_vac",
+            stopping_criteria=[
+                MinToroidalFluxStoppingCriterion(0.01),
+                MaxToroidalFluxStoppingCriterion(0.99),
+            ],
+            tol=1e-8,
+            dt_save=1e-8,
+            **test_options,
+        )
+        for i in range(nparticles):
+            diffs = np.append(
+                diffs,
+                np.log10(
+                    np.abs(gc_tys[i][-1, 1:] - gc_tys_2[i][-1, 1:])
+                    / np.abs(gc_tys_2[i][-1, 1:])
+                ),
+            )
+
+        s_diff, theta_diff, zeta_diff, vpar_diff = (diffs[i::4] for i in range(4))
+        print(f"{max(s_diff)=}")
+        print(f"{max(theta_diff)=}")
+        print(f"{max(zeta_diff)=}")
+        print(f"{max(vpar_diff)=}")
+        assert max(s_diff) < -7
+        assert max(theta_diff) < -7
+        assert max(zeta_diff) < -7
+        assert max(vpar_diff) < -7
 
 
 if __name__ == "__main__":

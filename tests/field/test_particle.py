@@ -276,6 +276,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 "predictor_step": True,
                 "axis": 0,
             },
+            {"ODE_solver": "dormand_prince"}
         ]:
             # First, test energy and momentum conservation in a QA vacuum field
             etabar = 1 / 1.2
@@ -595,6 +596,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
 
         for solver_options in [
             {"ODE_solver": "symplectic", "dt": 5e-7, "roottol": 1e-15, "predictor_step": True},
+            {"ODE_solver": "dormand_prince"},
             {"ODE_solver": "boost"},
         ]:
             gc_tys, gc_zeta_hits = trace_particles_boozer(
@@ -667,6 +669,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 "predictor_step": True,
                 "axis": 0,
             },
+            {"ODE_solver": "dormand_prince"},
         ]:
             # Test that particles remain within MinToroidalFlux and MaxToroidalFlux')
             gc_tys, gc_zeta_hits = trace_particles_boozer(
@@ -700,6 +703,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         for solver_options in [
             {"ODE_solver": "symplectic", "dt": 1e-7, "roottol": 1e-7, "predictor_step": True},
             {"ODE_solver": "boost", "axis": 0},
+            {"ODE_solver": "dormand_prince", "axis": 0},
         ]:
             etabar = 1.2
             B0 = 1.0
@@ -801,6 +805,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         for solver_options in [
             {"ODE_solver": "boost", "axis": 0},
             {"ODE_solver": "symplectic", "dt": 1e-7, "roottol": 1e-7, "predictor_step": True},
+            {"ODE_solver": "dormand_prince", "axis": 0},
         ]:
             # zetas_stop with mismatched zetas and omegas
             solver_options["phases_stop"] = True
@@ -1229,105 +1234,105 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         assert max(zeta_diff) < -2
         assert max(vpar_diff) < -1
     
-    def test_dormand_prince_solver(self):
-        """Test the dormand price integrator against Boost."""
-        # Same field from test_energy_momentum_conservation_boozer
-        etabar = 1.2 / 1.2
-        B0 = 1.0
-        G0 = 1.1
-        psi0 = 0.8
-        iota0 = 0.4
-        bsh = BoozerAnalytic(etabar, B0, 0, G0, psi0, iota0)
+    # def test_dormand_prince_solver(self):
+    #     """Test the dormand price integrator against Boost."""
+    #     # Same field from test_energy_momentum_conservation_boozer
+    #     etabar = 1.2 / 1.2
+    #     B0 = 1.0
+    #     G0 = 1.1
+    #     psi0 = 0.8
+    #     iota0 = 0.4
+    #     bsh = BoozerAnalytic(etabar, B0, 0, G0, psi0, iota0)
 
-        nparticles = 100
-        m = PROTON_MASS
-        q = ELEMENTARY_CHARGE
-        tmax = 0.0
-        Ekin = 100.0 * ONE_EV
-        vpar = np.sqrt(2 * Ekin / m)
+    #     nparticles = 100
+    #     m = PROTON_MASS
+    #     q = ELEMENTARY_CHARGE
+    #     tmax = 0.0
+    #     Ekin = 100.0 * ONE_EV
+    #     vpar = np.sqrt(2 * Ekin / m)
 
-        np.random.seed(1)
-        stz_inits = np.random.uniform(size=(nparticles, 3))
-        vpar_inits = vpar * np.random.uniform(size=(nparticles, 1))
-        smin = 0.2
-        smax = 0.6
-        thetamin = 0
-        thetamax = np.pi
-        zetamin = 0
-        zetamax = np.pi
-        stz_inits[:, 0] = stz_inits[:, 0] * (smax - smin) + smin
-        stz_inits[:, 1] = stz_inits[:, 1] * (thetamax - thetamin) + thetamin
-        stz_inits[:, 2] = stz_inits[:, 2] * (zetamax - zetamin) + zetamin
+    #     np.random.seed(1)
+    #     stz_inits = np.random.uniform(size=(nparticles, 3))
+    #     vpar_inits = vpar * np.random.uniform(size=(nparticles, 1))
+    #     smin = 0.2
+    #     smax = 0.6
+    #     thetamin = 0
+    #     thetamax = np.pi
+    #     zetamin = 0
+    #     zetamax = np.pi
+    #     stz_inits[:, 0] = stz_inits[:, 0] * (smax - smin) + smin
+    #     stz_inits[:, 1] = stz_inits[:, 1] * (thetamax - thetamin) + thetamin
+    #     stz_inits[:, 2] = stz_inits[:, 2] * (zetamax - zetamin) + zetamin
 
-        bsh.set_points(stz_inits)
-        modB_inits = bsh.modB()
-        assert np.all(modB_inits > 0)  # Make sure all modBs are positive
+    #     bsh.set_points(stz_inits)
+    #     modB_inits = bsh.modB()
+    #     assert np.all(modB_inits > 0)  # Make sure all modBs are positive
 
-        solver_options = {
-            "ODE_solver": "boost",
-            "axis": 0,
-        }
-        gc_tys, gc_zeta_hits = trace_particles_boozer(
-            bsh,
-            stz_inits,
-            vpar_inits,
-            tmax=tmax + 5e-8,
-            mass=m,
-            charge=q,
-            Ekin=Ekin,
-            mode="gc_vac",
-            #stopping_criteria=[
-            #    MinToroidalFluxStoppingCriterion(0.01),
-            #    MaxToroidalFluxStoppingCriterion(0.99),
-            #],
-            tol=1e-8,
-            dt_save=1e-8,
-            **solver_options,
-        )
-        diffs = np.array([])
-        test_options = {
-            "ODE_solver": "dormand_prince",
-            "axis": 0,
-        }
-        for i in range(nparticles):
-            stz_init = np.array([gc_tys[i][-2, 1:4]])
-            vpar_init = np.array([gc_tys[i][-2, 4]])
-            test_tmax = gc_tys[i][-1, 0] - gc_tys[i][-2, 0]
-            gc_ty, gc_phi_hit = trace_particles_boozer(
-                bsh,
-                stz_init,
-                vpar_init,
-                tmax=test_tmax,
-                mass=m,
-                charge=q,
-                Ekin=Ekin,
-                mode="gc_vac",
-                #stopping_criteria=[
-                #    MinToroidalFluxStoppingCriterion(0.01),
-                #    MaxToroidalFluxStoppingCriterion(0.99),
-                #],
-                tol=1e-7,
-                dt_save=1e-7,
-                **test_options,
-            )
+    #     solver_options = {
+    #         "ODE_solver": "boost",
+    #         "axis": 0,
+    #     }
+    #     gc_tys, gc_zeta_hits = trace_particles_boozer(
+    #         bsh,
+    #         stz_inits,
+    #         vpar_inits,
+    #         tmax=tmax + 5e-8,
+    #         mass=m,
+    #         charge=q,
+    #         Ekin=Ekin,
+    #         mode="gc_vac",
+    #         #stopping_criteria=[
+    #         #    MinToroidalFluxStoppingCriterion(0.01),
+    #         #    MaxToroidalFluxStoppingCriterion(0.99),
+    #         #],
+    #         tol=1e-8,
+    #         dt_save=1e-8,
+    #         **solver_options,
+    #     )
+    #     diffs = np.array([])
+    #     test_options = {
+    #         "ODE_solver": "dormand_prince",
+    #         "axis": 0,
+    #     }
+    #     for i in range(nparticles):
+    #         stz_init = np.array([gc_tys[i][-2, 1:4]])
+    #         vpar_init = np.array([gc_tys[i][-2, 4]])
+    #         test_tmax = gc_tys[i][-1, 0] - gc_tys[i][-2, 0]
+    #         gc_ty, gc_phi_hit = trace_particles_boozer(
+    #             bsh,
+    #             stz_init,
+    #             vpar_init,
+    #             tmax=test_tmax,
+    #             mass=m,
+    #             charge=q,
+    #             Ekin=Ekin,
+    #             mode="gc_vac",
+    #             #stopping_criteria=[
+    #             #    MinToroidalFluxStoppingCriterion(0.01),
+    #             #    MaxToroidalFluxStoppingCriterion(0.99),
+    #             #],
+    #             tol=1e-7,
+    #             dt_save=1e-7,
+    #             **test_options,
+    #         )
 
-            diffs = np.append(
-                diffs,
-                np.log10(
-                    np.abs(gc_tys[i][-1, 1:] - gc_ty[0][-1, 1:])
-                    / np.abs(gc_ty[0][-1, 1:])
-                ),
-            )
+    #         diffs = np.append(
+    #             diffs,
+    #             np.log10(
+    #                 np.abs(gc_tys[i][-1, 1:] - gc_ty[0][-1, 1:])
+    #                 / np.abs(gc_ty[0][-1, 1:])
+    #             ),
+    #         )
 
-        s_diff, theta_diff, zeta_diff, vpar_diff = (diffs[i::4] for i in range(4))
-        print(f"{max(s_diff)=}")
-        print(f"{max(theta_diff)=}")
-        print(f"{max(zeta_diff)=}")
-        print(f"{max(vpar_diff)=}")
-        assert max(s_diff) < -2
-        assert max(theta_diff) < -2
-        assert max(zeta_diff) < -2
-        assert max(vpar_diff) < -1
+    #     s_diff, theta_diff, zeta_diff, vpar_diff = (diffs[i::4] for i in range(4))
+    #     print(f"{max(s_diff)=}")
+    #     print(f"{max(theta_diff)=}")
+    #     print(f"{max(zeta_diff)=}")
+    #     print(f"{max(vpar_diff)=}")
+    #     assert max(s_diff) < -2
+    #     assert max(theta_diff) < -2
+    #     assert max(zeta_diff) < -2
+    #     assert max(vpar_diff) < -1
         
     
 

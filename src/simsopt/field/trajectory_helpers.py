@@ -1104,9 +1104,10 @@ class PassingPerturbedPoincare:
             helicity_N : Toroidal helicity of the magnetic field.
             helicity_Mp : Poloidal helicity of the phase variable eta.
             Defaults to None. If no value is given, Mp and Np are determined
-            by field helicity. 
+            by field helicity.
             helicity_Np : Toroidal helicity of the phase variable eta.
-            Defaults to None. If no value is given, Mp and Np are determined by field helicity.
+            Defaults to None. If no value is given, Mp and Np are determined by field
+            helicity.
             Eprime: Shifted energy, Eprime = n' * E - omega * p_eta.
             mu: Magnetic moment, mu = vperp^2/(2 B).
             Ekin: Total unperturbed kinetic energy of the particle, used to
@@ -1217,7 +1218,7 @@ class PassingPerturbedPoincare:
             self.vpars_all,
             self.t_all,
         ) = self.compute_passing_map()
-        
+
     def _set_helicity_Np_Mp(self, helicity_Np, helicity_Mp):
         """
         Sets helicity of the phase variable eta based on user inputs.
@@ -1227,11 +1228,11 @@ class PassingPerturbedPoincare:
             self.helicity_Mp = helicity_Mp
             self.helicity_Np = helicity_Np
             return
-            
-        if ((helicity_Np is None) and (helicity_Mp is None)):
+
+        if (helicity_Np is None) and (helicity_Mp is None):
             # User did not specify helicity, choose default
             if self.helicity_M == 0:
-                # modB contours close poloidally, 
+                # modB contours close poloidally,
                 # so can use theta as mapping coordinate
                 self.helicity_Mp = 1
                 self.helicity_Np = 0
@@ -1240,9 +1241,10 @@ class PassingPerturbedPoincare:
                 self.helicity_Mp = 0
                 self.helicity_Np = -1
             return
-        
+
         raise ValueError(
-            f"User must either specify both helicity_Np and helicity_Mp or leave both of them None. Currently {helicity_Np=} while {helicity_Mp=}."
+            f"User must either specify both helicity_Np and helicity_Mp or leave both "
+            f"of them None. Currently {helicity_Np=} while {helicity_Mp=}."
         )
 
     def initialize_passing_map(self):
@@ -1397,17 +1399,15 @@ class PassingPerturbedPoincare:
         points[:, 2] = zeta
 
         if self.helicity_M != 0:
-            phases = [zeta*self.nprime]
+            phases = [zeta * self.nprime]
             n_zetas = [self.nprime]
             m_thetas = [0]
             omegas = [self.omega]
-            phases_stop = True
         else:
-            phases = [theta*self.nprime]
+            phases = [theta * self.nprime]
             n_zetas = [0]
             m_thetas = [self.nprime]
             omegas = [self.omega]
-            phases_stop = True
 
         res_tys, res_hits = trace_particles_boozer_perturbed(
             perturbed_field=self.saw,
@@ -1437,7 +1437,8 @@ class PassingPerturbedPoincare:
 
         res_hit = res_hits[0][0, :]  # Only check the first hit or stopping criterion
 
-        if res_hit[1] == 0:  # Check that the phases plane was hit (index 0 for first phase)
+        # Check that the phases plane was hit (index 0 for first phase)
+        if res_hit[1] == 0:
             point[0] = res_hit[2]
             point[1] = self.chi(res_hit[3], res_hit[4])
             point[2] = res_hit[5]

@@ -55,7 +55,7 @@ def trace_particles_boozer_perturbed(
     vpars_stop=False,
     axis=2,
     ODE_solver="boost",
-    DP_hmin=0.0
+    DP_hmin=0.0,
 ):
     r"""
     Follow particles in a perturbed field of class :class:`ShearAlfvenWave`.
@@ -137,7 +137,8 @@ def trace_particles_boozer_perturbed(
         n_zetas: list of toroidal mode numbers for stopping criterion
         m_thetas: list of poloidal mode numbers for stopping criterion
         omegas: list of frequencies defining a stopping criterion such that
-              n_zetas*zetas + m_thetas*thetas - omega_thetas*t = phase. Must have the same length as thetas.
+              n_zetas*zetas + m_thetas*thetas - omega_thetas*t = phase. Must have the
+              same length as thetas.
               If provided, the solver will stop when the particle hits the
               plane defined by thetas and omega_thetas.
         vpars: list of parallel velocities defining a stopping criterion such
@@ -164,7 +165,8 @@ def trace_particles_boozer_perturbed(
             performed in coordinates (sqrt(s)*cos(theta), sqrt(s)*sin(theta),
             zeta). If 2, tracing is performed in coordinates
             (s*cos(theta),s*sin(theta),zeta). Option 2 is recommended.
-        ODE_solver: Which ODE solver to use, can be "boost" or "dormand prince". Defaults to "boost".
+        ODE_solver: Which ODE solver to use, can be "boost" or "dormand prince".
+            Defaults to "boost".
     Returns: 2 element tuple containing
         - ``res_tys``:
             A list of numpy arrays (one for each particle) describing the
@@ -257,7 +259,7 @@ def trace_particles_boozer_perturbed(
             forget_exact_path=forget_exact_path,
             axis=axis,
             ODE_solver=ODE_solver,
-            DP_hmin=DP_hmin
+            DP_hmin=DP_hmin,
         )
         if not forget_exact_path:
             res_tys.append(np.asarray(res_ty))
@@ -299,7 +301,7 @@ def trace_particles_boozer(
     ODE_solver="boost",
     roottol=None,
     predictor_step=None,
-    DP_hmin=0.0
+    DP_hmin=0.0,
 ):
     r"""
     Follow particles in a :class:`BoozerMagneticField`.
@@ -370,7 +372,8 @@ def trace_particles_boozer(
         n_zetas: list of toroidal mode numbers for stopping criterion
         m_thetas: list of poloidal mode numbers for stopping criterion
         omegas: list of frequencies defining a stopping criterion such that
-              n_zetas*zetas + m_thetas*thetas - omega_thetas*t = phase. Must have the same length as thetas.
+              n_zetas*zetas + m_thetas*thetas - omega_thetas*t = phase. Must have the
+              same length as thetas.
               If provided, the solver will stop when the particle hits the
               plane defined by thetas and omega_thetas.
         vpars: list of parallel velocities defining a stopping criterion such
@@ -392,17 +395,22 @@ def trace_particles_boozer(
         phases_stop: whether to stop if hit provided phase planes.
         vpars_stop: whether to stop if hit provided vpar planes
         axis: Defines handling of coordinate singularity. If 0, tracing is
-            performed in Boozer coordinates (s,theta,zeta). Not used with "symplectic" ODE_solver. If 1, tracing is performed in coordinates
+            performed in Boozer coordinates (s,theta,zeta). Not used with "symplectic"
+            ODE_solver. If 1, tracing is performed in coordinates
             (sqrt(s)*cos(theta), sqrt(s)*sin(theta), zeta). If 2, tracing is
             performed in coordinates (s*cos(theta),s*sin(theta),zeta).
             Option 2 (default) is recommended.
-        dt: time step for the symplectic solver. Only used if `ODE_solver` is "symplectic".
+        dt: time step for the symplectic solver. Only used if `ODE_solver` is
+            "symplectic".
         ODE_solver: Choice of ODE_solver: "boost", "dormand_prince" or "symplectic"
         roottol: root solver tolerance for the symplectic solver. Only used if
             `ODE_solver` is "symplectic". If None, defaults to `tol`.
         predictor_step: provide better initial guess for the next time step
             using predictor steps. Defaults to True if `ODE_solver` is "symplectic".
-        DP_hmin: Minimal timestep to enforce during numerical integration with adaptive timestep. If the adaptice time step gets below DP_hmin, the stepper completes step with DP_hmin timestep. Default is 0.0. Only used if `ODE_solver` is "dormand_prince".
+        DP_hmin: Minimal timestep to enforce during numerical integration with adaptive
+            timestep. If the adaptice time step gets below DP_hmin, the stepper
+            completes step with DP_hmin timestep. Default is 0.0. Only used if
+            `ODE_solver` is "dormand_prince".
     Returns: 2 element tuple containing
         - ``res_tys``:
             A list of numpy arrays (one for each particle) describing the
@@ -530,7 +538,7 @@ def trace_particles_boozer(
             predictor_step=predictor_step,
             roottol=roottol,
             dt=dt,
-            DP_hmin=DP_hmin
+            DP_hmin=DP_hmin,
         )
         if not forget_exact_path:
             res_tys.append(np.asarray(res_ty))

@@ -276,7 +276,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                 "predictor_step": True,
                 "axis": 0,
             },
-            {"ODE_solver": "dormand_prince"}
+            {"ODE_solver": "dormand_prince"},
         ]:
             # First, test energy and momentum conservation in a QA vacuum field
             etabar = 1 / 1.2
@@ -595,7 +595,12 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         stz_inits[:, 2] = stz_inits[:, 2] * (zetamax - zetamin) + zetamin
 
         for solver_options in [
-            {"ODE_solver": "symplectic", "dt": 5e-7, "roottol": 1e-15, "predictor_step": True},
+            {
+                "ODE_solver": "symplectic",
+                "dt": 5e-7,
+                "roottol": 1e-15,
+                "predictor_step": True,
+            },
             {"ODE_solver": "dormand_prince"},
             {"ODE_solver": "boost"},
         ]:
@@ -701,7 +706,12 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         matches the rotational transform.
         """
         for solver_options in [
-            {"ODE_solver": "symplectic", "dt": 1e-7, "roottol": 1e-7, "predictor_step": True},
+            {
+                "ODE_solver": "symplectic",
+                "dt": 1e-7,
+                "roottol": 1e-7,
+                "predictor_step": True,
+            },
             {"ODE_solver": "boost", "axis": 0},
             {"ODE_solver": "dormand_prince", "axis": 0},
         ]:
@@ -804,7 +814,12 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
 
         for solver_options in [
             {"ODE_solver": "boost", "axis": 0},
-            {"ODE_solver": "symplectic", "dt": 1e-7, "roottol": 1e-7, "predictor_step": True},
+            {
+                "ODE_solver": "symplectic",
+                "dt": 1e-7,
+                "roottol": 1e-7,
+                "predictor_step": True,
+            },
             {"ODE_solver": "dormand_prince", "axis": 0},
         ]:
             # zetas_stop with mismatched zetas and omegas
@@ -914,14 +929,14 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                     )
                     if gc_tys[i][-2, 3] > gc_tys[i][-1, 3]:
                         lower_bound = phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
-                        upper_bound = (phases[idx] + 1) + (
-                            omegas[idx] + 0.1
-                        ) * gc_tys[i][1:-1, 0]
+                        upper_bound = (phases[idx] + 1) + (omegas[idx] + 0.1) * gc_tys[
+                            i
+                        ][1:-1, 0]
                     else:
                         upper_bound = phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
-                        lower_bound = (phases[idx] - 1) + (
-                            omegas[idx] - 0.1
-                        ) * gc_tys[i][1:-1, 0]
+                        lower_bound = (phases[idx] - 1) + (omegas[idx] - 0.1) * gc_tys[
+                            i
+                        ][1:-1, 0]
                     assert np.all(gc_tys[i][1:-1, 3] < upper_bound)
                     assert np.all(gc_tys[i][1:-1, 3] > lower_bound)
 
@@ -1029,19 +1044,15 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                         atol=0,
                     )
                     if gc_tys[i][-2, 2] > gc_tys[i][-1, 2]:
-                        lower_bound = (
-                            phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
-                        )
-                        upper_bound = (phases[idx] + 1) + (
-                            omegas[idx] + 0.1
-                        ) * gc_tys[i][1:-1, 0]
+                        lower_bound = phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
+                        upper_bound = (phases[idx] + 1) + (omegas[idx] + 0.1) * gc_tys[
+                            i
+                        ][1:-1, 0]
                     else:
-                        upper_bound = (
-                            phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
-                        )
-                        lower_bound = (phases[idx] - 1) + (
-                            omegas[idx] - 0.1
-                        ) * gc_tys[i][1:-1, 0]
+                        upper_bound = phases[idx] + omegas[idx] * gc_tys[i][1:-1, 0]
+                        lower_bound = (phases[idx] - 1) + (omegas[idx] - 0.1) * gc_tys[
+                            i
+                        ][1:-1, 0]
                     assert np.all(gc_tys[i][1:-1, 2] < upper_bound)
                     assert np.all(gc_tys[i][1:-1, 2] > lower_bound)
 
@@ -1121,9 +1132,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
                             stop = vpars[idx - len(phases)]
                         else:
                             res = gc_zeta_hits[i][-1, 4] % (2 * np.pi)
-                            stop = (
-                                phases[idx] + omegas[idx] * gc_zeta_hits[i][-1, 0]
-                            )
+                            stop = phases[idx] + omegas[idx] * gc_zeta_hits[i][-1, 0]
                         assert np.isclose(res, stop, rtol=1e-7, atol=0)
 
     def test_sympl_dense_output(self):
@@ -1233,7 +1242,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         assert max(theta_diff) < -2
         assert max(zeta_diff) < -2
         assert max(vpar_diff) < -1
-    
+
     def test_dormand_prince_solver(self):
         """Test the dormand price integrator against Boost."""
         # Same field from test_energy_momentum_conservation_boozer
@@ -1282,8 +1291,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
             Ekin=Ekin,
             mode="gc_vac",
             stopping_criteria=[
-               MinToroidalFluxStoppingCriterion(0.01),
-               MaxToroidalFluxStoppingCriterion(0.99),
+                MinToroidalFluxStoppingCriterion(0.01),
+                MaxToroidalFluxStoppingCriterion(0.99),
             ],
             tol=1e-8,
             dt_save=1e-8,
@@ -1304,8 +1313,8 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
             Ekin=Ekin,
             mode="gc_vac",
             stopping_criteria=[
-               MinToroidalFluxStoppingCriterion(0.01),
-               MaxToroidalFluxStoppingCriterion(0.99),
+                MinToroidalFluxStoppingCriterion(0.01),
+                MaxToroidalFluxStoppingCriterion(0.99),
             ],
             tol=1e-8,
             dt_save=1e-8,
@@ -1329,8 +1338,7 @@ class BoozerGuidingCenterTracingTesting(unittest.TestCase):
         assert max(theta_diff) < -7
         assert max(zeta_diff) < -7
         assert max(vpar_diff) < -7
-        
-    
+
 
 if __name__ == "__main__":
     unittest.main()

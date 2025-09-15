@@ -358,7 +358,7 @@ class PassingPoincare:
                 continue
             delta_theta = np.array(theta_traj[1::]) - np.array(theta_traj[0:-1])
 
-            delta_t = np.array(t_traj[1::]) - np.array(t_traj[0:-1])
+            delta_t = t_traj[1::]
             delta_zeta = 2 * np.pi * self.sign_vpar * sign_G
 
             # Average over wells along one field line

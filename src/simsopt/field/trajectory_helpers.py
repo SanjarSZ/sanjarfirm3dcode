@@ -357,8 +357,7 @@ class PassingPoincare:
             ):  # Need at least one full Poincare return maps to compute frequency
                 continue
             delta_theta = np.array(theta_traj[1::]) - np.array(theta_traj[0:-1])
-
-            delta_t = np.array(t_traj[1::]) - np.array(t_traj[0:-1])
+            delta_t = t_traj[1::]
             delta_zeta = 2 * np.pi * self.sign_vpar * sign_G
 
             # Average over wells along one field line
@@ -613,7 +612,6 @@ class TrappedPoincare:
             mass=self.mass,
             charge=self.charge,
             Ekin=self.Ekin,
-            zetas=[],
             vpars=[0],
             stopping_criteria=[
                 MinToroidalFluxStoppingCriterion(0.01),
@@ -621,7 +619,6 @@ class TrappedPoincare:
             ],
             forget_exact_path=False,
             vpars_stop=True,
-            zetas_stop=False,
             **self.solver_options,
         )
 
@@ -875,7 +872,7 @@ class TrappedPoincare:
             ):  # Need at least one full Poincare return maps to compute frequency
                 continue
             delta_eta = np.array(eta_traj[1::]) - np.array(eta_traj[0:-1])
-            delta_t = np.array(t_traj[1::]) - np.array(t_traj[0:-1])
+            delta_t = t_traj[1::]
 
             # Average over wells along one field line
             omega_eta.append(np.mean(delta_eta) / np.mean(delta_t))

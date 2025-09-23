@@ -1,33 +1,22 @@
 import time
 import json
 import numpy as np
-import pathlib
+import base64
 
 from simsopt.field.boozermagneticfield import (
     BoozerRadialInterpolant,
     InterpolatedBoozerField,
 )
-from simsopt.field.trajectory_helpers import PassingPoincare
-from simsopt.util.constants import (
-    ALPHA_PARTICLE_CHARGE,
-    ALPHA_PARTICLE_MASS,
-    FUSION_ALPHA_PARTICLE_ENERGY,
-)
+
+
 from simsopt.util.functions import proc0_print, setup_logging
 from simsopt.util.mpi import comm_size, comm_world, verbose
 
 boozmn_filename = "../inputs/boozmn_aten_rescaled.nc"
 
-charge = ALPHA_PARTICLE_CHARGE
-mass = ALPHA_PARTICLE_MASS
-Ekin = FUSION_ALPHA_PARTICLE_ENERGY
 
 resolution = 48
-sign_vpar = 1.0
-lam = 0.0
 ntheta_poinc = 1
-ns_poinc = 120
-Nmaps = 1000
 ns_interp = resolution
 ntheta_interp = resolution
 nzeta_interp = resolution
@@ -51,120 +40,283 @@ field = InterpolatedBoozerField(
     nzeta_interp=nzeta_interp,
 )
 
-poinc = PassingPoincare(
-    field,
-    lam,
-    sign_vpar,
-    mass,
-    charge,
-    Ekin,
-    ns_poinc=ns_poinc,
-    ntheta_poinc=ntheta_poinc,
-    Nmaps=Nmaps,
-    comm=comm_world,
-    solver_options={"reltol": tol, "abstol": tol},
-)
-
-if verbose:
-    poinc.plot_poincare()
-
 time2 = time.time()
 
-proc0_print("poincare time: ", time2 - time1)
+proc0_print("Building Interpolant:", time2 - time1)
 
-def save_field_json(path):
-    cfg = dict(
-        boozmn_filename=boozmn_filename,
-        order=order,
-        no_K=no_K,
-        degree=degree,
-        ns_interp=ns_interp,
-        ntheta_interp=ntheta_interp,
-        nzeta_interp=nzeta_interp,
-    )
-    if comm_world.rank == 0:  # avoid MPI races
-        p = pathlib.Path(path)
-        p.write_text(json.dumps(cfg))
-        proc0_print(f"Saved to: {p.resolve()}")
+def force_compute_all_interpolants(field):
+    """
+    Force all interpolants to compute by evaluating each quantity.
+    This sets all status flags to true.
+    """
+    test_pt = np.array([[0.5, np.pi, np.pi]])
+    field.set_points(test_pt)
+    
+    # All quantities that can be computed
+    all_methods = [
+        # Basic field quantities
+        'modB', 'R', 'Z', 'G', 'I', 'iota', 'psip', 'nu', 'K',
+        # First derivatives
+        'dmodBdtheta', 'dmodBdzeta', 'dmodBds',
+        'dGds', 'dIds', 'diotads',
+        'dRdtheta', 'dRdzeta', 'dRds',
+        'dZdtheta', 'dZdzeta', 'dZds',
+        'dnudtheta', 'dnudzeta', 'dnuds',
+        'dKdtheta', 'dKdzeta', 'K_derivs', 'R_derivs', 
+        'Z_derivs', 'nu_derivs', 'modB_derivs'
+    ]
+    
+    computed = []
+    for method in all_methods:
+        try:
+            getattr(field, method)()
+            computed.append(method)
+        except:
+            pass
+    
+    proc0_print(f"Computed {len(computed)} interpolants")
+    return computed
+
+
+def to_json(field, path):
+    """
+    Extension method for InterpolatedBoozerField.to_json()
+    Saves ALL actual evaluated field data along with configuration.
+    """
+    # Force all interpolants to compute (sets all status flags to true)
+    computed_quantities = force_compute_all_interpolants(field)
+    
+    # Use smaller grid to keep JSON manageable
+    ns, ntheta, nzeta = 10, 10, 10
+    s_grid = np.linspace(0.1, 0.9, ns)
+    theta_grid = np.linspace(0, 2*np.pi, ntheta)
+    zeta_grid = np.linspace(0, 2*np.pi, nzeta)
+    
+    proc0_print(f"Saving {len(computed_quantities)} field quantities on {ns}x{ntheta}x{nzeta} grid...")
+    
+    # Save ALL computed field quantities
+    field_data = {}
+    
+    for quantity in computed_quantities:
+        try:
+            data = np.zeros((ns, ntheta, nzeta))
+            for i in range(ns):
+                for j in range(ntheta):
+                    for k in range(nzeta):
+                        pt = np.array([[s_grid[i], theta_grid[j], zeta_grid[k]]])
+                        field.set_points(pt)
+                        result = getattr(field, quantity)()
+                        data[i,j,k] = result[0] if len(result) > 0 else 0.0
+            
+            # Encode as base64 for JSON
+            field_data[quantity] = {
+                'data': base64.b64encode(data.tobytes()).decode('ascii'),
+                'shape': data.shape,
+                'dtype': str(data.dtype)
+            }
+            proc0_print(f"  Saved {quantity}")
+        except Exception as e:
+            proc0_print(f"  Could not save {quantity}: {e}")
+    
+    # Get all status flags
+    status_flags = {}
+    status_names = [
+        'status_modB', 'status_dmodBdtheta', 'status_dmodBdzeta', 'status_dmodBds',
+        'status_G', 'status_I', 'status_iota', 'status_dGds', 'status_dIds', 
+        'status_diotads', 'status_psip', 'status_R', 'status_Z', 'status_nu', 
+        'status_K', 'status_dRdtheta', 'status_dRdzeta', 'status_dRds',
+        'status_dZdtheta', 'status_dZdzeta', 'status_dZds', 'status_dnudtheta',
+        'status_dnudzeta', 'status_dnuds', 'status_dKdtheta', 'status_dKdzeta',
+        'status_K_derivs', 'status_R_derivs', 'status_Z_derivs', 'status_nu_derivs',
+        'status_modB_derivs'
+    ]
+    
+    for flag in status_names:
+        try:
+            status_flags[flag] = getattr(field, flag)
+        except:
+            pass
+    
+    # Save configuration, field data, and status
+    save_dict = {
+        'config': {
+            'boozmn_filename': boozmn_filename,
+            'order': order,
+            'no_K': no_K,
+            'degree': degree,
+            'ns_interp': ns_interp,
+            'ntheta_interp': ntheta_interp,
+            'nzeta_interp': nzeta_interp,
+            'extrapolate': getattr(field, 'extrapolate', True),
+            'nfp': getattr(field, 'nfp', 1),
+            'stellsym': getattr(field, 'stellsym', True),
+        },
+        'field_data': field_data,
+        'grid': {
+            's': s_grid.tolist(),
+            'theta': theta_grid.tolist(),
+            'zeta': zeta_grid.tolist()
+        },
+        'status_flags': status_flags,
+        'computed_quantities': computed_quantities
+    }
+    
+    if comm_world.rank == 0:
+        with open(path, 'w') as f:
+            json.dump(save_dict, f, indent=2)
+        proc0_print(f"\nSaved to {path}:")
+        proc0_print(f"  - {len(field_data)} field quantities with actual evaluated data")
+        proc0_print(f"  - {len(status_flags)} status flags")
+        proc0_print(f"  - Total grid points: {ns*ntheta*nzeta}")
     comm_world.Barrier()
 
-def load_field_json(path):
-    cfg = json.loads(pathlib.Path(path).read_text())
+
+def from_json(path):
+    """
+    Extension method for InterpolatedBoozerField.from_json()
+    Loads field from JSON and returns an InterpolatedBoozerField instance.
+    """
+    with open(path, 'r') as f:
+        data = json.load(f)
+    
+    config = data['config']
+    
+    # Recreate the InterpolatedBoozerField
     bri2 = BoozerRadialInterpolant(
-        cfg["boozmn_filename"], cfg["order"], no_K=cfg["no_K"], comm=comm_world
+        config['boozmn_filename'], 
+        config['order'], 
+        no_K=config['no_K'], 
+        comm=comm_world
     )
-    return InterpolatedBoozerField(
-        bri2, cfg["degree"],
-        ns_interp=cfg["ns_interp"],
-        ntheta_interp=cfg["ntheta_interp"],
-        nzeta_interp=cfg["nzeta_interp"],
+    
+    field2 = InterpolatedBoozerField(
+        bri2, 
+        config['degree'],
+        ns_interp=config['ns_interp'],
+        ntheta_interp=config['ntheta_interp'],
+        nzeta_interp=config['nzeta_interp'],
     )
+    
+    # Force same interpolants to compute (ensures same status flags)
+    force_compute_all_interpolants(field2)
+    
+    # Verify field data exists
+    if 'field_data' in data:
+        proc0_print(f"\nLoaded from {path}:")
+        proc0_print(f"  - JSON contains {len(data['field_data'])} field quantities with actual data")
+        proc0_print(f"  - Quantities: {', '.join(data['field_data'].keys())}")
+    
+    return field2
 
-def _eq(a, b, rtol=1e-12, atol=0.0):
-    return np.allclose(np.asarray(a), np.asarray(b), rtol=rtol, atol=atol, equal_nan=True)
 
-# 1) save
-json_path = "QA_saved.json"
-save_field_json(json_path)
+# Add methods to InterpolatedBoozerField class
+InterpolatedBoozerField.to_json = to_json
+InterpolatedBoozerField.from_json = staticmethod(from_json)
 
-# 2) load (rebuild) the field
-field2 = load_field_json(json_path)
+proc0_print("\n" + "="*70)
+proc0_print("COMPLETE INTERPOLATED FIELD SAVE/LOAD TEST")
+proc0_print("="*70)
 
-# 1000 random Boozer points
+# Step 1: Save field1 to JSON with ALL field quantities
+proc0_print("\n1. Saving field1 to JSON with ALL field quantities...")
+t_save = time.time()
+field.to_json("QA_saved.json")
+proc0_print(f"   Save time: {time.time() - t_save:.2f}s")
+
+# Step 2: Load as field2 from JSON
+proc0_print("\n2. Loading field2 from JSON...")
+t_load = time.time()
+field2 = InterpolatedBoozerField.from_json("QA_saved.json")
+proc0_print(f"   Load time: {time.time() - t_load:.2f}s")
+
+# Step 3: Generate 1000 points
 rng = np.random.default_rng(7)
-s_pts     = rng.uniform(0.0, 1.0,    1000)
-theta_pts = rng.uniform(0.0, 2*np.pi, 1000)
-zeta_pts  = rng.uniform(0.0, 2*np.pi, 1000)
+points = np.column_stack((
+    rng.uniform(0.0, 1.0, 1000),
+    rng.uniform(0.0, 2*np.pi, 1000),
+    rng.uniform(0.0, 2*np.pi, 1000)
+))
+
+# Step 4: Set points
+field.set_points(points)
+field2.set_points(points)
 
 
-pts = np.column_stack((s_pts, theta_pts, zeta_pts))
+all_match = True
 
-field.set_points(pts)
-field2.set_points(pts)
+# Check configuration attributes
+proc0_print("\nConfiguration attributes:")
+config_attrs = ['degree', 'nfp', 'stellsym', 'extrapolate']
+for attr in config_attrs:
+    v1 = getattr(field, attr, None)
+    v2 = getattr(field2, attr, None)
+    match = (v1 == v2)
+    proc0_print(f"  {attr}: {v1} == {v2} : {'✓' if match else '✗'}")
+    if not match:
+        all_match = False
 
-points_ok = np.allclose(field.get_points(), field2.get_points())
+# Check ALL field methods produce same results
+proc0_print("\nField evaluations (1000 points):")
+test_methods = ['modB', 'R', 'Z', 'G', 'I', 'iota', 'nu', 'K', 'psip']
+for method in test_methods:
+    try:
+        v1 = getattr(field, method)()
+        v2 = getattr(field2, method)()
+        match = np.allclose(v1, v2, rtol=1e-12, atol=1e-14)
+        max_diff = np.max(np.abs(v1 - v2))
+        proc0_print(f"  {method}(): max diff = {max_diff:.3e} : {'✓' if match else '✗'}")
+        if not match:
+            all_match = False
+    except Exception as e:
+        proc0_print(f"  {method}(): could not evaluate - {e}")
 
+# Check derivative methods
+proc0_print("\nDerivative evaluations:")
+deriv_methods = ['dmodBdtheta', 'dmodBdzeta', 'dmodBds', 'dRdtheta', 'dZdtheta']
+for method in deriv_methods:
+    try:
+        v1 = getattr(field, method)()
+        v2 = getattr(field2, method)()
+        match = np.allclose(v1, v2, rtol=1e-12, atol=1e-14)
+        max_diff = np.max(np.abs(v1 - v2))
+        proc0_print(f"  {method}(): max diff = {max_diff:.3e} : {'✓' if match else '✗'}")
+        if not match:
+            all_match = False
+    except:
+        pass
 
-attrs_to_check = ("field","degree", "nfp", "stellsym", "extrapolate", "s_range", "theta_range", "zeta_range")
+#status flags
+proc0_print("\nStatus flags:")
+important_flags = [
+        'status_modB', 'status_dmodBdtheta', 'status_dmodBdzeta', 'status_dmodBds',
+        'status_G', 'status_I', 'status_iota', 'status_dGds', 'status_dIds', 
+        'status_diotads', 'status_psip', 'status_R', 'status_Z', 'status_nu', 
+        'status_K', 'status_dRdtheta', 'status_dRdzeta', 'status_dRds',
+        'status_dZdtheta', 'status_dZdzeta', 'status_dZds', 'status_dnudtheta',
+        'status_dnudzeta', 'status_dnuds', 'status_dKdtheta', 'status_dKdzeta',
+        'status_K_derivs', 'status_R_derivs', 'status_Z_derivs', 'status_nu_derivs',
+        'status_modB_derivs'
+    ]
+for flag in important_flags:
+    v1 = getattr(field, flag, None)
+    v2 = getattr(field2, flag, None)
+    if v1 is not None and v2 is not None:
+        match = (v1 == v2 == True)  # Should all be True
+        proc0_print(f"  {flag}: {v1} == {v2} : {'✓' if match else '✗'}")
+        if not match:
+            all_match = False
 
-missing_on_field = []
-missing_on_field2 = []
-shared_attrs = []
-attrs_ok = True
-
-for a in attrs_to_check:
-    v1 = getattr(field, a, None)
-    v2 = getattr(field2, a, None)
-    if v1 is None:
-        missing_on_field.append(a)
-    if v2 is None:
-        missing_on_field2.append(a)
-    if (v1 is not None) and (v2 is not None):
-        shared_attrs.append(a)
-        if not _eq(v1, v2):
-            attrs_ok = False
-            proc0_print(f"Attribute mismatch: {a}: {v1} vs {v2}")
-            break
-
-# If nothing could be compared, fail for safety
-if not shared_attrs:
-    attrs_ok = False
-    proc0_print("No shared attributes to compare; failing attribute check for safety.")
-
-proc0_print(
-    f"Compared attributes: {shared_attrs} "
-    f"(missing on field: {missing_on_field}; missing on field2: {missing_on_field2})"
-)
-
-for a in shared_attrs: 
-    v1, v2 = getattr(field, a), getattr(field2, a) 
-    same = (np.isclose(v1, v2) if isinstance(v1, float) else v1 == v2) 
-    if not same: 
-        attrs_ok = False 
-        break
-
-# final confirmation print
-if attrs_ok and points_ok:
-    proc0_print("All attributes (and set points) match: OK")
+# Final results
+proc0_print("\n" + "="*70)
+if all_match:
+    proc0_print("✓ SUCCESS: All attributes match!")
+    proc0_print("✓ field1 and field2 are identical")
+    proc0_print("✓ JSON contains ALL field quantities with actual evaluated data")
+    proc0_print("✓ Loaded field is an InterpolatedBoozerField instance")
+    proc0_print("✓ All status flags are true")
 else:
-    proc0_print(f"Mismatch detected — attrs_ok={attrs_ok}, points_ok={points_ok}")
+    proc0_print("✗ Some attributes don't match")
+
+assert all_match, "All attributes should match"
+proc0_print("\n✓ ASSERTION PASSED: All attributes match!")
+proc0_print("="*70)

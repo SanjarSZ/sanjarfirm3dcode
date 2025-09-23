@@ -272,7 +272,13 @@ for method in test_methods:
 
 # Check derivative methods
 proc0_print("\nDerivative evaluations:")
-deriv_methods = ['dmodBdtheta', 'dmodBdzeta', 'dmodBds', 'dRdtheta', 'dZdtheta']
+deriv_methods = ['dmodBdtheta', 'dmodBdzeta', 'dmodBds',
+        'dGds', 'dIds', 'diotads',
+        'dRdtheta', 'dRdzeta', 'dRds',
+        'dZdtheta', 'dZdzeta', 'dZds',
+        'dnudtheta', 'dnudzeta', 'dnuds',
+        'dKdtheta', 'dKdzeta', 'K_derivs', 'R_derivs', 
+        'Z_derivs', 'nu_derivs', 'modB_derivs']
 for method in deriv_methods:
     try:
         v1 = getattr(field, method)()

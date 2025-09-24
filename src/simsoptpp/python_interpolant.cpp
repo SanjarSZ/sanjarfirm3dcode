@@ -13,7 +13,9 @@ namespace py = pybind11;
 void init_interpolant(py::module_ &m){
 
     py::class_<InterpolationRule, shared_ptr<InterpolationRule>>(m, "InterpolationRule", "Abstract class for interpolation rules on an interval.")
-        .def_readonly("degree", &InterpolationRule::degree, "The degree of the polynomial. The number of interpolation points in `degree+1`.");
+        .def_readonly("degree", &InterpolationRule::degree, "The degree of the polynomial. The number of interpolation points in `degree+1`.")
+        .def_readonly("nodes", &InterpolationRule::nodes, "The interpolation nodes (points) within each cell.")
+        .def_readonly("scalings", &InterpolationRule::scalings, "The scaling factors for interpolation weights.");
 
     py::class_<UniformInterpolationRule, shared_ptr<UniformInterpolationRule>, InterpolationRule>(m, "UniformInterpolationRule", "Polynomial interpolation using equispaced points.")
         .def(py::init<int>())

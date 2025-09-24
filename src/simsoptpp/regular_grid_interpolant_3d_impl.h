@@ -12,6 +12,8 @@ const int RegularGridInterpolant3D<Array>::simdcount;
 
 template<class Array>
 void RegularGridInterpolant3D<Array>::interpolate_batch(std::function<Vec(Vec, Vec, Vec)> &f) {
+    std::cout << "DEBUG: interpolate_batch() called - this should NOT happen during load!" << std::endl;
+    std::cout << "DEBUG: This is the expensive computation that should be avoided!" << std::endl;
     int BATCH_SIZE = 16384;
     int NUM_BATCHES = dofs_to_keep/BATCH_SIZE + (dofs_to_keep % BATCH_SIZE != 0);
     for (int i = 0; i < NUM_BATCHES; ++i) {
@@ -282,3 +284,124 @@ Vec linspace(double min, double max, int n, bool endpoint) {
     }
     return res;
 }
+
+
+template<class Array>
+std::map<std::string, std::vector<double>> RegularGridInterpolant3D<Array>::get_interpolant_data() const {
+    std::map<std::string, std::vector<double>> data;
+    
+    // Save the interpolated values
+    data["vals"] = vals;
+    
+    // Save grid information
+    data["xmesh"] = xmesh;
+    data["ymesh"] = ymesh;
+    data["zmesh"] = zmesh;
+    data["xdof"] = xdof;
+    data["ydof"] = ydof;
+    data["zdof"] = zdof;
+    data["xdoftensor_reduced"] = xdoftensor_reduced;
+    data["ydoftensor_reduced"] = ydoftensor_reduced;
+    data["zdoftensor_reduced"] = zdoftensor_reduced;
+    
+    // Save grid parameters
+    data["nx"] = {static_cast<double>(nx)};
+    data["ny"] = {static_cast<double>(ny)};
+    data["nz"] = {static_cast<double>(nz)};
+    data["hx"] = {hx};
+    data["hy"] = {hy};
+    data["hz"] = {hz};
+    data["xmin"] = {xmin};
+    data["ymin"] = {ymin};
+    data["zmin"] = {zmin};
+    data["xmax"] = {xmax};
+    data["ymax"] = {ymax};
+    data["zmax"] = {zmax};
+    data["value_size"] = {static_cast<double>(value_size)};
+    data["padded_value_size"] = {static_cast<double>(padded_value_size)};
+    data["dofs_to_keep"] = {static_cast<double>(dofs_to_keep)};
+    data["cells_to_keep"] = {static_cast<double>(cells_to_keep)};
+    data["local_vals_size"] = {static_cast<double>(local_vals_size)};
+    
+    // Save interpolation rule
+    data["rule_degree"] = {static_cast<double>(rule.degree)};
+    data["rule_nodes"] = rule.nodes;
+    data["rule_scalings"] = rule.scalings;
+    
+    // Save mappings
+    data["reduced_to_full_map"] = std::vector<double>(reduced_to_full_map.begin(), reduced_to_full_map.end());
+    data["full_to_reduced_map"] = std::vector<double>(full_to_reduced_map.begin(), full_to_reduced_map.end());
+    
+    // Save skip information
+    data["skip_cell"] = std::vector<double>(skip_cell.begin(), skip_cell.end());
+    
+    // Save local values if available
+    if (!all_local_vals_map.empty()) {
+        for (const auto& pair : all_local_vals_map) {
+            std::string key = "local_vals_" + std::to_string(pair.first);
+            data[key] = std::vector<double>(pair.second.begin(), pair.second.end());
+        }
+    }
+    
+    return data;
+}
+
+template<class Array>
+void RegularGridInterpolant3D<Array>::set_interpolant_data(const std::map<std::string, std::vector<double>>& data) {
+    // Load the interpolated values
+    if (data.find("vals") != data.end()) {
+        vals = data.at("vals");
+    }
+    
+    // Load grid information
+    if (data.find("xmesh") != data.end()) xmesh = data.at("xmesh");
+    if (data.find("ymesh") != data.end()) ymesh = data.at("ymesh");
+    if (data.find("zmesh") != data.end()) zmesh = data.at("zmesh");
+    if (data.find("xdof") != data.end()) xdof = data.at("xdof");
+    if (data.find("ydof") != data.end()) ydof = data.at("ydof");
+    if (data.find("zdof") != data.end()) zdof = data.at("zdof");
+    if (data.find("xdoftensor_reduced") != data.end()) xdoftensor_reduced = data.at("xdoftensor_reduced");
+    if (data.find("ydoftensor_reduced") != data.end()) ydoftensor_reduced = data.at("ydoftensor_reduced");
+    if (data.find("zdoftensor_reduced") != data.end()) zdoftensor_reduced = data.at("zdoftensor_reduced");
+    
+    // Load grid parameters
+    if (data.find("hx") != data.end()) hx = data.at("hx")[0];
+    if (data.find("hy") != data.end()) hy = data.at("hy")[0];
+    if (data.find("hz") != data.end()) hz = data.at("hz")[0];
+    if (data.find("padded_value_size") != data.end()) padded_value_size = static_cast<int>(data.at("padded_value_size")[0]);
+    if (data.find("dofs_to_keep") != data.end()) dofs_to_keep = static_cast<uint32_t>(data.at("dofs_to_keep")[0]);
+    if (data.find("cells_to_keep") != data.end()) cells_to_keep = static_cast<uint32_t>(data.at("cells_to_keep")[0]);
+    if (data.find("local_vals_size") != data.end()) local_vals_size = static_cast<int>(data.at("local_vals_size")[0]);
+    
+    // Load mappings
+    if (data.find("reduced_to_full_map") != data.end()) {
+        const auto& vec = data.at("reduced_to_full_map");
+        reduced_to_full_map = std::vector<uint32_t>(vec.begin(), vec.end());
+    }
+    if (data.find("full_to_reduced_map") != data.end()) {
+        const auto& vec = data.at("full_to_reduced_map");
+        full_to_reduced_map = std::vector<uint32_t>(vec.begin(), vec.end());
+    }
+    
+    // Load skip information
+    if (data.find("skip_cell") != data.end()) {
+        const auto& vec = data.at("skip_cell");
+        skip_cell = std::vector<bool>(vec.begin(), vec.end());
+    }
+    
+    // Load local values
+    all_local_vals_map.clear();
+    for (const auto& pair : data) {
+        if (pair.first.substr(0, 11) == "local_vals_") {
+            try {
+                int cell_idx = std::stoi(pair.first.substr(11));
+                all_local_vals_map[cell_idx] = AlignedPaddedVec(pair.second.begin(), pair.second.end());
+            } catch (const std::exception& e) {
+                // Skip keys that don't have valid integer indices
+                // This can happen if the data contains other keys that start with "local_vals_"
+                continue;
+            }
+        }
+    }
+}
+

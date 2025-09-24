@@ -379,9 +379,11 @@ class InterpolatedBoozerField : public BoozerMagneticField {
         }
 
         void _R_impl(Array2& R) override {
+            std::cout << "DEBUG: _R_impl() called - this should NOT happen during load!" << std::endl;
             if(!interp_R)
                 interp_R = std::make_shared<RegularGridInterpolant3D<Array2>>(rule, s_range, theta_range, zeta_range, 1, extrapolate);
             if(!status_R) {
+                std::cout << "DEBUG: Computing R interpolant - this should NOT happen during load!" << std::endl;
                 Array2 old_points = this->field->get_points();
                 string which_scalar = "R";
                 std::function<Vec(Vec, Vec, Vec)> fbatch = [this,which_scalar](Vec s, Vec theta, Vec zeta) {
@@ -488,9 +490,11 @@ class InterpolatedBoozerField : public BoozerMagneticField {
         }
 
         void _Z_impl(Array2& Z) override {
+            std::cout << "DEBUG: _Z_impl() called - this should NOT happen during load!" << std::endl;
             if(!interp_Z)
                 interp_Z = std::make_shared<RegularGridInterpolant3D<Array2>>(rule, s_range, theta_range, zeta_range, 1, extrapolate);
             if(!status_Z) {
+                std::cout << "DEBUG: Computing Z interpolant - this should NOT happen during load!" << std::endl;
                 Array2 old_points = this->field->get_points();
                 string which_scalar = "Z";
                 std::function<Vec(Vec, Vec, Vec)> fbatch = [this,which_scalar](Vec s, Vec theta, Vec zeta) {
@@ -597,9 +601,11 @@ class InterpolatedBoozerField : public BoozerMagneticField {
         }
 
         void _modB_impl(Array2& modB) override {
+            std::cout << "DEBUG: _modB_impl() called - this should NOT happen during load!" << std::endl;
             if(!interp_modB)
                 interp_modB = std::make_shared<RegularGridInterpolant3D<Array2>>(rule, s_range, theta_range, zeta_range, 1, extrapolate);
             if(!status_modB) {
+                std::cout << "DEBUG: Computing modB interpolant - this should NOT happen during load!" << std::endl;
                 Array2 old_points = this->field->get_points();
                 string which_scalar = "modB";
                 std::function<Vec(Vec, Vec, Vec)> fbatch = [this,which_scalar](Vec s, Vec theta, Vec zeta) {
@@ -894,6 +900,17 @@ class InterpolatedBoozerField : public BoozerMagneticField {
                 RangeTriplet s_range, RangeTriplet theta_range, RangeTriplet zeta_range,
                 bool extrapolate, int nfp, bool stellsym, string field_type) : InterpolatedBoozerField(field, UniformInterpolationRule(degree), s_range, theta_range, zeta_range, extrapolate, nfp, stellsym, field_type) {}
 
+        // Constructor for loading from saved data (no computation)
+        InterpolatedBoozerField(
+                shared_ptr<BoozerMagneticField> field, int degree,
+                RangeTriplet s_range, RangeTriplet theta_range, RangeTriplet zeta_range,
+                bool extrapolate, int nfp, bool stellsym, string field_type, bool load_mode) : 
+            BoozerMagneticField(field->psi0, field->field_type), field(field), rule(UniformInterpolationRule(degree)), s_range(s_range), theta_range(theta_range), zeta_range(zeta_range), extrapolate(extrapolate), nfp(nfp), stellsym(stellsym)
+        {
+            // In load mode, we don't call the parent constructor that might trigger computation
+            // We just set up the basic structure and wait for data to be loaded
+        }
+
                 std::pair<double, double> estimate_error_modB(int samples) {
                     if(!interp_modB) {
                       interp_modB = std::make_shared<RegularGridInterpolant3D<Array2>>(rule, s_range, theta_range, zeta_range, 1, extrapolate);
@@ -1029,4 +1046,13 @@ class InterpolatedBoozerField : public BoozerMagneticField {
                     }
                     return interp_iota->estimate_error(fbatch, samples);
                 }
+                
+                // Save/load methods for all interpolant data
+                std::map<std::string, std::map<std::string, std::vector<double>>> get_all_interpolant_data() const;
+                void set_all_interpolant_data(const std::map<std::string, std::map<std::string, std::vector<double>>>& data);
+                std::map<std::string, bool> get_status_flags() const;
+                void set_status_flags(const std::map<std::string, bool>& flags);
 };
+
+// Include the implementation
+#include "boozermagneticfield_interpolated_impl.h"

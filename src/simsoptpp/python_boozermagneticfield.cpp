@@ -428,6 +428,18 @@ void init_boozermagneticfields(py::module_ &m){
           string>()
       )
       .def(
+          py::init<shared_ptr<BoozerMagneticField>,
+          int,
+          RangeTriplet,
+          RangeTriplet,
+          RangeTriplet,
+          bool,
+          int,
+          bool,
+          string,
+          bool>()
+      )
+      .def(
           "estimate_error_K",
           &InterpolatedBoozerField::estimate_error_K
       )
@@ -506,6 +518,10 @@ void init_boozermagneticfields(py::module_ &m){
       .def_readwrite("status_Z_derivs",&InterpolatedBoozerField::status_Z_derivs)
       .def_readwrite("status_nu_derivs",&InterpolatedBoozerField::status_nu_derivs)
       .def_readwrite("status_modB_derivs",&InterpolatedBoozerField::status_modB_derivs)
+      .def("get_all_interpolant_data", &InterpolatedBoozerField::get_all_interpolant_data)
+      .def("set_all_interpolant_data", &InterpolatedBoozerField::set_all_interpolant_data)
+      .def("get_status_flags", &InterpolatedBoozerField::get_status_flags)
+      .def("set_status_flags", &InterpolatedBoozerField::set_status_flags)
       ;
 
     // ShearAlfvenWave:

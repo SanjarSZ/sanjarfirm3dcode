@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <tuple>
 #include <vector>
+#include <map>
 
 using Vec = std::vector<double>;
 using RangeTriplet = std::tuple<double, double, int>;
@@ -303,7 +304,13 @@ class RegularGridInterpolant3D {
         void evaluate_batch_1D(Array &xyz, Array &fxyz);
 
         std::pair<double, double> estimate_error(std::function<Vec(Vec, Vec, Vec)> &f, int samples);
+       
+        // Save/load methods for interpolant data
+        std::map<std::string, std::vector<double>> get_interpolant_data() const;
+        void set_interpolant_data(const std::map<std::string, std::vector<double>>& data);
+        bool is_computed() const { return !vals.empty(); }
 };
+
 
 class UniformInterpolationRule : public InterpolationRule {
     protected:

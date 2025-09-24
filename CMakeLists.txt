@@ -156,6 +156,12 @@ pybind11_add_module(${PROJECT_NAME}
     ${GSL_TARGETS}
 )
 
+if(APPLE)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE
+    _LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION
+  )
+endif()
+
 set_target_properties(${PROJECT_NAME}
     PROPERTIES
     CXX_STANDARD 17
